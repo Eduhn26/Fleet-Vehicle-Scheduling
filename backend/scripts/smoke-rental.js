@@ -4,6 +4,7 @@ const connectDatabase = require('../src/config/database');
 const rentalService = require('../src/services/rentalService');
 const { User } = require('../src/models/User');
 const { Vehicle } = require('../src/models/Vehicle');
+const { RentalRequest, RENTAL_STATUS } = require('../src/models/RentalRequest');
 
 const run = async () => {
   try {
@@ -18,6 +19,15 @@ const run = async () => {
 
     const startDate = '2026-03-01';
     const endDate = '2026-03-03';
+
+    // NOTE: smoke precisa ser idempotente. Limpamos apenas o cenário deste teste.
+    await RentalRequest.deleteMany({
+      user: user._id,
+      vehicle: vehicle._id,
+      startDate: new Date(`${startDate}T00:00:00.000Z`),
+      endDate: new Date(`${endDate}T00:00:00.000Z`),
+      status: { $in: [RENTAL_STATUS.PENDING, RENTAL_STATUS.APPROVED, RENTAL_STATUS.REJECTED] },
+    });
 
     console.log('🧪 Creating request...');
     const created = await rentalService.createRequest({
