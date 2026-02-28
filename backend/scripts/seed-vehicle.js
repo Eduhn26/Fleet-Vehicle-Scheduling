@@ -26,7 +26,11 @@ const run = async () => {
     const vehicle = await Vehicle.findOneAndUpdate(
       { licensePlate: payload.licensePlate },
       { $set: payload },
-      { new: true, upsert: true, runValidators: true }
+      {
+        returnDocument: 'after', // NOTE: substitui `new: true` (deprecated no Mongoose 9+)
+        upsert: true,
+        runValidators: true,
+      }
     );
 
     console.log('✅ Vehicle upserted:', {
