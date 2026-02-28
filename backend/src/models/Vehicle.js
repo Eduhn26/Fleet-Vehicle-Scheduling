@@ -1,4 +1,3 @@
-// backend/src/models/Vehicle.js
 const mongoose = require('mongoose');
 
 const VEHICLE_STATUS = Object.freeze({
@@ -111,7 +110,8 @@ const vehicleSchema = new mongoose.Schema(
   }
 );
 
-vehicleSchema.index({ licensePlate: 1 }, { unique: true });
+// NOTE: o índice unique já é criado via `unique: true` no campo.
+// Manter o schema.index aqui também gera warning de índice duplicado no Mongoose.
 
 module.exports = {
   Vehicle: mongoose.model('Vehicle', vehicleSchema),

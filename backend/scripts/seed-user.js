@@ -1,16 +1,21 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const connectDatabase = require('../src/config/database');
 const { User, USER_ROLE } = require('../src/models/User');
+
+const BCRYPT_SALT_ROUNDS = 10;
 
 const run = async () => {
   try {
     await connectDatabase();
 
+    const passwordHash = await bcrypt.hash('123456', BCRYPT_SALT_ROUNDS);
+
     const payload = {
       name: 'Eduardo Henrique',
       email: 'eduardo.dev@example.com',
-      password: '123456', // SEC: apenas para Fase 1 (hash virá na Fase 2)
+      password: passwordHash,
       role: USER_ROLE.ADMIN,
       department: 'TI',
       registrationId: 'DEV001',
@@ -19,7 +24,11 @@ const run = async () => {
     const user = await User.findOneAndUpdate(
       { email: payload.email },
       { $set: payload },
-      { new: true, upsert: true, runValidators: true }
+      {
+        returnDocument: 'after', // NOTE: substitui `new: true` (deprecated no Mongoose)
+        upsert: true,
+        runValidators: true,
+      }
     );
 
     console.log('✅ User upserted:', {

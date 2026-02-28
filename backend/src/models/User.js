@@ -1,4 +1,3 @@
-// backend/src/models/User.js
 const mongoose = require('mongoose');
 
 const USER_ROLE = Object.freeze({
@@ -32,7 +31,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
       maxlength: 200,
-      // SEC: aqui ainda é string “crua” (Fase 1). Hash com bcrypt é responsabilidade do AuthService (Fase 2).
+      // SEC: hash é responsabilidade do AuthService (Fase 2).
     },
 
     role: {
@@ -63,7 +62,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.index({ email: 1 }, { unique: true });
+// NOTE: `unique: true` no campo email já cria o índice. Duplicar com schema.index gera warning.
 
 module.exports = {
   User: mongoose.model('User', userSchema),
