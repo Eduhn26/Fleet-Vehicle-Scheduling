@@ -7,19 +7,38 @@ const isLikelyMongooseValidationError = (err) => err?.name === 'ValidationError'
 
 const isLikelyMongoDuplicateKeyError = (err) => err?.code === 11000;
 
+const isLikelyJsonSyntaxError = (err) =>
+  err instanceof SyntaxError &&
+  err?.status === 400 &&
+  'body' in err;
+
 const errorHandler = (err, req, res, next) => {
   // NOTE: Express exige a assinatura com `next` mesmo se não usamos.
-  const isOperational = err instanceof AppError || err?.isOperational === true;
 
-  if (isOperational) {
-    return res.status(err.statusCode || 400).json({
+  if (isLikelyJsonSyntaxError(err)) {
+    return res.status(400).json({
       error: {
-        message: err.message,
+        message: 'JSON inválido no body',
       },
     });
   }
 
-  // NOTE: mapeamentos comuns de infra (Mongo/Mongoose) para evitar 500 desnecessário.
+  const isOperational = err instanceof AppError || err?.isOperational === true;
+
+  if (isOperational) {
+    const payload = {
+      error: {
+        message: err.message,
+      },
+    };
+
+    if (Array.isArray(err.details) && err.details.length > 0) {
+      payload.error.details = err.details;
+    }
+
+    return res.status(err.statusCode || 400).json(payload);
+  }
+
   if (isLikelyMongooseCastError(err)) {
     return res.status(400).json({
       error: {
