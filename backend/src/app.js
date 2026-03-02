@@ -6,6 +6,7 @@ const AppError = require('./utils/AppError');
 const errorHandler = require('./middleware/errorHandler');
 
 const vehicleRoutes = require('./routes/vehicleRoutes');
+const rentalRoutes = require('./routes/rentalRoutes');
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/rentals', rentalRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
