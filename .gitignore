@@ -23,3 +23,6 @@ yarn-error.log*
 # Arquivos de Sistema (Mac/Windows)
 .DS_Store
 Thumbs.db
+
+projeto-completo.txt
+gerar-txt.js

@@ -156,7 +156,6 @@ const createRequest = async ({ userId, vehicleId, startDate, endDate, purpose })
 };
 
 const adminCreateReservation = async ({ adminUserId, userId, vehicleId, startDate, endDate, purpose }) => {
-  // NOTE: role/authorization fica no middleware/controller (Fase 3). Aqui é consistência de regra.
   assertObjectIdLike(adminUserId, 'adminUserId');
   return createRequest({ userId, vehicleId, startDate, endDate, purpose });
 };
@@ -168,12 +167,13 @@ const approveRequest = async ({ requestId, adminNotes }) => {
   const request = await RentalRequest.findById(rId);
   assertExists(request, 'Solicitação não encontrada');
 
-  if (request.status === RENTAL_STATUS.REJECTED) {
-    fail('Solicitação rejeitada não pode ser aprovada', 409);
+  // 🔒 Transições inválidas
+  if (request.status === RENTAL_STATUS.APPROVED) {
+    fail('Solicitação já foi aprovada', 409);
   }
 
-  if (request.status === RENTAL_STATUS.APPROVED) {
-    return formatRental(request);
+  if (request.status === RENTAL_STATUS.REJECTED) {
+    fail('Solicitação rejeitada não pode ser aprovada', 409);
   }
 
   const vehicle = await assertVehicleAvailableForRequest(request.vehicle.toString());
@@ -205,8 +205,9 @@ const rejectRequest = async ({ requestId, adminNotes }) => {
   const request = await RentalRequest.findById(rId);
   assertExists(request, 'Solicitação não encontrada');
 
+  // 🔒 Transições inválidas
   if (request.status === RENTAL_STATUS.REJECTED) {
-    return formatRental(request);
+    fail('Solicitação já foi rejeitada', 409);
   }
 
   if (request.status === RENTAL_STATUS.APPROVED) {

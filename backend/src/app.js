@@ -2,21 +2,57 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 
+const AppError = require('./utils/AppError');
+const errorHandler = require('./middleware/errorHandler');
+
+const vehicleRoutes = require('./routes/vehicleRoutes');
+const rentalRoutes = require('./routes/rentalRoutes');
+const authRoutes = require('./routes/authRoutes'); // 🔐 novo
+
 const app = express();
 
-// Middlewares Globais
-app.use(helmet()); // Proteção de headers HTTP
-app.use(cors()); // Permite requisições do frontend
-app.use(express.json()); // Parse de JSON no body
+const isProd = process.env.NODE_ENV === 'production';
 
-// Rota de Health Check (Verifica se a API está viva)
+const buildCorsOptions = () => {
+  const frontendUrl = String(process.env.FRONTEND_URL || '').trim();
+
+  if (!frontendUrl) {
+    if (isProd) return { origin: false };
+    return { origin: true };
+  }
+
+  const allowed = new Set([frontendUrl]);
+
+  return {
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowed.has(origin)) return callback(null, true);
+      return callback(null, false);
+    },
+    credentials: true,
+  };
+};
+
+app.use(helmet());
+app.use(cors(buildCorsOptions()));
+app.use(express.json());
+
+// 🔐 AUTH
+app.use('/api/auth', authRoutes);
+
+// Domain Routes
+app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/rentals', rentalRoutes);
+
+// Health
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Frota Manager API is running!' });
 });
 
-// Tratamento para rotas não encontradas (404)
-app.use((req, res) => {
-  res.status(404).json({ error: 'Rota não encontrada' });
+app.use((req, res, next) => {
+  next(new AppError('Rota não encontrada', 404));
 });
+
+app.use(errorHandler);
 
 module.exports = app;
