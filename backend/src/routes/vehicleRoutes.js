@@ -1,5 +1,8 @@
 const express = require('express');
 const validate = require('../middleware/validate');
+const auth = require('../middleware/auth');
+const requireRole = require('../middleware/requireRole');
+
 const vehicleController = require('../controllers/vehicleController');
 
 const {
@@ -11,7 +14,7 @@ const {
 
 const assertFn = (fn, name) => {
   if (typeof fn !== 'function') {
-    throw new Error(`Handler inválido: vehicleController.${name} não é função (export/import quebrado)`);
+    throw new Error(`Handler inválido: vehicleController.${name} não é função`);
   }
 };
 
@@ -24,15 +27,41 @@ assertFn(vehicleController.recordMaintenance, 'recordMaintenance');
 
 const router = express.Router();
 
+// Público
 router.get('/', vehicleController.listVehicles);
 router.get('/:licensePlate', vehicleController.getByLicensePlate);
 
-router.post('/', validate(createVehicleSchema), vehicleController.createVehicle);
+// 🔐 Admin only
+router.post(
+  '/',
+  auth,
+  requireRole('admin'),
+  validate(createVehicleSchema),
+  vehicleController.createVehicle
+);
 
-router.patch('/:licensePlate/mileage', validate(updateMileageSchema), vehicleController.updateMileage);
+router.patch(
+  '/:licensePlate/mileage',
+  auth,
+  requireRole('admin'),
+  validate(updateMileageSchema),
+  vehicleController.updateMileage
+);
 
-router.patch('/:licensePlate/status', validate(setMaintenanceStatusSchema), vehicleController.setMaintenanceStatus);
+router.patch(
+  '/:licensePlate/status',
+  auth,
+  requireRole('admin'),
+  validate(setMaintenanceStatusSchema),
+  vehicleController.setMaintenanceStatus
+);
 
-router.patch('/:licensePlate/maintenance', validate(recordMaintenanceSchema), vehicleController.recordMaintenance);
+router.patch(
+  '/:licensePlate/maintenance',
+  auth,
+  requireRole('admin'),
+  validate(recordMaintenanceSchema),
+  vehicleController.recordMaintenance
+);
 
 module.exports = router;

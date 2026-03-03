@@ -1,5 +1,8 @@
 const express = require('express');
 const validate = require('../middleware/validate');
+const auth = require('../middleware/auth');
+const requireRole = require('../middleware/requireRole');
+
 const rentalController = require('../controllers/rentalController');
 
 const {
@@ -10,12 +13,36 @@ const {
 
 const router = express.Router();
 
-router.get('/', validate(listRequestsQuerySchema, 'query'), rentalController.listRequests);
+// 🔐 autenticado
+router.get(
+  '/',
+  auth,
+  validate(listRequestsQuerySchema, 'query'),
+  rentalController.listRequests
+);
 
-router.post('/', validate(createRequestSchema), rentalController.createRequest);
+router.post(
+  '/',
+  auth,
+  validate(createRequestSchema),
+  rentalController.createRequest
+);
 
-router.patch('/:id/approve', validate(adminDecisionSchema), rentalController.approveRequest);
+// 🔐 admin only
+router.patch(
+  '/:id/approve',
+  auth,
+  requireRole('admin'),
+  validate(adminDecisionSchema),
+  rentalController.approveRequest
+);
 
-router.patch('/:id/reject', validate(adminDecisionSchema), rentalController.rejectRequest);
+router.patch(
+  '/:id/reject',
+  auth,
+  requireRole('admin'),
+  validate(adminDecisionSchema),
+  rentalController.rejectRequest
+);
 
 module.exports = router;
