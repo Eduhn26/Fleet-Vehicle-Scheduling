@@ -1,78 +1,80 @@
-.layout {
+.layout-shell {
   min-height: 100vh;
-  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
 }
 
 .layout-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--color-bg);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.layout-header-inner {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0.9rem var(--spacing-xl);
+  background: #1e293b;
+  color: #ffffff;
+  padding: 12px 20px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-lg);
+  align-items: center;
 }
 
 .layout-brand {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  user-select: none;
+  gap: 12px;
 }
 
-.layout-brand-mark {
-  font-size: 1.2rem;
-}
-
-.layout-brand-text {
+.layout-title {
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.2px;
 }
 
 .layout-nav {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: 10px;
 }
 
 .layout-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: 0.55rem 0.75rem;
-  border-radius: var(--radius-md);
-  color: var(--color-text);
-  font-size: var(--font-size-sm);
-  border: 1px solid transparent;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-size: 0.95rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: background var(--transition-fast);
 }
 
 .layout-link:hover {
-  background: rgba(17, 24, 39, 0.04);
-  border-color: rgba(17, 24, 39, 0.08);
+  background: rgba(255, 255, 255, 0.12);
 }
 
-.layout-link.is-active {
-  background: rgba(37, 99, 235, 0.08);
-  border-color: rgba(37, 99, 235, 0.2);
-  color: var(--color-primary);
+.layout-link-active {
+  background: rgba(255, 255, 255, 0.16);
 }
 
-.layout-link-button {
-  background: transparent;
+.layout-user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.layout-username {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+}
+
+.layout-logout {
+  padding: 8px 12px;
+  background: var(--color-danger);
+  border: 0;
+  color: #ffffff;
+  border-radius: 8px;
   cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.layout-logout:hover {
+  opacity: 0.92;
 }
 
 .layout-main {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: var(--spacing-xl);
+  flex: 1;
+  padding: 20px;
+  background: var(--color-surface);
 }
