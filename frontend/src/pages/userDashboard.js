@@ -31,10 +31,12 @@ export default function UserDashboard() {
       setErrorMsg('');
 
       try {
-        // NOTE: baseURL do api.js já aponta para /api, então aqui usamos rotas sem prefixo /api
         const res = await api.get('/rentals/my');
         if (!alive) return;
-        setMyRentals(safeArray(res?.data));
+
+        // NOTE: axios devolve res.data, e o backend encapsula a lista em { data: [...] }.
+        const rentals = safeArray(res?.data?.data ?? res?.data);
+        setMyRentals(rentals);
       } catch (err) {
         if (!alive) return;
         setErrorMsg('Não foi possível carregar suas solicitações.');
@@ -90,7 +92,7 @@ export default function UserDashboard() {
               </thead>
               <tbody>
                 {recent.map((r) => (
-                  <tr key={r?._id || `${r?.vehicleId}-${r?.startDate}-${r?.endDate}`}>
+                  <tr key={r?.id || `${r?.vehicle?.id}-${r?.startDate}-${r?.endDate}`}>
                     <td>
                       <span className={badgeClassFor(r?.status)}>
                         {String(r?.status || 'pending').toUpperCase()}
@@ -98,7 +100,7 @@ export default function UserDashboard() {
                     </td>
                     <td>{formatDate(r?.startDate)}</td>
                     <td>{formatDate(r?.endDate)}</td>
-                    <td>{r?.vehicle?.model || r?.vehicle?.name || r?.vehicleId || '-'}</td>
+                    <td>{r?.vehicle?.model || r?.vehicle?.licensePlate || '-'}</td>
                   </tr>
                 ))}
               </tbody>

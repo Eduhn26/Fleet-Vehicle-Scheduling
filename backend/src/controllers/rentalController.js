@@ -10,6 +10,18 @@ const listRequests = async (req, res, next) => {
   }
 };
 
+const listMyRequests = async (req, res, next) => {
+  try {
+    const requests = await rentalService.listRequests({
+      userId: req.user.userId,
+    });
+
+    return res.status(200).json({ data: requests });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const createRequest = async (req, res, next) => {
   try {
     const created = await rentalService.createRequest(req.body);
@@ -51,6 +63,7 @@ const rejectRequest = async (req, res, next) => {
 
 module.exports = {
   listRequests,
+  listMyRequests,
   createRequest,
   approveRequest,
   rejectRequest,
