@@ -1,27 +1,46 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import RentalForm from '../components/RentalForm';
 import api from '../services/api';
 import '../styles/dashboard.css';
+
+function safeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function badgeClassFor(status) {
+  if (status === 'approved') return 'badge badge-approved';
+  if (status === 'rejected') return 'badge badge-rejected';
+  return 'badge badge-pending';
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  return String(dateStr).slice(0, 10);
+}
 
 export default function Rentals() {
   const [rentals, setRentals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await api.get('/rentals/my');
-        const data = Array.isArray(res?.data?.data) ? res.data.data : [];
-        setRentals(data);
-      } catch (err) {
-        setErrorMsg('Não foi possível carregar as solicitações.');
-      } finally {
-        setLoading(false);
-      }
-    }
+  const loadRentals = useCallback(async () => {
+    setLoading(true);
+    setErrorMsg('');
 
-    load();
+    try {
+      const res = await api.get('/rentals/my');
+      const data = safeArray(res?.data?.data ?? res?.data);
+      setRentals(data);
+    } catch (err) {
+      setErrorMsg('Não foi possível carregar as solicitações.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadRentals();
+  }, [loadRentals]);
 
   return (
     <div className="dashboard">
@@ -29,10 +48,12 @@ export default function Rentals() {
         <div>
           <div className="dashboard-title">Minhas solicitações</div>
           <div className="dashboard-subtitle">
-            Lista completa das suas reservas
+            Crie e acompanhe suas reservas de veículo
           </div>
         </div>
       </div>
+
+      <RentalForm onCreated={loadRentals} />
 
       {loading && <div className="alert alert-info">Carregando...</div>}
       {!loading && errorMsg && (
@@ -41,6 +62,10 @@ export default function Rentals() {
 
       {!loading && !errorMsg && (
         <div className="card card-wide">
+          <div className="card-titleRow">
+            <div className="card-title">Histórico de solicitações</div>
+          </div>
+
           {rentals.length === 0 ? (
             <div className="card-meta">
               Você ainda não possui solicitações.
@@ -53,17 +78,23 @@ export default function Rentals() {
                   <th>Início</th>
                   <th>Fim</th>
                   <th>Veículo</th>
+                  <th>Motivo</th>
                 </tr>
               </thead>
               <tbody>
-                {rentals.map((r) => (
-                  <tr key={r.id}>
-                    <td>{String(r.status).toUpperCase()}</td>
-                    <td>{String(r.startDate).slice(0, 10)}</td>
-                    <td>{String(r.endDate).slice(0, 10)}</td>
+                {rentals.map((rental) => (
+                  <tr key={rental.id}>
                     <td>
-                      {r?.vehicle?.model || r?.vehicle?.licensePlate || '-'}
+                      <span className={badgeClassFor(rental.status)}>
+                        {String(rental.status).toUpperCase()}
+                      </span>
                     </td>
+                    <td>{formatDate(rental.startDate)}</td>
+                    <td>{formatDate(rental.endDate)}</td>
+                    <td>
+                      {rental?.vehicle?.model || rental?.vehicle?.licensePlate || '-'}
+                    </td>
+                    <td>{rental.purpose || '-'}</td>
                   </tr>
                 ))}
               </tbody>

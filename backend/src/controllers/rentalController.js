@@ -24,7 +24,14 @@ const listMyRequests = async (req, res, next) => {
 
 const createRequest = async (req, res, next) => {
   try {
-    const created = await rentalService.createRequest(req.body);
+    const created = await rentalService.createRequest({
+      userId: req.user.userId,
+      vehicleId: req.body.vehicleId,
+      startDate: req.body.startDate,
+      endDate: req.body.endDate,
+      purpose: req.body.purpose,
+    });
+
     return res.status(201).json({ data: created });
   } catch (err) {
     return next(err);

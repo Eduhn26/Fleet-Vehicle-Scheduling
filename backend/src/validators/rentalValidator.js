@@ -4,11 +4,8 @@ const yyyyMmDd = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'data deve estar no formato YYYY-MM-DD');
 
-const objectIdLike = z.string().trim().min(1);
-
 const createRequestSchema = z.object({
-  userId: objectIdLike,
-  vehicleId: objectIdLike,
+  vehicleId: z.string().trim().min(1, 'vehicleId é obrigatório'),
   startDate: yyyyMmDd,
   endDate: yyyyMmDd,
   purpose: z.string().trim().min(3, 'purpose muito curto').max(300, 'purpose muito longo'),
