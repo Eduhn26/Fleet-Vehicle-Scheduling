@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import '../styles/dashboard.css';
+import AdminRentalTable from "../components/AdminRentalTable";
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -34,7 +35,7 @@ export default function AdminDashboard() {
         if (!alive) return;
 
         setVehicles(safeArray(vehiclesRes?.data));
-        setRentals(safeArray(rentalsRes?.data));
+        setRentals(safeArray(rentalsRes?.data?.data));
       } catch (err) {
         if (!alive) return;
         setErrorMsg('Não foi possível carregar os dados do dashboard.');
@@ -113,6 +114,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+      <AdminRentalTable />
     </div>
   );
 }
