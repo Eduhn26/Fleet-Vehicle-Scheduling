@@ -21,6 +21,8 @@ router.get(
   rentalController.listRequests
 );
 
+router.get('/my', auth, rentalController.listMyRequests);
+
 router.post(
   '/',
   auth,

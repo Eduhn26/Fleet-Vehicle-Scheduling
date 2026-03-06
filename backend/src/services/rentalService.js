@@ -80,8 +80,27 @@ const normalizePeriod = ({ startDate, endDate }) => {
 
 const formatRental = (doc) => ({
   id: doc._id.toString(),
-  user: doc.user?.toString?.() ? doc.user.toString() : doc.user,
-  vehicle: doc.vehicle?.toString?.() ? doc.vehicle.toString() : doc.vehicle,
+  user: doc.user?._id
+    ? {
+        id: doc.user._id.toString(),
+        name: doc.user.name,
+        email: doc.user.email,
+        role: doc.user.role,
+      }
+    : doc.user?.toString?.()
+      ? doc.user.toString()
+      : doc.user,
+  vehicle: doc.vehicle?._id
+    ? {
+        id: doc.vehicle._id.toString(),
+        brand: doc.vehicle.brand,
+        model: doc.vehicle.model,
+        licensePlate: doc.vehicle.licensePlate,
+        status: doc.vehicle.status,
+      }
+    : doc.vehicle?.toString?.()
+      ? doc.vehicle.toString()
+      : doc.vehicle,
   startDate: toYyyyMmDd(doc.startDate),
   endDate: toYyyyMmDd(doc.endDate),
   purpose: doc.purpose,
@@ -137,7 +156,13 @@ const createRequest = async ({ userId, vehicleId, startDate, endDate, purpose })
 
   await assertVehicleAvailableForRequest(vId);
 
-  const duplicate = await findDuplicateOpenRequest({ userId: uId, vehicleId: vId, startUtc, endUtc });
+  const duplicate = await findDuplicateOpenRequest({
+    userId: uId,
+    vehicleId: vId,
+    startUtc,
+    endUtc,
+  });
+
   if (duplicate) fail('Solicitação duplicada para o mesmo período', 409);
 
   const conflict = await findApprovedOverlap({ vehicleId: vId, startUtc, endUtc });
@@ -155,7 +180,14 @@ const createRequest = async ({ userId, vehicleId, startDate, endDate, purpose })
   return formatRental(created);
 };
 
-const adminCreateReservation = async ({ adminUserId, userId, vehicleId, startDate, endDate, purpose }) => {
+const adminCreateReservation = async ({
+  adminUserId,
+  userId,
+  vehicleId,
+  startDate,
+  endDate,
+  purpose,
+}) => {
   assertObjectIdLike(adminUserId, 'adminUserId');
   return createRequest({ userId, vehicleId, startDate, endDate, purpose });
 };
@@ -167,7 +199,6 @@ const approveRequest = async ({ requestId, adminNotes }) => {
   const request = await RentalRequest.findById(rId);
   assertExists(request, 'Solicitação não encontrada');
 
-  // 🔒 Transições inválidas
   if (request.status === RENTAL_STATUS.APPROVED) {
     fail('Solicitação já foi aprovada', 409);
   }
@@ -205,7 +236,6 @@ const rejectRequest = async ({ requestId, adminNotes }) => {
   const request = await RentalRequest.findById(rId);
   assertExists(request, 'Solicitação não encontrada');
 
-  // 🔒 Transições inválidas
   if (request.status === RENTAL_STATUS.REJECTED) {
     fail('Solicitação já foi rejeitada', 409);
   }
@@ -221,11 +251,22 @@ const rejectRequest = async ({ requestId, adminNotes }) => {
   return formatRental(request);
 };
 
-const listRequests = async ({ status } = {}) => {
+const listRequests = async ({ status, userId } = {}) => {
   const query = {};
-  if (status) query.status = String(status).trim();
 
-  const items = await RentalRequest.find(query).sort({ createdAt: -1 });
+  if (status) {
+    query.status = String(status).trim();
+  }
+
+  if (userId) {
+    query.user = String(userId).trim();
+  }
+
+  const items = await RentalRequest.find(query)
+    .populate('vehicle', 'brand model licensePlate status')
+    .populate('user', 'name email role')
+    .sort({ createdAt: -1 });
+
   return items.map(formatRental);
 };
 
