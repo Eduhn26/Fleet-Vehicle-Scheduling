@@ -1,132 +1,131 @@
-# Fleet Vehicle Scheduling
+README.md
+Fleet Vehicle Scheduling
 
-Backend-first **fleet rental and vehicle scheduling system** built with **Node.js, Express, MongoDB and React**.
+Full-stack fleet rental and vehicle scheduling system built with Node.js, Express, MongoDB and React.
 
-The project focuses on **architecture, separation of concerns and progressive system design**, simulating how a real production system evolves over time.
+The project focuses on software architecture, separation of concerns and progressive system evolution, simulating how a real production system grows over time.
 
----
+Instead of implementing everything at once, the system is built through incremental engineering phases, each introducing new architectural capabilities.
 
-# Project Purpose
+Project Goals
 
-This project was created as a **full-stack architecture learning exercise**, focused on developing production-style systems.
+This project was created as a full-stack architecture learning exercise, with a strong emphasis on backend system design.
 
 The goals of the project are:
 
-* Practice **layered backend architecture**
-* Separate **transport, business rules and persistence**
-* Implement **authentication flows used in real SaaS systems**
-* Build a **scalable codebase that grows in phases**
-* Demonstrate **clean architecture thinking for interviews**
+Practice layered backend architecture
 
-Rather than building everything at once, the system evolves through **incremental phases**.
+Implement separation between transport, business rules and persistence
 
----
+Build authentication flows used in real SaaS systems
 
-# System Overview
+Design a scalable codebase that evolves in phases
+
+Demonstrate clean architecture thinking in interviews
+
+The focus is engineering quality over feature speed.
+
+System Overview
 
 Fleet Vehicle Scheduling is designed to manage:
 
-* vehicle fleets
-* rental operations
-* scheduling of vehicles
-* role-based user access
+vehicle fleets
 
-The system follows a **backend-first approach**, where the API and business logic are implemented before the UI.
+vehicle rental requests
 
----
+scheduling of fleet resources
 
-# Architecture
+administrative approval workflows
 
-The backend follows a **layered architecture** designed to isolate responsibilities.
+role-based user access
 
-```id="arch1"
+The project follows a backend-first development strategy, where the API and business logic are implemented before the UI layer.
+
+Architecture
+
+The backend follows a layered architecture designed to isolate responsibilities.
+
 Routes → Controllers → Services → Models
-```
 
-## Layer Responsibilities
+Each layer has a strict responsibility boundary.
 
-### Routes
+Layer Responsibilities
+Routes
 
-Responsible for defining **API endpoints**.
+Responsible for defining API endpoints.
 
-Example:
+Example endpoints:
 
-```id="arch2"
 POST /api/auth/login
 GET  /api/vehicles
 POST /api/rentals
-```
 
-Routes map HTTP requests to controllers.
+Routes map incoming HTTP requests to controllers.
 
----
+Controllers
 
-### Controllers
+Controllers handle HTTP concerns only:
 
-Controllers handle **HTTP concerns**:
+request parsing
 
-* request parsing
-* validation
-* response formatting
-* calling services
+validation
 
-Controllers should **not contain business rules**.
+response formatting
 
----
+calling services
 
-### Services
+Controllers must not contain business rules.
 
-Services contain the **application business logic**.
+Services
+
+Services contain the application business logic.
 
 Examples:
 
-```id="arch3"
 createRental()
 validateVehicleAvailability()
 registerVehicle()
 authenticateUser()
-```
 
-Rules implemented in Services:
+Rules enforced inside services:
 
-* no HTTP logic
-* reusable business logic
-* centralized validation
-* standardized error throwing
+no HTTP dependencies
 
----
+reusable business logic
 
-### Models
+centralized rule validation
 
-Models define **database schemas** using Mongoose.
+standardized error handling
 
-Example responsibilities:
+Models
 
-* schema definition
-* persistence layer
-* database interaction
+Models define database schemas using Mongoose.
 
----
+Responsibilities:
 
-# Backend Architecture Principles
+schema definition
 
-The backend enforces several design rules:
+persistence logic
 
-### Service Isolation
+database interaction
 
-Business rules must live inside **Services**, not controllers.
+Backend Architecture Principles
 
-### Controller Thinness
+The backend enforces several design guarantees.
 
-Controllers should remain thin and only coordinate requests.
+Service Isolation
 
-### Standardized Errors
+Business rules live exclusively inside Services, not Controllers.
 
-Custom error handling via `AppError`.
+Thin Controllers
 
-### Predictable Flow
+Controllers act as coordinators between HTTP and the Service layer.
 
-```id="arch4"
+Standardized Errors
+
+Errors are handled through a centralized AppError system, ensuring consistent responses.
+
+Predictable Request Flow
 HTTP Request
      ↓
 Route
@@ -136,42 +135,37 @@ Controller
 Service
      ↓
 Database Model
-```
 
-This structure ensures **clear separation between transport and domain logic**.
+This ensures clear separation between transport and business logic.
 
----
+Frontend Architecture
 
-# Frontend Architecture
+The frontend is implemented using React.
 
-The frontend is implemented using **React** and follows a modular structure.
+Its responsibilities include:
 
-Main responsibilities:
+authentication
 
-* authentication
-* protected navigation
-* dashboard rendering
-* API consumption
+protected navigation
+
+dashboard rendering
+
+API consumption
+
+workflow interaction
 
 Frontend structure:
 
-```id="front1"
 Pages
 Components
 Context
 Services
 Styles
-```
+Authentication System
 
----
+Authentication is implemented using JWT tokens.
 
-# Authentication System
-
-Authentication is implemented using **JWT tokens**.
-
-## Login Flow
-
-```id="auth1"
+Login Flow
 Frontend → POST /api/auth/login
          ↓
 Backend validates credentials
@@ -181,108 +175,84 @@ JWT token generated
 Token returned to frontend
          ↓
 Stored in localStorage
-```
 
 Stored session data:
 
-```id="auth2"
 localStorage.token
 localStorage.user
-```
+Session Persistence
 
----
-
-# Session Persistence
-
-Authentication state is maintained using **React Context**.
+Authentication state is maintained using React Context.
 
 Component:
 
-```id="auth3"
 AuthContext
-```
 
 Responsibilities:
 
-* login()
-* logout()
-* session persistence
-* global auth state
+login()
 
----
+logout()
 
-# Axios Interceptor
+session persistence
 
-API requests are handled by a centralized Axios instance.
+global authentication state
+
+Axios Interceptor
+
+All API requests are made through a centralized Axios instance.
 
 Features:
 
-* automatic JWT injection
-* centralized API configuration
-* automatic logout on token failure
+automatic JWT injection
 
-Example behavior:
+centralized API configuration
 
-```id="auth4"
+automatic logout on token failure
+
+Behavior example:
+
 request → attach Authorization header
 response 401 → trigger logout
-```
-
----
-
-# Protected Routes
+Protected Routes
 
 Frontend routes are protected through a dedicated component:
 
-```id="auth5"
 PrivateRoute
-```
 
 Behavior:
 
-```id="auth6"
 not authenticated → redirect /login
 authenticated → allow access
-```
-
----
-
-# Role-Based Navigation
+Role-Based Navigation
 
 Users are redirected depending on their role.
 
-```id="auth7"
 admin → /admin
 user  → /user
-```
 
-This allows separation between administrative and normal user dashboards.
+This separates administrative features from normal user workflows.
 
----
+Layout System
 
-# Layout System
+A reusable layout component provides shared UI elements.
 
-A reusable layout component provides shared UI elements:
+Component:
 
-```id="layout1"
 Layout
-```
 
 Features:
 
-* navigation bar
-* logout button
-* shared dashboard layout
+navigation bar
 
-Pages render inside the layout.
+logout button
 
----
+shared dashboard structure
 
-# Project Structure
+All pages render inside this layout.
 
-## Backend
-
-```id="tree1"
+Project Structure
+Backend
 backend
 │
 ├─ controllers
@@ -300,18 +270,14 @@ backend
 └─ scripts
    ├─ list-users.js
    └─ reset-password.js
-```
-
----
-
-## Frontend
-
-```id="tree2"
+Frontend
 frontend/src
 │
 ├─ components
 │  ├─ Layout.js
-│  └─ PrivateRoute.js
+│  ├─ PrivateRoute.js
+│  ├─ AdminRentalTable.js
+│  └─ RentalForm.js
 │
 ├─ context
 │  └─ AuthContext.js
@@ -319,7 +285,8 @@ frontend/src
 ├─ pages
 │  ├─ login.js
 │  ├─ adminDashboard.js
-│  └─ userDashboard.js
+│  ├─ userDashboard.js
+│  └─ rentals.js
 │
 ├─ services
 │  └─ api.js
@@ -327,167 +294,189 @@ frontend/src
 ├─ styles
 │  ├─ global.css
 │  ├─ layout.css
-│  └─ login.css
+│  ├─ login.css
+│  └─ dashboard.css
 │
 ├─ App.js
 └─ index.js
-```
-
----
-
-# Development Utilities
+Development Utilities
 
 Two helper scripts were created for development debugging.
 
-### List users
-
-```id="script1"
+List users
 node backend/scripts/list-users.js
-```
 
 Displays all registered users in the database.
 
----
-
-### Reset password
-
-```id="script2"
+Reset password
 node backend/scripts/reset-password.js
-```
 
 Allows manual password reset for development accounts.
 
----
+Engineering Phases
 
-# Development Phases
+The system evolves through incremental architectural phases.
 
-The project evolves through **incremental architectural phases**.
-
----
-
-## Phase 1 — Foundation
+Phase 1 — Foundation
 
 System initialization.
 
 Features:
 
-* Express server
-* MongoDB connection
-* project structure
-* environment configuration
+Express server setup
 
----
+MongoDB connection
 
-## Phase 2 — Services Layer
+project structure
+
+environment configuration
+
+Phase 2 — Services Layer
 
 Business logic centralization.
 
 Features:
 
-* Services layer introduced
-* Controllers simplified
-* AppError error system
+Services layer introduced
 
----
+Controllers simplified
 
-## Phase 3 — Routes & Controllers
+AppError error system
+
+Phase 3 — HTTP Layer & Security
 
 Backend API completion.
 
 Features:
 
-* REST routes implemented
-* controllers handling HTTP flow
-* API endpoints for frontend integration
+REST routes implemented
 
----
+controllers handling HTTP flow
 
-## Phase 4 — Frontend Foundation
+JWT authentication
 
-Full authentication frontend implemented.
+role-based access control
+
+request validation
+
+Phase 4 — Frontend Foundation
+
+Frontend infrastructure.
 
 Features:
 
-* React application setup
-* JWT login flow
-* protected routes
-* role-based navigation
-* dashboard layout
-* session persistence
+React application setup
 
-Current state: **Phase 4 completed**
+JWT authentication integration
 
----
+protected routes
 
-# Technology Stack
+role-based navigation
 
-## Backend
+dashboard layout
 
-* Node.js
-* Express
-* MongoDB
-* Mongoose
-* JSON Web Tokens
+session persistence
 
----
+Phase 5 — Rental Workflow
 
-## Frontend
+Complete rental request workflow.
 
-* React
-* React Router
-* Axios
-* Context API
+Features:
 
----
+rental request creation
 
-# Current System Capabilities
+user request listing
+
+admin request management
+
+approval and rejection system
+
+dashboard synchronization
+
+Current System Capabilities
 
 The system currently supports:
 
-* user authentication
-* JWT session persistence
-* role-based dashboards
-* protected routes
-* structured backend API
-* layered backend architecture
+user authentication
 
----
+JWT session persistence
 
-# Upcoming Development
+role-based dashboards
 
-## Phase 5 — Vehicle Management
+protected routes
 
-Next features:
+vehicle rental requests
 
-* vehicle CRUD
-* fleet management dashboard
-* vehicle availability tracking
-* scheduling interface
+administrative approval workflows
 
-Future phases will include:
+layered backend architecture
 
-* rental workflows
-* scheduling validation
-* reporting dashboards
+Upcoming Development
+Phase 6 — Reservation Rules
 
----
+Next improvements will include:
 
-# Learning Focus
+vehicle availability validation
 
-This project intentionally focuses on **architecture over speed**.
+date conflict detection
+
+reservation lifecycle management
+
+fleet scheduling rules
+
+Future phases may include:
+
+analytics dashboards
+
+reporting tools
+
+operational metrics
+
+advanced scheduling engine
+
+Technology Stack
+Backend
+
+Node.js
+
+Express
+
+MongoDB
+
+Mongoose
+
+JSON Web Tokens
+
+Frontend
+
+React
+
+React Router
+
+Axios
+
+Context API
+
+Learning Focus
+
+This project intentionally prioritizes architecture and engineering practices over rapid feature delivery.
 
 Key learning areas:
 
-* layered backend design
-* separation of concerns
-* authentication flows
-* full-stack integration
-* scalable project structure
+layered backend design
 
----
+separation of concerns
 
-# Author
+authentication systems
+
+API design
+
+full-stack integration
+
+scalable project structure
+
+Author
 
 Eduardo Henrique
 
-Full-stack developer focused on **backend architecture, system design and scalable APIs**.
+Full-stack developer focused on backend architecture, system design and scalable APIs.
