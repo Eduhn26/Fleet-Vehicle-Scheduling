@@ -30,8 +30,6 @@ The project follows a backend-first development strategy, where the API and busi
 
 ## 🏗️ Architecture
 
-
-
 The backend follows a layered architecture designed to isolate responsibilities. Each layer has a strict responsibility boundary, ensuring clear separation between transport and business logic.
 
 **Request Flow:** Route → Controller → Service → Database Model
@@ -59,8 +57,6 @@ The frontend is implemented using React. Its core responsibilities include authe
 
 ### Authentication System
 
-
-
 Authentication is implemented using JWT tokens and maintained using React Context (`AuthContext`).
 
 * **Login Flow:** Frontend sends credentials → Backend validates → JWT token generated → Token returned and stored in `localStorage`.
@@ -77,38 +73,99 @@ Authentication is implemented using JWT tokens and maintained using React Contex
 
 ## 📂 Project Structure
 
-```text
-fleet-vehicle-scheduling/
-├── backend/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── models/
-│   ├── routes/
-│   ├── services/
-│   ├── validators/
-│   └── scripts/
-│       ├── list-users.js
-│       └── reset-password.js
-└── frontend/src/
-    ├── components/
-    │   ├── Layout.js
-    │   ├── PrivateRoute.js
-    │   ├── AdminRentalTable.js
-    │   └── RentalForm.js
-    ├── context/
-    │   └── AuthContext.js
-    ├── pages/
-    │   ├── login.js
-    │   ├── adminDashboard.js
-    │   ├── userDashboard.js
-    │   └── rentals.js
-    ├── services/
-    │   └── api.js
-    ├── styles/
-    │   ├── global.css
-    │   ├── layout.css
-    │   ├── login.css
-    │   └── dashboard.css
-    ├── App.js
-    └── index.js
-🛠️ Development UtilitiesTwo helper scripts were created for development debugging:List users: Displays all registered users in the database.node backend/scripts/list-users.jsReset password: Allows manual password reset for development accounts.node backend/scripts/reset-password.js🚀 Engineering PhasesThe system evolves through incremental architectural phases:Phase 1 — Foundation: System initialization, Express server setup, MongoDB connection, project structure, and environment configuration.Phase 2 — Services Layer: Business logic centralization, Services layer introduced, Controllers simplified, and AppError error system created.Phase 3 — HTTP Layer & Security: Backend API completion, REST routes implemented, controllers handling HTTP flow, JWT authentication, role-based access control, and request validation.Phase 4 — Frontend Foundation: React application setup, JWT authentication integration, protected routes, role-based navigation, dashboard layout, and session persistence.Phase 5 — Rental Workflow: Complete rental request workflow, including creation, user listing, admin management, approval/rejection system, and dashboard synchronization.⚙️ Current System CapabilitiesUser authentication & JWT session persistenceRole-based dashboards & protected routesLayered backend architectureVehicle rental requests & administrative approval workflows🔮 Upcoming DevelopmentPhase 6 — Reservation RulesNext improvements will include vehicle availability validation, date conflict detection, reservation lifecycle management, and fleet scheduling rules.Future phases may include analytics dashboards, reporting tools, operational metrics, and an advanced scheduling engine.💻 Technology StackEnvironmentTechnologiesBackendNode.js, Express, MongoDB, Mongoose, JSON Web TokensFrontendReact, React Router, Axios, Context API🧠 Learning FocusThis project intentionally prioritizes architecture and engineering practices over rapid feature delivery. Key learning areas include layered backend design, separation of concerns, authentication systems, API design, full-stack integration, and scalable project structure.👨‍💻 AuthorEduardo HenriqueFull-stack developer focused on backend architecture, system design, and scalable APIs.
+    fleet-vehicle-scheduling/
+    ├── backend/
+    │   ├── controllers/
+    │   ├── middleware/
+    │   ├── models/
+    │   ├── routes/
+    │   ├── services/
+    │   ├── validators/
+    │   └── scripts/
+    │       ├── list-users.js
+    │       └── reset-password.js
+    └── frontend/src/
+        ├── components/
+        │   ├── Layout.js
+        │   ├── PrivateRoute.js
+        │   ├── AdminRentalTable.js
+        │   └── RentalForm.js
+        ├── context/
+        │   └── AuthContext.js
+        ├── pages/
+        │   ├── login.js
+        │   ├── adminDashboard.js
+        │   ├── userDashboard.js
+        │   └── rentals.js
+        ├── services/
+        │   └── api.js
+        ├── styles/
+        │   ├── global.css
+        │   ├── layout.css
+        │   ├── login.css
+        │   └── dashboard.css
+        ├── App.js
+        └── index.js
+
+---
+
+## 🛠️ Development Utilities
+
+Two helper scripts were created for development debugging:
+
+* **List users:** Displays all registered users in the database.
+  `node backend/scripts/list-users.js`
+* **Reset password:** Allows manual password reset for development accounts.
+  `node backend/scripts/reset-password.js`
+
+---
+
+## 🚀 Engineering Phases
+
+The system evolves through incremental architectural phases:
+
+* **Phase 1 — Foundation:** System initialization, Express server setup, MongoDB connection, project structure, and environment configuration.
+* **Phase 2 — Services Layer:** Business logic centralization, Services layer introduced, Controllers simplified, and AppError error system created.
+* **Phase 3 — HTTP Layer & Security:** Backend API completion, REST routes implemented, controllers handling HTTP flow, JWT authentication, role-based access control, and request validation.
+* **Phase 4 — Frontend Foundation:** React application setup, JWT authentication integration, protected routes, role-based navigation, dashboard layout, and session persistence.
+* **Phase 5 — Rental Workflow:** Complete rental request workflow, including creation, user listing, admin management, approval/rejection system, and dashboard synchronization.
+
+---
+
+## ⚙️ Current System Capabilities
+
+* User authentication & JWT session persistence
+* Role-based dashboards & protected routes
+* Layered backend architecture
+* Vehicle rental requests & administrative approval workflows
+
+---
+
+## 🔮 Upcoming Development
+
+**Phase 6 — Reservation Rules**
+Next improvements will include vehicle availability validation, date conflict detection, reservation lifecycle management, and fleet scheduling rules.
+
+Future phases may include analytics dashboards, reporting tools, operational metrics, and an advanced scheduling engine.
+
+---
+
+## 💻 Technology Stack
+
+| Environment | Technologies |
+| :--- | :--- |
+| **Backend** | Node.js, Express, MongoDB, Mongoose, JSON Web Tokens |
+| **Frontend** | React, React Router, Axios, Context API |
+
+---
+
+## 🧠 Learning Focus
+
+This project intentionally prioritizes architecture and engineering practices over rapid feature delivery. Key learning areas include layered backend design, separation of concerns, authentication systems, API design, full-stack integration, and scalable project structure.
+
+---
+
+## 👨‍💻 Author
+
+**Eduardo Henrique**
+Full-stack developer focused on backend architecture, system design, and scalable APIs.
