@@ -8,16 +8,18 @@ const rentalController = require('../controllers/rentalController');
 const {
   createRequestSchema,
   adminDecisionSchema,
+  cancelRequestSchema,
   listRequestsQuerySchema,
 } = require('../validators/rentalValidator');
 
 const router = express.Router();
 
-// 🔐 autenticado
 router.get(
   '/',
   auth,
+  requireRole('admin'),
   validate(listRequestsQuerySchema, 'query'),
+  // SEC: listagem global expõe dados de todas as requests; precisa ficar restrita a admin.
   rentalController.listRequests
 );
 
@@ -30,7 +32,6 @@ router.post(
   rentalController.createRequest
 );
 
-// 🔐 admin only
 router.patch(
   '/:id/approve',
   auth,
@@ -45,6 +46,13 @@ router.patch(
   requireRole('admin'),
   validate(adminDecisionSchema),
   rentalController.rejectRequest
+);
+
+router.patch(
+  '/:id/cancel',
+  auth,
+  validate(cancelRequestSchema),
+  rentalController.cancelRequest
 );
 
 module.exports = router;

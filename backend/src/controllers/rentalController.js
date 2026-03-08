@@ -4,6 +4,7 @@ const listRequests = async (req, res, next) => {
   try {
     const { status } = req.query;
     const requests = await rentalService.listRequests({ status });
+
     return res.status(200).json({ data: requests });
   } catch (err) {
     return next(err);
@@ -68,10 +69,28 @@ const rejectRequest = async (req, res, next) => {
   }
 };
 
+const cancelRequest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const cancelled = await rentalService.cancelRequest({
+      requestId: id,
+      actorUserId: req.user.userId,
+      actorRole: req.user.role,
+      cancelNotes: req.body.cancelNotes
+    });
+
+    return res.status(200).json({ data: cancelled });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   listRequests,
   listMyRequests,
   createRequest,
   approveRequest,
   rejectRequest,
+  cancelRequest,
 };

@@ -23,6 +23,8 @@ const toYyyyMmDd = (date) => {
 const toUtcStartDate = (input) => {
   const ymd = toYyyyMmDd(input);
   if (!ymd) return null;
+
+  // NOTE: a fase usa YYYY-MM-DD como contrato canônico para matar drift de timezone.
   return new Date(`${ymd}T00:00:00.000Z`);
 };
 
@@ -47,9 +49,21 @@ const assertObjectIdLike = (value, fieldName) => {
 
 const assertPurpose = (purpose) => {
   const p = String(purpose || '').trim();
+
   if (p.length < 3) fail('purpose inválido (mín. 3 caracteres)', 400);
   if (p.length > 300) fail('purpose inválido (máx. 300 caracteres)', 400);
+
   return p;
+};
+
+const normalizeNotes = (notes, fieldName = 'adminNotes') => {
+  const value = String(notes || '').trim();
+
+  if (value.length > 500) {
+    fail(`${fieldName} inválido (máx. 500 caracteres)`, 400);
+  }
+
+  return value;
 };
 
 const normalizePeriod = ({ startDate, endDate }) => {
@@ -71,6 +85,8 @@ const normalizePeriod = ({ startDate, endDate }) => {
   }
 
   const todayUtc = toUtcStartDate(new Date());
+
+  // NOTE: comparar em UTC evita o clássico bug de “ontem/today” dependendo do fuso da máquina.
   if (startUtc.getTime() < todayUtc.getTime()) {
     fail('startDate não pode ser no passado', 400);
   }
@@ -116,6 +132,7 @@ const assertVehicleAvailableForRequest = async (vehicleId) => {
   const vehicle = await Vehicle.findById(vId);
   assertExists(vehicle, 'Veículo não encontrado');
 
+  // NOTE: maintenance é bloqueio operacional explícito, independente de calendário.
   if (vehicle.status === VEHICLE_STATUS.MAINTENANCE) {
     fail('Veículo em manutenção não pode ser alugado', 409);
   }
@@ -131,7 +148,10 @@ const findApprovedOverlap = async ({ vehicleId, startUtc, endUtc, excludeRequest
     endDate: { $gte: startUtc },
   };
 
-  if (excludeRequestId) query._id = { $ne: excludeRequestId };
+  if (excludeRequestId) {
+    // NOTE: approve precisa ignorar a própria request para não gerar falso positivo.
+    query._id = { $ne: excludeRequestId };
+  }
 
   return RentalRequest.findOne(query);
 };
@@ -142,7 +162,10 @@ const findDuplicateOpenRequest = async ({ userId, vehicleId, startUtc, endUtc })
     vehicle: vehicleId,
     startDate: startUtc,
     endDate: endUtc,
-    status: { $in: [RENTAL_STATUS.PENDING, RENTAL_STATUS.APPROVED] },
+    status: {
+      // NOTE: pending e approved continuam “abertas” do ponto de vista operacional.
+      $in: [RENTAL_STATUS.PENDING, RENTAL_STATUS.APPROVED],
+    },
   });
 
 const createRequest = async ({ userId, vehicleId, startDate, endDate, purpose }) => {
@@ -163,10 +186,20 @@ const createRequest = async ({ userId, vehicleId, startDate, endDate, purpose })
     endUtc,
   });
 
-  if (duplicate) fail('Solicitação duplicada para o mesmo período', 409);
+  if (duplicate) {
+    fail('Solicitação duplicada para o mesmo período', 409);
+  }
 
-  const conflict = await findApprovedOverlap({ vehicleId: vId, startUtc, endUtc });
-  if (conflict) fail('Conflito de datas: veículo já reservado nesse período', 409);
+  const conflict = await findApprovedOverlap({
+    vehicleId: vId,
+    startUtc,
+    endUtc,
+  });
+
+  // NOTE: só approved bloqueia agenda real. Pending ainda não “consome” o veículo.
+  if (conflict) {
+    fail('Conflito de datas: veículo já reservado nesse período', 409);
+  }
 
   const created = await RentalRequest.create({
     user: uId,
@@ -188,13 +221,15 @@ const adminCreateReservation = async ({
   endDate,
   purpose,
 }) => {
+  // SEC: ainda validamos a presença do adminUserId para não deixar o fluxo “sem ator”.
   assertObjectIdLike(adminUserId, 'adminUserId');
+
   return createRequest({ userId, vehicleId, startDate, endDate, purpose });
 };
 
 const approveRequest = async ({ requestId, adminNotes }) => {
   const rId = assertObjectIdLike(requestId, 'requestId');
-  const notes = String(adminNotes || '').trim();
+  const notes = normalizeNotes(adminNotes, 'adminNotes');
 
   const request = await RentalRequest.findById(rId);
   assertExists(request, 'Solicitação não encontrada');
@@ -203,15 +238,25 @@ const approveRequest = async ({ requestId, adminNotes }) => {
     fail('Solicitação já foi aprovada', 409);
   }
 
+  // NOTE: rejected é decisão final; reabrir isso por approve direto distorce o workflow.
   if (request.status === RENTAL_STATUS.REJECTED) {
     fail('Solicitação rejeitada não pode ser aprovada', 409);
+  }
+
+  // NOTE: cancelled representa encerramento do fluxo pelo ator autorizado.
+  if (request.status === RENTAL_STATUS.CANCELLED) {
+    fail('Solicitação cancelada não pode ser aprovada', 409);
   }
 
   const vehicle = await assertVehicleAvailableForRequest(request.vehicle.toString());
 
   const startUtc = toUtcStartDate(request.startDate);
   const endUtc = toUtcStartDate(request.endDate);
-  if (!startUtc || !endUtc) throw new Error('Período inválido armazenado na solicitação');
+
+  // FIXME: se isso disparar, temos dado persistido inconsistente no banco.
+  if (!startUtc || !endUtc) {
+    throw new Error('Período inválido armazenado na solicitação');
+  }
 
   const conflict = await findApprovedOverlap({
     vehicleId: vehicle._id.toString(),
@@ -220,7 +265,10 @@ const approveRequest = async ({ requestId, adminNotes }) => {
     excludeRequestId: request._id.toString(),
   });
 
-  if (conflict) fail('Conflito de datas: já existe reserva aprovada nesse período', 409);
+  // NOTE: revalidamos no approve porque duas requests pending podem coexistir até a decisão final.
+  if (conflict) {
+    fail('Conflito de datas: já existe reserva aprovada nesse período', 409);
+  }
 
   request.status = RENTAL_STATUS.APPROVED;
   request.adminNotes = notes;
@@ -231,7 +279,7 @@ const approveRequest = async ({ requestId, adminNotes }) => {
 
 const rejectRequest = async ({ requestId, adminNotes }) => {
   const rId = assertObjectIdLike(requestId, 'requestId');
-  const notes = String(adminNotes || '').trim();
+  const notes = normalizeNotes(adminNotes, 'adminNotes');
 
   const request = await RentalRequest.findById(rId);
   assertExists(request, 'Solicitação não encontrada');
@@ -240,8 +288,13 @@ const rejectRequest = async ({ requestId, adminNotes }) => {
     fail('Solicitação já foi rejeitada', 409);
   }
 
+  // NOTE: depois de aprovada, a saída semântica correta é cancelamento, não rejeição retroativa.
   if (request.status === RENTAL_STATUS.APPROVED) {
     fail('Solicitação aprovada não pode ser rejeitada (requer cancelamento)', 409);
+  }
+
+  if (request.status === RENTAL_STATUS.CANCELLED) {
+    fail('Solicitação cancelada não pode ser rejeitada', 409);
   }
 
   request.status = RENTAL_STATUS.REJECTED;
@@ -251,23 +304,37 @@ const rejectRequest = async ({ requestId, adminNotes }) => {
   return formatRental(request);
 };
 
-const listRequests = async ({ status, userId } = {}) => {
-  const query = {};
+const cancelRequest = async ({ requestId, actorUserId, actorRole, cancelNotes }) => {
+  const request = await RentalRequest.findById(requestId);
 
-  if (status) {
-    query.status = String(status).trim();
+  if (!request) {
+    throw new AppError('Solicitação não encontrada', 404);
   }
 
-  if (userId) {
-    query.user = String(userId).trim();
+  const isAdmin = actorRole === 'admin';
+  const isOwner = request.user.toString() === actorUserId;
+
+  // SEC: cancelar reserva altera disponibilidade operacional da frota
+  if (!isAdmin && !isOwner) {
+    throw new AppError('Você não tem permissão para cancelar esta solicitação', 403);
   }
 
-  const items = await RentalRequest.find(query)
-    .populate('vehicle', 'brand model licensePlate status')
-    .populate('user', 'name email role')
-    .sort({ createdAt: -1 });
+  if (request.status === RENTAL_STATUS.REJECTED) {
+    throw new AppError('Solicitação rejeitada não pode ser cancelada', 409);
+  }
 
-  return items.map(formatRental);
+  if (request.status === RENTAL_STATUS.CANCELLED) {
+    throw new AppError('Solicitação já foi cancelada', 409);
+  }
+
+  request.status = RENTAL_STATUS.CANCELLED;
+
+  // NOTE: reaproveitamos adminNotes para não alterar schema nesta fase
+  request.adminNotes = cancelNotes || '';
+
+  await request.save();
+
+  return request;
 };
 
 module.exports = {
@@ -278,5 +345,6 @@ module.exports = {
   adminCreateReservation,
   approveRequest,
   rejectRequest,
+  cancelRequest,
   listRequests,
 };
