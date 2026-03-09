@@ -1,10 +1,10 @@
-// backend/src/models/RentalRequest.js
 const mongoose = require('mongoose');
 
 const RENTAL_STATUS = Object.freeze({
   PENDING: 'pending',
   APPROVED: 'approved',
   REJECTED: 'rejected',
+  CANCELLED: 'cancelled',
 });
 
 const rentalRequestSchema = new mongoose.Schema(
@@ -13,14 +13,14 @@ const rentalRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      // NOTE: guardamos referência, não snapshot do usuário.
+      // NOTE: mantemos referência ao usuário para evitar snapshot duplicado.
     },
 
     vehicle: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Vehicle',
       required: true,
-      // NOTE: referência mantém fonte da verdade no Vehicle.
+      // NOTE: a fonte da verdade do veículo continua sendo o documento Vehicle.
     },
 
     startDate: {
@@ -46,6 +46,7 @@ const rentalRequestSchema = new mongoose.Schema(
       enum: Object.values(RENTAL_STATUS),
       default: RENTAL_STATUS.PENDING,
       required: true,
+      // NOTE: cancelled entra na Fase 6 para fechar o lifecycle da reserva.
     },
 
     adminNotes: {
@@ -53,6 +54,7 @@ const rentalRequestSchema = new mongoose.Schema(
       trim: true,
       maxlength: 500,
       default: '',
+      // TODO: se a auditoria crescer, separar em campos distintos: approvalNotes, rejectionNotes, cancelNotes.
     },
   },
   {
@@ -61,7 +63,7 @@ const rentalRequestSchema = new mongoose.Schema(
   }
 );
 
-// Índice para consultas frequentes por veículo + período
+// NOTE: este índice favorece as consultas de conflito por veículo + período.
 rentalRequestSchema.index({ vehicle: 1, startDate: 1, endDate: 1 });
 
 module.exports = {

@@ -15,6 +15,11 @@ const adminDecisionSchema = z.object({
   adminNotes: z.string().trim().max(500).optional().default(''),
 });
 
+const cancelRequestSchema = z.object({
+  // NOTE: mantemos opcional porque nem todo cancelamento exige justificativa nesta fase.
+  cancelNotes: z.string().trim().max(500).optional().default(''),
+});
+
 const listRequestsQuerySchema = z.object({
   status: z.string().trim().optional(),
 });
@@ -22,5 +27,6 @@ const listRequestsQuerySchema = z.object({
 module.exports = {
   createRequestSchema,
   adminDecisionSchema,
+  cancelRequestSchema,
   listRequestsQuerySchema,
 };

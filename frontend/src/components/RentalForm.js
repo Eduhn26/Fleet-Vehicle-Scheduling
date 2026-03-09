@@ -6,16 +6,27 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function daysBetween(start, end) {
+  const s = new Date(start);
+  const e = new Date(end);
+
+  const diff = Math.round((e - s) / (1000 * 60 * 60 * 24));
+  return diff + 1;
+}
+
 export default function RentalForm({ onCreated }) {
   const [vehicles, setVehicles] = useState([]);
+
   const [form, setForm] = useState({
     vehicleId: '',
     startDate: '',
     endDate: '',
     purpose: '',
   });
+
   const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -28,9 +39,11 @@ export default function RentalForm({ onCreated }) {
 
       try {
         const res = await api.get('/vehicles');
+
         if (!alive) return;
 
         const data = safeArray(res?.data?.data ?? res?.data);
+
         const availableVehicles = data.filter(
           (vehicle) => String(vehicle?.status || '') === 'available'
         );
@@ -61,12 +74,42 @@ export default function RentalForm({ onCreated }) {
     }));
   }
 
+  function validateForm() {
+    const { startDate, endDate, purpose } = form;
+
+    if (startDate && endDate) {
+      if (endDate < startDate) {
+        return 'A data final não pode ser antes da inicial.';
+      }
+
+      const days = daysBetween(startDate, endDate);
+
+      if (days > 5) {
+        return 'O período máximo de reserva é de 5 dias.';
+      }
+    }
+
+    if (String(purpose || '').trim().length < 3) {
+      return 'O motivo deve ter no mínimo 3 caracteres.';
+    }
+
+    return null;
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
 
-    setSubmitting(true);
     setErrorMsg('');
     setSuccessMsg('');
+
+    const validationError = validateForm();
+
+    if (validationError) {
+      setErrorMsg(validationError);
+      return;
+    }
+
+    setSubmitting(true);
 
     try {
       await api.post('/rentals', {
@@ -77,6 +120,7 @@ export default function RentalForm({ onCreated }) {
       });
 
       setSuccessMsg('Solicitação criada com sucesso.');
+
       setForm({
         vehicleId: '',
         startDate: '',
@@ -132,6 +176,7 @@ export default function RentalForm({ onCreated }) {
                 required
               >
                 <option value="">Selecione um veículo</option>
+
                 {vehicles.map((vehicle) => (
                   <option key={vehicle.id} value={vehicle.id}>
                     {vehicle.brand} {vehicle.model} — {vehicle.licensePlate}
