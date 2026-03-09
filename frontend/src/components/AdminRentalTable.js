@@ -5,6 +5,7 @@ import "../styles/dashboard.css";
 function badgeClass(status) {
   if (status === "approved") return "badge badge-approved";
   if (status === "rejected") return "badge badge-rejected";
+  if (status === "cancelled") return "badge badge-cancelled";
   return "badge badge-pending";
 }
 
@@ -80,6 +81,13 @@ export default function AdminRentalTable() {
             onClick={() => setStatusFilter("rejected")}
           >
             Rejeitadas
+          </button>
+
+          <button
+            className="dashboard-linkBtn"
+            onClick={() => setStatusFilter("cancelled")}
+          >
+            Canceladas
           </button>
         </div>
       </div>

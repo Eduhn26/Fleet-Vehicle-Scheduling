@@ -10,9 +10,9 @@ function safeArray(value) {
 function badgeClassFor(status) {
   if (status === 'approved') return 'badge badge-approved';
   if (status === 'rejected') return 'badge badge-rejected';
+  if (status === 'cancelled') return 'badge badge-cancelled';
   return 'badge badge-pending';
 }
-
 function formatDate(dateStr) {
   if (!dateStr) return '-';
   return String(dateStr).slice(0, 10);

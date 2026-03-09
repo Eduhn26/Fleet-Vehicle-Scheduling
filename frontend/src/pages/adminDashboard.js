@@ -54,6 +54,7 @@ export default function AdminDashboard() {
   const pendingCount = useMemo(() => countByStatus(rentals, 'pending'), [rentals]);
   const approvedCount = useMemo(() => countByStatus(rentals, 'approved'), [rentals]);
   const rejectedCount = useMemo(() => countByStatus(rentals, 'rejected'), [rentals]);
+  const cancelledCount = useMemo(() => countByStatus(rentals, 'cancelled'), [rentals]);
 
   return (
     <div className="dashboard">
@@ -112,7 +113,17 @@ export default function AdminDashboard() {
             <div className="card-kpi">{rejectedCount}</div>
             <div className="card-meta">Solicitações negadas</div>
           </div>
+
+          <div className="card">
+  <div className="card-titleRow">
+    <div className="card-title">Canceladas</div>
+    <span className="badge badge-cancelled">CANCELLED</span>
+  </div>
+  <div className="card-kpi">{cancelledCount}</div>
+  <div className="card-meta">Reservas canceladas</div>
+</div>
         </div>
+        
       )}
       <AdminRentalTable />
     </div>

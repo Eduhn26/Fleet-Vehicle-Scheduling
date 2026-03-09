@@ -10,6 +10,7 @@ function safeArray(value) {
 function badgeClassFor(status) {
   if (status === 'approved') return 'badge badge-approved';
   if (status === 'rejected') return 'badge badge-rejected';
+  if (status === 'cancelled') return 'badge badge-cancelled';
   return 'badge badge-pending';
 }
 
@@ -41,6 +42,16 @@ export default function Rentals() {
   useEffect(() => {
     loadRentals();
   }, [loadRentals]);
+
+  // NOTE:
+  // Cancelamento é permitido apenas quando a reserva já foi aprovada.
+  // Antes da aprovação o usuário pode simplesmente ignorar a solicitação.
+  // Depois de aprovada o veículo passa a bloquear agenda — então cancelar
+  // precisa liberar esse bloqueio operacional no backend.
+  async function cancelRental(id) {
+    await api.patch(`/rentals/${id}/cancel`);
+    loadRentals();
+  }
 
   return (
     <div className="dashboard">
@@ -77,10 +88,12 @@ export default function Rentals() {
                   <th>Status</th>
                   <th>Início</th>
                   <th>Fim</th>
+                  <th>Ações</th>
                   <th>Veículo</th>
                   <th>Motivo</th>
                 </tr>
               </thead>
+
               <tbody>
                 {rentals.map((rental) => (
                   <tr key={rental.id}>
@@ -89,11 +102,25 @@ export default function Rentals() {
                         {String(rental.status).toUpperCase()}
                       </span>
                     </td>
+
                     <td>{formatDate(rental.startDate)}</td>
                     <td>{formatDate(rental.endDate)}</td>
+
+                    <td>
+                      {rental.status === "approved" && (
+                        <button
+                          className="dashboard-linkBtn"
+                          onClick={() => cancelRental(rental.id)}
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                    </td>
+
                     <td>
                       {rental?.vehicle?.model || rental?.vehicle?.licensePlate || '-'}
                     </td>
+
                     <td>{rental.purpose || '-'}</td>
                   </tr>
                 ))}

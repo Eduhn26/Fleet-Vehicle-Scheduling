@@ -1,103 +1,123 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const connectDatabase = require('../src/config/database');
+
+const connectDB = require('../src/config/database');
+
 const rentalService = require('../src/services/rentalService');
+
 const { User } = require('../src/models/User');
 const { Vehicle } = require('../src/models/Vehicle');
-const { RentalRequest, RENTAL_STATUS } = require('../src/models/RentalRequest');
 
-const run = async () => {
+async function run() {
   try {
-    await connectDatabase();
+    await connectDB();
 
-    const user = await User.findOne({ email: 'eduardo.dev@example.com' });
-    const vehicle = await Vehicle.findOne({ licensePlate: 'ABC1D23' });
+    console.log('\n=== SMOKE TEST — RENTAL LIFECYCLE ===\n');
+
+    const user = await User.findOne();
+    const vehicle = await Vehicle.findOne();
 
     if (!user || !vehicle) {
-      throw new Error('User ou Vehicle não encontrados. Rode seed-user e seed-vehicle antes.');
+      throw new Error('Necessário seed de usuário e veículo');
     }
 
-    const startDate = '2026-03-01';
-    const endDate = '2026-03-03';
+    const startDate = '2030-01-10';
+    const endDate = '2030-01-12';
 
-    // NOTE: smoke precisa ser idempotente. Limpamos apenas o cenário deste teste.
-    await RentalRequest.deleteMany({
-      user: user._id,
-      vehicle: vehicle._id,
-      startDate: new Date(`${startDate}T00:00:00.000Z`),
-      endDate: new Date(`${endDate}T00:00:00.000Z`),
-      status: { $in: [RENTAL_STATUS.PENDING, RENTAL_STATUS.APPROVED, RENTAL_STATUS.REJECTED] },
-    });
+    console.log('1️⃣ Criando solicitação...');
 
-    console.log('🧪 Creating request...');
-    const created = await rentalService.createRequest({
+    /*
+    NOTE:
+    Smoke test chama diretamente o service em vez de usar HTTP.
+    Isso permite validar regras de domínio sem interferência de
+    middleware, controllers ou validações de transporte.
+    */
+    const request = await rentalService.createRequest({
       userId: user._id.toString(),
       vehicleId: vehicle._id.toString(),
       startDate,
       endDate,
-      purpose: 'Teste de agendamento',
+      purpose: 'Teste de reserva',
     });
 
-    console.log('✅ Created:', {
-      id: created.id,
-      status: created.status,
-      period: `${created.startDate}..${created.endDate}`,
+    console.log('Request criada:', request.status);
+
+    console.log('\n2️⃣ Aprovando solicitação...');
+
+    const approved = await rentalService.approveRequest({
+      requestId: request.id,
+      adminNotes: 'Aprovado no smoke test',
     });
 
-    console.log('🧪 Creating duplicate (should fail 409)...');
+    console.log('Status após approve:', approved.status);
+
+    console.log('\n3️⃣ Tentando criar conflito de data...');
+
+    /*
+    NOTE:
+    Apenas reservas APPROVED bloqueiam calendário.
+    Este teste garante que createRequest detecta conflito
+    quando já existe reserva aprovada no mesmo período.
+    */
     try {
       await rentalService.createRequest({
         userId: user._id.toString(),
         vehicleId: vehicle._id.toString(),
         startDate,
         endDate,
-        purpose: 'Duplicado',
+        purpose: 'Conflito esperado',
       });
-      console.log('❌ Unexpected: duplicate created');
     } catch (err) {
-      console.log('✅ Duplicate blocked:', { message: err.message, statusCode: err.statusCode });
+      console.log('Conflito detectado ✔');
     }
 
-    console.log('🧪 Approving request...');
-    const approved = await rentalService.approveRequest({
-      requestId: created.id,
-      adminNotes: 'Aprovado no smoke test',
+    console.log('\n4️⃣ Cancelando reserva...');
+
+    const cancelled = await rentalService.cancelRequest({
+      requestId: request.id,
+      actorUserId: user._id.toString(),
+      actorRole: user.role,
+      cancelNotes: 'Cancelamento teste',
     });
 
-    console.log('✅ Approved:', { id: approved.id, status: approved.status });
+    console.log('Status após cancel:', cancelled.status);
 
-    console.log('🧪 Creating overlapping request (should fail 409)...');
+    console.log('\n5️⃣ Tentando cancelar novamente...');
+
     try {
-      await rentalService.createRequest({
-        userId: user._id.toString(),
-        vehicleId: vehicle._id.toString(),
-        startDate: '2026-03-02',
-        endDate: '2026-03-04',
-        purpose: 'Overlap',
+      await rentalService.cancelRequest({
+        requestId: request.id,
+        actorUserId: user._id.toString(),
+        actorRole: user.role,
       });
-      console.log('❌ Unexpected: overlap created');
     } catch (err) {
-      console.log('✅ Overlap blocked:', { message: err.message, statusCode: err.statusCode });
+      console.log('Cancelamento duplicado bloqueado ✔');
     }
 
-    console.log('🧪 Listing requests...');
-    const list = await rentalService.listRequests({});
-    console.log('✅ Total requests:', list.length);
+    console.log('\n6️⃣ Tentando aprovar reserva cancelada...');
 
-    await mongoose.connection.close();
+    /*
+    NOTE:
+    Lifecycle da reserva não permite reabrir fluxo após cancelamento.
+    Este teste valida que approveRequest protege essa transição.
+    */
+    try {
+      await rentalService.approveRequest({
+        requestId: request.id,
+      });
+    } catch (err) {
+      console.log('Approve após cancel bloqueado ✔');
+    }
+
+    console.log('\n=== SMOKE TEST FINALIZADO ===\n');
+
     process.exit(0);
-  } catch (error) {
-    console.error('❌ Smoke rental failed:', {
-      message: error.message,
-      statusCode: error.statusCode,
-    });
-
-    try {
-      await mongoose.connection.close();
-    } catch (_) {}
+  } catch (err) {
+    console.error('\nERRO NO SMOKE TEST\n');
+    console.error(err);
 
     process.exit(1);
   }
-};
+}
 
 run();

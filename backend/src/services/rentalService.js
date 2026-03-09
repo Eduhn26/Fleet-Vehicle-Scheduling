@@ -20,6 +20,16 @@ const toYyyyMmDd = (date) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+const toLocalYyyyMmDd = (date) => {
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return null;
+
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 const toUtcStartDate = (input) => {
   const ymd = toYyyyMmDd(input);
   if (!ymd) return null;
@@ -84,10 +94,12 @@ const normalizePeriod = ({ startDate, endDate }) => {
     fail(`Período máximo é de ${MAX_RENTAL_DAYS} dias`, 400);
   }
 
-  const todayUtc = toUtcStartDate(new Date());
+  // NOTE: "hoje" precisa respeitar o dia local da operação.
+  // Usar UTC aqui faz o Brasil "virar o dia" antes da meia-noite local.
+  const today = toLocalYyyyMmDd(new Date());
+  const start = String(startDate || '').trim();
 
-  // NOTE: comparar em UTC evita o clássico bug de “ontem/today” dependendo do fuso da máquina.
-  if (startUtc.getTime() < todayUtc.getTime()) {
+  if (start < today) {
     fail('startDate não pode ser no passado', 400);
   }
 
@@ -305,36 +317,59 @@ const rejectRequest = async ({ requestId, adminNotes }) => {
 };
 
 const cancelRequest = async ({ requestId, actorUserId, actorRole, cancelNotes }) => {
-  const request = await RentalRequest.findById(requestId);
+  const rId = assertObjectIdLike(requestId, 'requestId');
+  const aId = assertObjectIdLike(actorUserId, 'actorUserId');
+  const role = String(actorRole || '').trim();
+  const notes = normalizeNotes(cancelNotes, 'cancelNotes');
 
-  if (!request) {
-    throw new AppError('Solicitação não encontrada', 404);
-  }
+  const request = await RentalRequest.findById(rId);
+  assertExists(request, 'Solicitação não encontrada');
 
-  const isAdmin = actorRole === 'admin';
-  const isOwner = request.user.toString() === actorUserId;
+  const isAdmin = role === 'admin';
+  const isOwner = request.user.toString() === aId;
 
-  // SEC: cancelar reserva altera disponibilidade operacional da frota
+  // SEC: cancelamento é sensível porque altera disponibilidade operacional da frota.
   if (!isAdmin && !isOwner) {
-    throw new AppError('Você não tem permissão para cancelar esta solicitação', 403);
+    fail('Você não tem permissão para cancelar esta solicitação', 403);
   }
 
+  // NOTE: rejected já encerra o fluxo administrativo; cancelar depois apagaria a semântica da decisão.
   if (request.status === RENTAL_STATUS.REJECTED) {
-    throw new AppError('Solicitação rejeitada não pode ser cancelada', 409);
+    fail('Solicitação rejeitada não pode ser cancelada', 409);
   }
 
+  // NOTE: guard explícito para manter comportamento previsível em retry duplo de UI.
   if (request.status === RENTAL_STATUS.CANCELLED) {
-    throw new AppError('Solicitação já foi cancelada', 409);
+    fail('Solicitação já foi cancelada', 409);
   }
 
   request.status = RENTAL_STATUS.CANCELLED;
 
-  // NOTE: reaproveitamos adminNotes para não alterar schema nesta fase
-  request.adminNotes = cancelNotes || '';
+  // NOTE: reaproveitamos adminNotes para não expandir schema cedo demais nesta fase.
+  // TODO: separar trilha de auditoria por ação quando o sistema ganhar histórico formal.
+  request.adminNotes = notes;
 
   await request.save();
+  return formatRental(request);
+};
 
-  return request;
+const listRequests = async ({ status, userId } = {}) => {
+  const query = {};
+
+  if (status) {
+    query.status = String(status).trim();
+  }
+
+  if (userId) {
+    query.user = String(userId).trim();
+  }
+
+  const items = await RentalRequest.find(query)
+    .populate('vehicle', 'brand model licensePlate status')
+    .populate('user', 'name email role')
+    .sort({ createdAt: -1 });
+
+  return items.map(formatRental);
 };
 
 module.exports = {
