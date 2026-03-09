@@ -1,132 +1,179 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import api from '../services/api';
+import '../styles/dashboard.css';
 
-function AdminRentalTable({ rentals, refresh }) {
-  const [loadingId, setLoadingId] = useState(null);
+function safeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
 
-  // NOTE: protege o render inicial enquanto a prop ainda não foi populada pelo fetch.
-  const safeRentals = Array.isArray(rentals) ? rentals : [];
+function getApiErrorMessage(err, fallbackMessage) {
+  const apiMessage = err?.response?.data?.error?.message;
 
-  const getApiErrorMessage = (err, fallbackMessage) => {
-    const apiMessage = err?.response?.data?.error?.message;
-
-    if (apiMessage) {
-      return apiMessage;
-    }
-
-    return fallbackMessage;
-  };
-
-  const approve = async (id) => {
-    // NOTE: confirmação reduz risco de decisão administrativa acidental.
-    const confirmed = window.confirm(
-      'Tem certeza que deseja APROVAR esta solicitação?'
-    );
-
-    if (!confirmed) return;
-
-    try {
-      setLoadingId(id);
-
-      await api.patch(`/rentals/${id}/approve`, {
-        adminNotes: 'Aprovado pelo administrador',
-      });
-
-      await refresh();
-    } catch (err) {
-      alert(getApiErrorMessage(err, 'Erro ao aprovar solicitação.'));
-    } finally {
-      setLoadingId(null);
-    }
-  };
-
-  const reject = async (id) => {
-    // NOTE: rejeição encerra o fluxo atual da request; exige confirmação explícita.
-    const confirmed = window.confirm(
-      'Tem certeza que deseja REJEITAR esta solicitação?'
-    );
-
-    if (!confirmed) return;
-
-    try {
-      setLoadingId(id);
-
-      await api.patch(`/rentals/${id}/reject`, {
-        adminNotes: 'Rejeitado pelo administrador',
-      });
-
-      await refresh();
-    } catch (err) {
-      alert(getApiErrorMessage(err, 'Erro ao rejeitar solicitação.'));
-    } finally {
-      setLoadingId(null);
-    }
-  };
-
-  if (safeRentals.length === 0) {
-    return (
-      <div className="card-meta">
-        Nenhuma solicitação encontrada.
-      </div>
-    );
+  if (apiMessage) {
+    return apiMessage;
   }
 
+  return fallbackMessage;
+}
+
+function getStatusBadgeClass(status) {
+  if (status === 'approved') return 'badge badge-approved';
+  if (status === 'rejected') return 'badge badge-rejected';
+  if (status === 'cancelled') return 'badge badge-cancelled';
+  return 'badge badge-pending';
+}
+
+export default function AdminRentalTable({ rentals, onActionComplete }) {
+  const [loadingId, setLoadingId] = useState('');
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
+
+  const sortedRentals = useMemo(() => {
+    const items = safeArray(rentals);
+
+    return [...items].sort((a, b) => {
+      const left = new Date(b?.createdAt || 0).getTime();
+      const right = new Date(a?.createdAt || 0).getTime();
+      return left - right;
+    });
+  }, [rentals]);
+
+  const handleDecision = async (rentalId, action) => {
+    setLoadingId(rentalId);
+    setFeedback({ type: '', message: '' });
+
+    try {
+      const notes =
+        action === 'approve'
+          ? 'Aprovado pelo admin via interface.'
+          : 'Rejeitado pelo admin via interface.';
+
+      await api.patch(`/rentals/${rentalId}/${action}`, {
+        adminNotes: notes,
+      });
+
+      setFeedback({
+        type: 'info',
+        message:
+          action === 'approve'
+            ? 'Solicitação aprovada com sucesso.'
+            : 'Solicitação rejeitada com sucesso.',
+      });
+
+      await onActionComplete();
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        message: getApiErrorMessage(
+          err,
+          'Não foi possível concluir a ação administrativa.'
+        ),
+      });
+    } finally {
+      setLoadingId('');
+    }
+  };
+
   return (
-    <div className="table-wrap">
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Usuário</th>
-            <th>Veículo</th>
-            <th>Período</th>
-            <th>Status</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
+    <div className="card card-wide">
+      <div className="card-titleRow">
+        <div className="card-title">Fila administrativa</div>
+      </div>
 
-        <tbody>
-          {safeRentals.map((rental) => {
-            const isLoading = loadingId === rental.id;
+      {feedback.message && (
+        <div className={`alert ${feedback.type === 'error' ? 'alert-error' : 'alert-info'}`}>
+          {feedback.message}
+        </div>
+      )}
 
-            return (
-              <tr key={rental.id}>
-                <td>{rental.user?.name || 'Usuário não informado'}</td>
-                <td>{rental.vehicle?.licensePlate || 'Veículo não informado'}</td>
-                <td>
-                  {rental.startDate} → {rental.endDate}
-                </td>
-                <td>{rental.status}</td>
-
-                <td>
-                  {rental.status === 'pending' ? (
-                    <>
-                      <button
-                        className="dashboard-linkBtn"
-                        onClick={() => approve(rental.id)}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? 'Processando...' : 'Aprovar'}
-                      </button>
-
-                      <button
-                        className="dashboard-linkBtn"
-                        onClick={() => reject(rental.id)}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? 'Processando...' : 'Rejeitar'}
-                      </button>
-                    </>
-                  ) : (
-                    <span>-</span>
-                  )}
-                </td>
+      {sortedRentals.length === 0 ? (
+        <div className="card-meta">Nenhuma solicitação encontrada.</div>
+      ) : (
+        <div className="table-wrapper">
+          <table className="dashboard-table">
+            <thead>
+              <tr>
+                <th>Usuário</th>
+                <th>Veículo</th>
+                <th>Período</th>
+                <th>Motivo</th>
+                <th>Status</th>
+                <th>Ações</th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {sortedRentals.map((rental) => {
+                const isPending = rental.status === 'pending';
+                const isLoading = loadingId === rental.id;
+
+                return (
+                  <tr key={rental.id}>
+                    <td>
+                      <div>{rental?.user?.name || 'Usuário'}</div>
+                      <div className="card-meta">{rental?.user?.email || '-'}</div>
+                    </td>
+                    <td>
+                      {rental?.vehicle?.brand} {rental?.vehicle?.model}
+                    </td>
+                    <td>
+                      {rental.startDate} até {rental.endDate}
+                    </td>
+                    <td>{rental.purpose}</td>
+                    <td>
+                      <span className={getStatusBadgeClass(rental.status)}>
+                        {String(rental.status || '').toUpperCase()}
+                      </span>
+                    </td>
+                    <td>
+                      {isPending ? (
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: '8px',
+                            flexWrap: 'wrap',
+                          }}
+                        >
+                          <button
+                            type="button"
+                            className="dashboard-linkBtn"
+                            onClick={() => handleDecision(rental.id, 'approve')}
+                            disabled={isLoading}
+                            style={{
+                              minHeight: '38px',
+                              padding: '0 12px',
+                              fontSize: '0.85rem',
+                            }}
+                          >
+                            {isLoading ? 'Processando...' : 'Aprovar'}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="dashboard-linkBtn"
+                            onClick={() => handleDecision(rental.id, 'reject')}
+                            disabled={isLoading}
+                            style={{
+                              minHeight: '38px',
+                              padding: '0 12px',
+                              fontSize: '0.85rem',
+                              background:
+                                'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                              boxShadow: '0 10px 24px rgba(220, 38, 38, 0.18)',
+                            }}
+                          >
+                            {isLoading ? 'Processando...' : 'Rejeitar'}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="card-meta">Decisão já concluída</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
-
-export default AdminRentalTable;

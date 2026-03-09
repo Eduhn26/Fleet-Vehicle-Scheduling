@@ -24,45 +24,69 @@ export default function Layout() {
   return (
     <div className="layout-shell">
       <header className="layout-header">
-        <div className="layout-brand">
-          <div className="layout-title">Fleet Manager</div>
+        <div className="layout-container">
+          <div className="layout-brandBlock">
+            <NavLink to={admin ? '/admin' : '/user'} className="layout-brand">
+              <span className="layout-brandBadge">FM</span>
 
-          <nav className="layout-nav">
-            {admin ? (
-              <>
-                <NavLink to="/admin" className={linkClassName}>
-                  Dashboard
-                </NavLink>
-                <NavLink to="/vehicles" className={linkClassName}>
-                  Veículos
-                </NavLink>
-                <NavLink to="/rentals" className={linkClassName}>
-                  Solicitações
-                </NavLink>
-              </>
-            ) : (
-              <>
-                <NavLink to="/user" className={linkClassName}>
-                  Dashboard
-                </NavLink>
-                <NavLink to="/rentals" className={linkClassName}>
-                  Minhas solicitações
-                </NavLink>
-              </>
-            )}
-          </nav>
-        </div>
+              <div className="layout-brandText">
+                <span className="layout-title">Fleet Manager</span>
+                <span className="layout-subtitle">Vehicle Scheduling System</span>
+              </div>
+            </NavLink>
 
-        <div className="layout-user">
-          <span className="layout-username">{user?.name || 'Usuário'}</span>
-          <button type="button" className="layout-logout" onClick={handleLogout}>
-            Logout
-          </button>
+            <nav className="layout-nav" aria-label="Navegação principal">
+              {admin ? (
+                <>
+                  <NavLink to="/admin" className={linkClassName}>
+                    Dashboard
+                  </NavLink>
+
+                  <NavLink to="/admin/vehicles" className={linkClassName}>
+                    Veículos
+                  </NavLink>
+
+                  <NavLink to="/admin/rentals" className={linkClassName}>
+                    Solicitações
+                  </NavLink>
+                </>
+              ) : (
+                <>
+                  <NavLink to="/user" className={linkClassName}>
+                    Dashboard
+                  </NavLink>
+
+                  <NavLink to="/rentals" className={linkClassName}>
+                    Minhas solicitações
+                  </NavLink>
+                </>
+              )}
+            </nav>
+          </div>
+
+          <div className="layout-user">
+            <div className="layout-userMeta">
+              <span className="layout-userLabel">
+                {admin ? 'Administrador' : 'Usuário'}
+              </span>
+              <span className="layout-username">{user?.name || 'Usuário'}</span>
+            </div>
+
+            <button
+              type="button"
+              className="layout-logout"
+              onClick={handleLogout}
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="layout-main">
-        <Outlet />
+        <div className="layout-content">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

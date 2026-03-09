@@ -6,36 +6,35 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
-function daysBetween(start, end) {
-  const s = new Date(start);
-  const e = new Date(end);
+function getApiErrorMessage(err, fallbackMessage) {
+  const apiMessage = err?.response?.data?.error?.message;
 
-  const diff = Math.round((e - s) / (1000 * 60 * 60 * 24));
-  return diff + 1;
+  if (apiMessage) {
+    return apiMessage;
+  }
+
+  return fallbackMessage;
 }
+
+const initialForm = {
+  vehicleId: '',
+  startDate: '',
+  endDate: '',
+  purpose: '',
+};
 
 export default function RentalForm({ onCreated }) {
   const [vehicles, setVehicles] = useState([]);
-
-  const [form, setForm] = useState({
-    vehicleId: '',
-    startDate: '',
-    endDate: '',
-    purpose: '',
-  });
-
+  const [form, setForm] = useState(initialForm);
   const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-
-  const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
 
   useEffect(() => {
     let alive = true;
 
     async function loadVehicles() {
       setLoadingVehicles(true);
-      setErrorMsg('');
 
       try {
         const res = await api.get('/vehicles');
@@ -43,15 +42,17 @@ export default function RentalForm({ onCreated }) {
         if (!alive) return;
 
         const data = safeArray(res?.data?.data ?? res?.data);
-
-        const availableVehicles = data.filter(
-          (vehicle) => String(vehicle?.status || '') === 'available'
-        );
-
-        setVehicles(availableVehicles);
+        setVehicles(data);
       } catch (err) {
         if (!alive) return;
-        setErrorMsg('Não foi possível carregar os veículos.');
+
+        setFeedback({
+          type: 'error',
+          message: getApiErrorMessage(
+            err,
+            'Não foi possível carregar os veículos disponíveis.'
+          ),
+        });
       } finally {
         if (!alive) return;
         setLoadingVehicles(false);
@@ -65,172 +66,119 @@ export default function RentalForm({ onCreated }) {
     };
   }, []);
 
-  function handleChange(event) {
+  const handleChange = (event) => {
     const { name, value } = event.target;
 
     setForm((current) => ({
       ...current,
       [name]: value,
     }));
-  }
+  };
 
-  function validateForm() {
-    const { startDate, endDate, purpose } = form;
-
-    if (startDate && endDate) {
-      if (endDate < startDate) {
-        return 'A data final não pode ser antes da inicial.';
-      }
-
-      const days = daysBetween(startDate, endDate);
-
-      if (days > 5) {
-        return 'O período máximo de reserva é de 5 dias.';
-      }
-    }
-
-    if (String(purpose || '').trim().length < 3) {
-      return 'O motivo deve ter no mínimo 3 caracteres.';
-    }
-
-    return null;
-  }
-
-  async function handleSubmit(event) {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    const validationError = validateForm();
-
-    if (validationError) {
-      setErrorMsg(validationError);
-      return;
-    }
-
     setSubmitting(true);
+    setFeedback({ type: '', message: '' });
 
     try {
-      await api.post('/rentals', {
-        vehicleId: form.vehicleId,
-        startDate: form.startDate,
-        endDate: form.endDate,
-        purpose: form.purpose,
+      await api.post('/rentals', form);
+
+      setForm(initialForm);
+      setFeedback({
+        type: 'info',
+        message: 'Solicitação enviada com sucesso.',
       });
 
-      setSuccessMsg('Solicitação criada com sucesso.');
-
-      setForm({
-        vehicleId: '',
-        startDate: '',
-        endDate: '',
-        purpose: '',
-      });
-
-      if (typeof onCreated === 'function') {
-        onCreated();
-      }
+      await onCreated();
     } catch (err) {
-      const message =
-        err?.response?.data?.error?.message ||
-        'Não foi possível criar a solicitação.';
-
-      setErrorMsg(message);
+      setFeedback({
+        type: 'error',
+        message: getApiErrorMessage(
+          err,
+          'Não foi possível criar a solicitação.'
+        ),
+      });
     } finally {
       setSubmitting(false);
     }
-  }
+  };
+
+  const availableVehicles = vehicles.filter(
+    (vehicle) => vehicle?.status === 'available'
+  );
 
   return (
-    <div className="card card-wide">
-      <div className="card-titleRow">
-        <div className="card-title">Nova solicitação</div>
-      </div>
-
-      {loadingVehicles && (
-        <div className="alert alert-info">Carregando veículos...</div>
-      )}
-
-      {!loadingVehicles && errorMsg && (
-        <div className="alert alert-error">{errorMsg}</div>
-      )}
-
-      {!loadingVehicles && !errorMsg && vehicles.length === 0 && (
-        <div className="card-meta">
-          Nenhum veículo disponível no momento.
+    <form className="rental-form" onSubmit={handleSubmit}>
+      {feedback.message && (
+        <div className={`alert ${feedback.type === 'error' ? 'alert-error' : 'alert-info'}`}>
+          {feedback.message}
         </div>
       )}
 
-      {!loadingVehicles && vehicles.length > 0 && (
-        <form className="rental-form" onSubmit={handleSubmit}>
-          {successMsg && <div className="alert alert-info">{successMsg}</div>}
+      <div className="rental-formGrid">
+        <label className="rental-field">
+          <span>Veículo</span>
+          <select
+            name="vehicleId"
+            value={form.vehicleId}
+            onChange={handleChange}
+            disabled={loadingVehicles || submitting}
+            required
+          >
+            <option value="">
+              {loadingVehicles ? 'Carregando veículos...' : 'Selecione um veículo'}
+            </option>
 
-          <div className="rental-formGrid">
-            <label className="rental-field">
-              <span>Veículo</span>
-              <select
-                name="vehicleId"
-                value={form.vehicleId}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Selecione um veículo</option>
+            {availableVehicles.map((vehicle) => (
+              <option key={vehicle.id} value={vehicle.id}>
+                {vehicle.brand} {vehicle.model} - {vehicle.licensePlate}
+              </option>
+            ))}
+          </select>
+        </label>
 
-                {vehicles.map((vehicle) => (
-                  <option key={vehicle.id} value={vehicle.id}>
-                    {vehicle.brand} {vehicle.model} — {vehicle.licensePlate}
-                  </option>
-                ))}
-              </select>
-            </label>
+        <label className="rental-field">
+          <span>Data inicial</span>
+          <input
+            type="date"
+            name="startDate"
+            value={form.startDate}
+            onChange={handleChange}
+            disabled={submitting}
+            required
+          />
+        </label>
 
-            <label className="rental-field">
-              <span>Data de início</span>
-              <input
-                type="date"
-                name="startDate"
-                value={form.startDate}
-                onChange={handleChange}
-                required
-              />
-            </label>
+        <label className="rental-field">
+          <span>Data final</span>
+          <input
+            type="date"
+            name="endDate"
+            value={form.endDate}
+            onChange={handleChange}
+            disabled={submitting}
+            required
+          />
+        </label>
 
-            <label className="rental-field">
-              <span>Data de fim</span>
-              <input
-                type="date"
-                name="endDate"
-                value={form.endDate}
-                onChange={handleChange}
-                required
-              />
-            </label>
+        <label className="rental-field rental-fieldWide">
+          <span>Motivo da solicitação</span>
+          <textarea
+            name="purpose"
+            value={form.purpose}
+            onChange={handleChange}
+            placeholder="Ex.: visita técnica, reunião externa, deslocamento corporativo..."
+            disabled={submitting}
+            required
+          />
+        </label>
+      </div>
 
-            <label className="rental-field rental-fieldWide">
-              <span>Motivo</span>
-              <textarea
-                name="purpose"
-                value={form.purpose}
-                onChange={handleChange}
-                rows="4"
-                placeholder="Descreva o motivo da solicitação"
-                required
-              />
-            </label>
-          </div>
-
-          <div className="dashboard-actions">
-            <button
-              type="submit"
-              className="dashboard-linkBtn"
-              disabled={submitting}
-            >
-              {submitting ? 'Enviando...' : 'Solicitar veículo'}
-            </button>
-          </div>
-        </form>
-      )}
-    </div>
+      <div className="dashboard-actions">
+        <button type="submit" className="dashboard-linkBtn" disabled={submitting}>
+          {submitting ? 'Enviando...' : 'Criar solicitação'}
+        </button>
+      </div>
+    </form>
   );
 }

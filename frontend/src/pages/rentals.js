@@ -1,22 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
-import RentalForm from '../components/RentalForm';
+import { useEffect, useState } from 'react';
 import api from '../services/api';
+import RentalForm from '../components/RentalForm';
 import '../styles/dashboard.css';
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
-}
-
-function badgeClassFor(status) {
-  if (status === 'approved') return 'badge badge-approved';
-  if (status === 'rejected') return 'badge badge-rejected';
-  if (status === 'cancelled') return 'badge badge-cancelled';
-  return 'badge badge-pending';
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  return String(dateStr).slice(0, 10);
 }
 
 function getApiErrorMessage(err, fallbackMessage) {
@@ -29,146 +17,160 @@ function getApiErrorMessage(err, fallbackMessage) {
   return fallbackMessage;
 }
 
+function getStatusBadgeClass(status) {
+  if (status === 'approved') return 'badge badge-approved';
+  if (status === 'rejected') return 'badge badge-rejected';
+  if (status === 'cancelled') return 'badge badge-cancelled';
+  return 'badge badge-pending';
+}
+
 export default function Rentals() {
   const [rentals, setRentals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
-  const [cancelLoadingId, setCancelLoadingId] = useState(null);
+  const [actionMsg, setActionMsg] = useState('');
+  const [cancelLoadingId, setCancelLoadingId] = useState('');
 
-  const loadRentals = useCallback(async () => {
+  const loadMyRentals = async () => {
     setLoading(true);
     setErrorMsg('');
 
     try {
       const res = await api.get('/rentals/my');
-      const data = safeArray(res?.data?.data ?? res?.data);
+      const data = safeArray(res?.data?.data);
+
       setRentals(data);
     } catch (err) {
       setErrorMsg(
-        getApiErrorMessage(err, 'Não foi possível carregar as solicitações.')
+        getApiErrorMessage(err, 'Não foi possível carregar suas solicitações.')
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    loadRentals();
-  }, [loadRentals]);
+    loadMyRentals();
+  }, []);
 
-  // NOTE:
-  // Cancelamento é permitido apenas quando a reserva já foi aprovada.
-  // Antes da aprovação o usuário pode simplesmente ignorar a solicitação.
-  // Depois de aprovada o veículo passa a bloquear agenda — então cancelar
-  // precisa liberar esse bloqueio operacional no backend.
-async function cancelRental(id) {
-  const confirmed = window.confirm(
-    'Tem certeza que deseja CANCELAR esta reserva aprovada?'
-  );
+  const handleCreated = async () => {
+    setActionMsg('Solicitação criada com sucesso.');
+    await loadMyRentals();
+  };
 
-  if (!confirmed) return;
-
-  try {
-    setCancelLoadingId(id);
+  const handleCancel = async (rentalId) => {
+    setCancelLoadingId(rentalId);
+    setActionMsg('');
     setErrorMsg('');
 
-    await api.patch(`/rentals/${id}/cancel`, {});
+    try {
+      await api.patch(`/rentals/${rentalId}/cancel`, {
+        cancelNotes: 'Cancelado pelo usuário via interface.',
+      });
 
-    await loadRentals();
-  } catch (err) {
-    setErrorMsg(
-      getApiErrorMessage(err, 'Não foi possível cancelar a reserva.')
-    );
-  } finally {
-    setCancelLoadingId(null);
-  }
-}
+      setActionMsg('Reserva cancelada com sucesso.');
+      await loadMyRentals();
+    } catch (err) {
+      setErrorMsg(
+        getApiErrorMessage(err, 'Não foi possível cancelar a reserva.')
+      );
+    } finally {
+      setCancelLoadingId('');
+    }
+  };
 
   return (
     <div className="dashboard">
       <div className="dashboard-header">
         <div>
-          <div className="dashboard-title">Minhas solicitações</div>
+          <div className="dashboard-title">Minhas Solicitações</div>
           <div className="dashboard-subtitle">
-            Crie e acompanhe suas reservas de veículo
+            Crie novas reservas e acompanhe o lifecycle das já existentes.
           </div>
         </div>
       </div>
 
-      <RentalForm onCreated={loadRentals} />
+      {actionMsg && <div className="alert alert-info">{actionMsg}</div>}
+      {errorMsg && <div className="alert alert-error">{errorMsg}</div>}
 
-      {loading && <div className="alert alert-info">Carregando...</div>}
-      {!loading && errorMsg && (
-        <div className="alert alert-error">{errorMsg}</div>
-      )}
-
-      {!loading && !errorMsg && (
+      <div className="dashboard-grid">
         <div className="card card-wide">
           <div className="card-titleRow">
-            <div className="card-title">Histórico de solicitações</div>
+            <div className="card-title">Nova solicitação</div>
           </div>
 
-          {rentals.length === 0 ? (
-            <div className="card-meta">
-              Você ainda não possui solicitações.
-            </div>
+          <RentalForm onCreated={handleCreated} />
+        </div>
+
+        <div className="card card-wide">
+          <div className="card-titleRow">
+            <div className="card-title">Histórico</div>
+          </div>
+
+          {loading ? (
+            <div className="card-meta">Carregando solicitações...</div>
+          ) : rentals.length === 0 ? (
+            <div className="card-meta">Nenhuma solicitação encontrada.</div>
           ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Status</th>
-                  <th>Início</th>
-                  <th>Fim</th>
-                  <th>Ações</th>
-                  <th>Veículo</th>
-                  <th>Motivo</th>
-                </tr>
-              </thead>
+            <div className="table-wrapper">
+              <table className="dashboard-table">
+                <thead>
+                  <tr>
+                    <th>Veículo</th>
+                    <th>Período</th>
+                    <th>Motivo</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rentals.map((rental) => {
+                    const canCancel = rental.status === 'approved';
 
-              <tbody>
-                {rentals.map((rental) => {
-                  const isCancelling = cancelLoadingId === rental.id;
-
-                  return (
-                    <tr key={rental.id}>
-                      <td>
-                        <span className={badgeClassFor(rental.status)}>
-                          {String(rental.status).toUpperCase()}
-                        </span>
-                      </td>
-
-                      <td>{formatDate(rental.startDate)}</td>
-                      <td>{formatDate(rental.endDate)}</td>
-
-                      <td>
-                        {rental.status === 'approved' ? (
-                          <button
-                            className="dashboard-linkBtn"
-                            onClick={() => cancelRental(rental.id)}
-                            disabled={isCancelling}
-                          >
-                            {isCancelling ? 'Cancelando...' : 'Cancelar'}
-                          </button>
-                        ) : (
-                          <span>-</span>
-                        )}
-                      </td>
-
-                      <td>
-                        {rental?.vehicle?.model ||
-                          rental?.vehicle?.licensePlate ||
-                          '-'}
-                      </td>
-
-                      <td>{rental.purpose || '-'}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <tr key={rental.id}>
+                        <td>
+                          {rental?.vehicle?.brand} {rental?.vehicle?.model}
+                        </td>
+                        <td>
+                          {rental.startDate} até {rental.endDate}
+                        </td>
+                        <td>{rental.purpose}</td>
+                        <td>
+                          <span className={getStatusBadgeClass(rental.status)}>
+                            {String(rental.status || '').toUpperCase()}
+                          </span>
+                        </td>
+                        <td>
+                          {canCancel ? (
+                            <button
+                              type="button"
+                              className="dashboard-linkBtn"
+                              onClick={() => handleCancel(rental.id)}
+                              disabled={cancelLoadingId === rental.id}
+                              style={{
+                                minHeight: '38px',
+                                padding: '0 12px',
+                                fontSize: '0.85rem',
+                              }}
+                            >
+                              {cancelLoadingId === rental.id
+                                ? 'Cancelando...'
+                                : 'Cancelar'}
+                            </button>
+                          ) : (
+                            <span className="card-meta">Sem ação disponível</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
