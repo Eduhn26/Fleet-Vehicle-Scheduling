@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
-import AdminRentalTable from '../components/AdminRentalTable';
+import { useEffect, useState } from 'react';
 import api from '../services/api';
+import AdminRentalTable from '../components/AdminRentalTable';
 import '../styles/dashboard.css';
 
 function safeArray(value) {
@@ -22,53 +22,44 @@ export default function AdminRentals() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const loadRentals = useCallback(async () => {
+  const loadRentals = async () => {
     setLoading(true);
     setErrorMsg('');
 
     try {
       const res = await api.get('/rentals');
-      setRentals(safeArray(res?.data?.data));
+      const data = safeArray(res?.data?.data);
+
+      setRentals(data);
     } catch (err) {
       setErrorMsg(
-        getApiErrorMessage(
-          err,
-          'Não foi possível carregar as solicitações administrativas.'
-        )
+        getApiErrorMessage(err, 'Não foi possível carregar as solicitações.')
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     loadRentals();
-  }, [loadRentals]);
+  }, []);
 
   return (
     <div className="dashboard">
       <div className="dashboard-header">
         <div>
-          <div className="dashboard-title">Solicitações (Admin)</div>
+          <div className="dashboard-title">Solicitações</div>
           <div className="dashboard-subtitle">
-            Aprove, rejeite e acompanhe o fluxo de reservas
+            Fila administrativa para aprovar ou rejeitar reservas.
           </div>
         </div>
       </div>
 
-      {loading && <div className="alert alert-info">Carregando...</div>}
-      {!loading && errorMsg && (
-        <div className="alert alert-error">{errorMsg}</div>
-      )}
+      {loading && <div className="alert alert-info">Carregando solicitações...</div>}
+      {!loading && errorMsg && <div className="alert alert-error">{errorMsg}</div>}
 
       {!loading && !errorMsg && (
-        <div className="card card-wide">
-          <div className="card-titleRow">
-            <div className="card-title">Fila administrativa</div>
-          </div>
-
-          <AdminRentalTable rentals={rentals} refresh={loadRentals} />
-        </div>
+        <AdminRentalTable rentals={rentals} onActionComplete={loadRentals} />
       )}
     </div>
   );

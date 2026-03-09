@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext';
 import Login from './pages/login';
 import AdminDashboard from './pages/adminDashboard';
 import AdminRentals from './pages/adminRentals';
+import AdminVehicles from './pages/adminVehicles';
 import UserDashboard from './pages/userDashboard';
 import Rentals from './pages/rentals';
 
@@ -31,6 +32,7 @@ export default function App() {
         <Route element={<PrivateRoute />}>
           <Route element={<Layout />}>
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/vehicles" element={<AdminVehicles />} />
             <Route path="/admin/rentals" element={<AdminRentals />} />
             <Route path="/user" element={<UserDashboard />} />
             <Route path="/rentals" element={<Rentals />} />
