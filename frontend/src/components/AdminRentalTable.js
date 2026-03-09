@@ -1,146 +1,132 @@
-import { useEffect, useState } from "react";
-import api from "../services/api";
-import "../styles/dashboard.css";
+import { useState } from 'react';
+import api from '../services/api';
 
-function badgeClass(status) {
-  if (status === "approved") return "badge badge-approved";
-  if (status === "rejected") return "badge badge-rejected";
-  if (status === "cancelled") return "badge badge-cancelled";
-  return "badge badge-pending";
-}
+function AdminRentalTable({ rentals, refresh }) {
+  const [loadingId, setLoadingId] = useState(null);
 
-export default function AdminRentalTable() {
-  const [rentals, setRentals] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState("");
+  // NOTE: protege o render inicial enquanto a prop ainda não foi populada pelo fetch.
+  const safeRentals = Array.isArray(rentals) ? rentals : [];
 
-  async function loadRentals() {
-    setLoading(true);
+  const getApiErrorMessage = (err, fallbackMessage) => {
+    const apiMessage = err?.response?.data?.error?.message;
 
-    try {
-      const url = statusFilter
-        ? `/rentals?status=${statusFilter}`
-        : "/rentals";
-
-      const res = await api.get(url);
-      setRentals(res.data.data || []);
-    } catch (err) {
-      console.error("Erro ao carregar solicitações");
+    if (apiMessage) {
+      return apiMessage;
     }
 
-    setLoading(false);
-  }
+    return fallbackMessage;
+  };
 
-  useEffect(() => {
-    loadRentals();
-  }, [statusFilter]);
+  const approve = async (id) => {
+    // NOTE: confirmação reduz risco de decisão administrativa acidental.
+    const confirmed = window.confirm(
+      'Tem certeza que deseja APROVAR esta solicitação?'
+    );
 
-  async function approve(id) {
-    await api.patch(`/rentals/${id}/approve`);
-    loadRentals();
-  }
+    if (!confirmed) return;
 
-  async function reject(id) {
-    await api.patch(`/rentals/${id}/reject`);
-    loadRentals();
-  }
+    try {
+      setLoadingId(id);
 
-  if (loading) {
-    return <div className="alert alert-info">Carregando solicitações...</div>;
+      await api.patch(`/rentals/${id}/approve`, {
+        adminNotes: 'Aprovado pelo administrador',
+      });
+
+      await refresh();
+    } catch (err) {
+      alert(getApiErrorMessage(err, 'Erro ao aprovar solicitação.'));
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const reject = async (id) => {
+    // NOTE: rejeição encerra o fluxo atual da request; exige confirmação explícita.
+    const confirmed = window.confirm(
+      'Tem certeza que deseja REJEITAR esta solicitação?'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setLoadingId(id);
+
+      await api.patch(`/rentals/${id}/reject`, {
+        adminNotes: 'Rejeitado pelo administrador',
+      });
+
+      await refresh();
+    } catch (err) {
+      alert(getApiErrorMessage(err, 'Erro ao rejeitar solicitação.'));
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  if (safeRentals.length === 0) {
+    return (
+      <div className="card-meta">
+        Nenhuma solicitação encontrada.
+      </div>
+    );
   }
 
   return (
-    <div className="card card-wide">
-      <div className="card-titleRow">
-        <div className="card-title">Solicitações</div>
-
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button
-            className="dashboard-linkBtn"
-            onClick={() => setStatusFilter("")}
-          >
-            Todas
-          </button>
-
-          <button
-            className="dashboard-linkBtn"
-            onClick={() => setStatusFilter("pending")}
-          >
-            Pendentes
-          </button>
-
-          <button
-            className="dashboard-linkBtn"
-            onClick={() => setStatusFilter("approved")}
-          >
-            Aprovadas
-          </button>
-
-          <button
-            className="dashboard-linkBtn"
-            onClick={() => setStatusFilter("rejected")}
-          >
-            Rejeitadas
-          </button>
-
-          <button
-            className="dashboard-linkBtn"
-            onClick={() => setStatusFilter("cancelled")}
-          >
-            Canceladas
-          </button>
-        </div>
-      </div>
-
+    <div className="table-wrap">
       <table className="table">
         <thead>
           <tr>
             <th>Usuário</th>
             <th>Veículo</th>
-            <th>Início</th>
-            <th>Fim</th>
+            <th>Período</th>
             <th>Status</th>
             <th>Ações</th>
           </tr>
         </thead>
 
         <tbody>
-          {rentals.map((r) => (
-            <tr key={r.id}>
-              <td>{r.user?.name}</td>
-              <td>{r.vehicle?.model}</td>
-              <td>{r.startDate}</td>
-              <td>{r.endDate}</td>
+          {safeRentals.map((rental) => {
+            const isLoading = loadingId === rental.id;
 
-              <td>
-                <span className={badgeClass(r.status)}>
-                  {r.status.toUpperCase()}
-                </span>
-              </td>
+            return (
+              <tr key={rental.id}>
+                <td>{rental.user?.name || 'Usuário não informado'}</td>
+                <td>{rental.vehicle?.licensePlate || 'Veículo não informado'}</td>
+                <td>
+                  {rental.startDate} → {rental.endDate}
+                </td>
+                <td>{rental.status}</td>
 
-              <td>
-                {r.status === "pending" && (
-                  <>
-                    <button
-                      className="dashboard-linkBtn"
-                      onClick={() => approve(r.id)}
-                    >
-                      Aprovar
-                    </button>
+                <td>
+                  {rental.status === 'pending' ? (
+                    <>
+                      <button
+                        className="dashboard-linkBtn"
+                        onClick={() => approve(rental.id)}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Processando...' : 'Aprovar'}
+                      </button>
 
-                    <button
-                      className="dashboard-linkBtn"
-                      onClick={() => reject(r.id)}
-                    >
-                      Rejeitar
-                    </button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
+                      <button
+                        className="dashboard-linkBtn"
+                        onClick={() => reject(rental.id)}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Processando...' : 'Rejeitar'}
+                      </button>
+                    </>
+                  ) : (
+                    <span>-</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
   );
 }
+
+export default AdminRentalTable;
