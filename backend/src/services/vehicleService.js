@@ -35,6 +35,7 @@ const formatVehicle = (vehicleDoc) => ({
   passengers: vehicleDoc.passengers,
   nextMaintenance: vehicleDoc.nextMaintenance,
   lastMaintenanceMileage: vehicleDoc.lastMaintenanceMileage,
+  imageUrl: vehicleDoc.imageUrl || '',
   createdAt: vehicleDoc.createdAt,
   updatedAt: vehicleDoc.updatedAt,
 });
@@ -73,6 +74,7 @@ const createVehicle = async (input) => {
     passengers: input?.passengers,
     nextMaintenance: input?.nextMaintenance,
     lastMaintenanceMileage: input?.lastMaintenanceMileage ?? 0,
+    imageUrl: String(input?.imageUrl || '').trim(),
   };
 
   if (!payload.brand) fail('Marca é obrigatória', 400);
@@ -87,7 +89,6 @@ const createVehicle = async (input) => {
     fail('lastMaintenanceMileage não pode ser maior que mileage', 400);
   }
 
-  // NOTE: se já nasce vencido, entra em manutenção para não permitir agendamento indevido.
   if (shouldEnterMaintenance(payload.mileage, payload.nextMaintenance)) {
     payload.status = VEHICLE_STATUS.MAINTENANCE;
   }
@@ -108,7 +109,6 @@ const updateMileage = async ({ licensePlate, mileage }) => {
   const vehicle = await Vehicle.findOne({ licensePlate: plate });
   assertVehicleExists(vehicle);
 
-  // NOTE: reduzir KM bagunça regra de manutenção e costuma indicar dado incorreto.
   if (mileage < vehicle.mileage) {
     fail('mileage não pode diminuir', 400);
   }
@@ -136,7 +136,6 @@ const setMaintenanceStatus = async ({ licensePlate, status }) => {
   const vehicle = await Vehicle.findOne({ licensePlate: plate });
   assertVehicleExists(vehicle);
 
-  // NOTE: requisito explícito: admin pode forçar manutenção manualmente (override).
   vehicle.status = nextStatus;
 
   await vehicle.save();

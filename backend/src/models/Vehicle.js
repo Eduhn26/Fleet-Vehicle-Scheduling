@@ -37,7 +37,8 @@ const vehicleSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 1900,
-      max: new Date().getFullYear() + 1, // NOTE: permite modelos do “ano que vem” (padrão de mercado)
+      max: new Date().getFullYear() + 1,
+      // NOTE: permite modelos do “ano que vem” (padrão de mercado)
     },
 
     licensePlate: {
@@ -103,15 +104,20 @@ const vehicleSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
+
+    imageUrl: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: '',
+      // NOTE: opcional. Frontend usa placeholder quando vazio.
+    },
   },
   {
     timestamps: true,
     versionKey: false,
   }
 );
-
-// NOTE: o índice unique já é criado via `unique: true` no campo.
-// Manter o schema.index aqui também gera warning de índice duplicado no Mongoose.
 
 module.exports = {
   Vehicle: mongoose.model('Vehicle', vehicleSchema),

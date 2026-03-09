@@ -8,11 +8,7 @@ function safeArray(value) {
 
 function getApiErrorMessage(err, fallbackMessage) {
   const apiMessage = err?.response?.data?.error?.message;
-
-  if (apiMessage) {
-    return apiMessage;
-  }
-
+  if (apiMessage) return apiMessage;
   return fallbackMessage;
 }
 
@@ -23,17 +19,25 @@ function getStatusBadgeClass(status) {
   return 'badge badge-pending';
 }
 
+function statusLabel(status) {
+  const map = {
+    pending: 'Pendente',
+    approved: 'Aprovado',
+    rejected: 'Rejeitado',
+    cancelled: 'Cancelado',
+    completed: 'Concluído',
+  };
+  return map[status] ?? String(status).toUpperCase();
+}
+
 export default function AdminRentalTable({ rentals, onActionComplete }) {
   const [loadingId, setLoadingId] = useState('');
   const [feedback, setFeedback] = useState({ type: '', message: '' });
 
   const sortedRentals = useMemo(() => {
     const items = safeArray(rentals);
-
     return [...items].sort((a, b) => {
-      const left = new Date(b?.createdAt || 0).getTime();
-      const right = new Date(a?.createdAt || 0).getTime();
-      return left - right;
+      return new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0);
     });
   }, [rentals]);
 
@@ -47,9 +51,7 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
           ? 'Aprovado pelo admin via interface.'
           : 'Rejeitado pelo admin via interface.';
 
-      await api.patch(`/rentals/${rentalId}/${action}`, {
-        adminNotes: notes,
-      });
+      await api.patch(`/rentals/${rentalId}/${action}`, { adminNotes: notes });
 
       setFeedback({
         type: 'info',
@@ -63,10 +65,7 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
     } catch (err) {
       setFeedback({
         type: 'error',
-        message: getApiErrorMessage(
-          err,
-          'Não foi possível concluir a ação administrativa.'
-        ),
+        message: getApiErrorMessage(err, 'Não foi possível concluir a ação.'),
       });
     } finally {
       setLoadingId('');
@@ -77,6 +76,7 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
     <div className="card card-wide">
       <div className="card-titleRow">
         <div className="card-title">Fila administrativa</div>
+        <span className="badge badge-pending">{sortedRentals.filter(r => r.status === 'pending').length} pendentes</span>
       </div>
 
       {feedback.message && (
@@ -108,63 +108,61 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
                 return (
                   <tr key={rental.id}>
                     <td>
-                      <div>{rental?.user?.name || 'Usuário'}</div>
-                      <div className="card-meta">{rental?.user?.email || '-'}</div>
+                      <span className="cell-main">{rental?.user?.name || 'Usuário'}</span>
+                      <span className="cell-sub">{rental?.user?.email || '-'}</span>
                     </td>
                     <td>
-                      {rental?.vehicle?.brand} {rental?.vehicle?.model}
+                      <span className="cell-main">
+                        {rental?.vehicle?.brand} {rental?.vehicle?.model}
+                      </span>
+                      {rental?.vehicle?.licensePlate && (
+                        <span className="license-plate">{rental.vehicle.licensePlate}</span>
+                      )}
                     </td>
                     <td>
-                      {rental.startDate} até {rental.endDate}
+                      <span className="cell-main">{rental.startDate}</span>
+                      <span className="cell-sub">até {rental.endDate}</span>
                     </td>
-                    <td>{rental.purpose}</td>
+                    <td>
+                      <span style={{ maxWidth: 180, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={rental.purpose}>
+                        {rental.purpose}
+                      </span>
+                    </td>
                     <td>
                       <span className={getStatusBadgeClass(rental.status)}>
-                        {String(rental.status || '').toUpperCase()}
+                        {statusLabel(rental.status)}
                       </span>
                     </td>
                     <td>
                       {isPending ? (
-                        <div
-                          style={{
-                            display: 'flex',
-                            gap: '8px',
-                            flexWrap: 'wrap',
-                          }}
-                        >
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                           <button
                             type="button"
                             className="dashboard-linkBtn"
                             onClick={() => handleDecision(rental.id, 'approve')}
                             disabled={isLoading}
-                            style={{
-                              minHeight: '38px',
-                              padding: '0 12px',
-                              fontSize: '0.85rem',
-                            }}
+                            style={{ minHeight: 36, padding: '0 12px', fontSize: '0.85rem' }}
                           >
-                            {isLoading ? 'Processando...' : 'Aprovar'}
+                            {isLoading ? '...' : '✓ Aprovar'}
                           </button>
-
                           <button
                             type="button"
                             className="dashboard-linkBtn"
                             onClick={() => handleDecision(rental.id, 'reject')}
                             disabled={isLoading}
                             style={{
-                              minHeight: '38px',
+                              minHeight: 36,
                               padding: '0 12px',
                               fontSize: '0.85rem',
-                              background:
-                                'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-                              boxShadow: '0 10px 24px rgba(220, 38, 38, 0.18)',
+                              background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+                              boxShadow: '0 6px 18px rgba(239, 68, 68, 0.22)',
                             }}
                           >
-                            {isLoading ? 'Processando...' : 'Rejeitar'}
+                            {isLoading ? '...' : '✕ Rejeitar'}
                           </button>
                         </div>
                       ) : (
-                        <span className="card-meta">Decisão já concluída</span>
+                        <span className="cell-sub">Decisão concluída</span>
                       )}
                     </td>
                   </tr>

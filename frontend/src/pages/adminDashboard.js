@@ -13,12 +13,25 @@ function countByStatus(items, status) {
 
 function getApiErrorMessage(err, fallbackMessage) {
   const apiMessage = err?.response?.data?.error?.message;
-
-  if (apiMessage) {
-    return apiMessage;
-  }
-
+  if (apiMessage) return apiMessage;
   return fallbackMessage;
+}
+
+function StatCard({ title, value, label, badge, accent, onClick }) {
+  return (
+    <div
+      className="card"
+      style={accent ? { borderLeft: `4px solid ${accent}`, cursor: onClick ? 'pointer' : 'default' } : { cursor: onClick ? 'pointer' : 'default' }}
+      onClick={onClick}
+    >
+      <div className="card-titleRow">
+        <div className="card-title">{title}</div>
+        {badge}
+      </div>
+      <div className="card-kpi">{value}</div>
+      <div className="card-meta">{label}</div>
+    </div>
+  );
 }
 
 export default function AdminDashboard() {
@@ -59,15 +72,12 @@ export default function AdminDashboard() {
     }
 
     loadDashboard();
-
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, []);
 
-  const pendingCount = useMemo(() => countByStatus(rentals, 'pending'), [rentals]);
-  const approvedCount = useMemo(() => countByStatus(rentals, 'approved'), [rentals]);
-  const rejectedCount = useMemo(() => countByStatus(rentals, 'rejected'), [rentals]);
+  const pendingCount   = useMemo(() => countByStatus(rentals, 'pending'), [rentals]);
+  const approvedCount  = useMemo(() => countByStatus(rentals, 'approved'), [rentals]);
+  const rejectedCount  = useMemo(() => countByStatus(rentals, 'rejected'), [rentals]);
   const cancelledCount = useMemo(() => countByStatus(rentals, 'cancelled'), [rentals]);
 
   return (
@@ -79,12 +89,10 @@ export default function AdminDashboard() {
             Visão geral da frota, reservas e fila operacional.
           </div>
         </div>
-
         <div className="dashboard-actions">
           <Link className="dashboard-linkBtn" to="/admin/vehicles">
             Gerenciar veículos
           </Link>
-
           <Link className="dashboard-linkBtn" to="/admin/rentals">
             Ver solicitações
           </Link>
@@ -92,68 +100,53 @@ export default function AdminDashboard() {
       </div>
 
       {loading && <div className="alert alert-info">Carregando indicadores...</div>}
-
       {!loading && errorMsg && <div className="alert alert-error">{errorMsg}</div>}
 
       {!loading && !errorMsg && (
-        <>
-          <div className="dashboard-grid">
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Frota</div>
-              </div>
-              <div className="card-kpi">{vehicles.length}</div>
-              <div className="card-meta">Veículos cadastrados no sistema</div>
+        <div className="dashboard-grid">
+          <StatCard
+            title="Frota"
+            value={vehicles.length}
+            label="Veículos cadastrados no sistema"
+          />
+          <StatCard
+            title="Pendentes"
+            value={pendingCount}
+            label="Solicitações aguardando decisão"
+            accent="#f59e0b"
+            badge={<span className="badge badge-pending">Pending</span>}
+          />
+          <StatCard
+            title="Aprovadas"
+            value={approvedCount}
+            label="Reservas confirmadas operacionalmente"
+            accent="#10b981"
+            badge={<span className="badge badge-approved">Approved</span>}
+          />
+          <StatCard
+            title="Rejeitadas"
+            value={rejectedCount}
+            label="Solicitações encerradas por negativa"
+            accent="#ef4444"
+            badge={<span className="badge badge-rejected">Rejected</span>}
+          />
+          <StatCard
+            title="Canceladas"
+            value={cancelledCount}
+            label="Reservas canceladas após criação/aprovação"
+            badge={<span className="badge badge-cancelled">Cancelled</span>}
+          />
+
+          <div className="card card-wide">
+            <div className="card-titleRow">
+              <div className="card-title">Próximas ações</div>
             </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Pendentes</div>
-                <span className="badge badge-pending">Pending</span>
-              </div>
-              <div className="card-kpi">{pendingCount}</div>
-              <div className="card-meta">Solicitações aguardando decisão</div>
-            </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Aprovadas</div>
-                <span className="badge badge-approved">Approved</span>
-              </div>
-              <div className="card-kpi">{approvedCount}</div>
-              <div className="card-meta">Reservas confirmadas operacionalmente</div>
-            </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Rejeitadas</div>
-                <span className="badge badge-rejected">Rejected</span>
-              </div>
-              <div className="card-kpi">{rejectedCount}</div>
-              <div className="card-meta">Solicitações encerradas por negativa</div>
-            </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Canceladas</div>
-                <span className="badge badge-cancelled">Cancelled</span>
-              </div>
-              <div className="card-kpi">{cancelledCount}</div>
-              <div className="card-meta">Reservas canceladas após criação/aprovação</div>
-            </div>
-
-            <div className="card card-wide">
-              <div className="card-titleRow">
-                <div className="card-title">Próximas ações</div>
-              </div>
-
-              <div className="card-meta">
-                Use a tela de <strong>Veículos</strong> para acompanhar a frota e a tela de
-                <strong> Solicitações</strong> para operar approve/reject do fluxo administrativo.
-              </div>
+            <div className="card-meta">
+              Use a tela de <strong>Veículos</strong> para acompanhar a frota e a tela de{' '}
+              <strong>Solicitações</strong> para operar approve/reject do fluxo administrativo.
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

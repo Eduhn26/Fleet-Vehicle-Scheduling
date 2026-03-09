@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import api from '../services/api';
-import '../styles/dashboard.css';
+import { useEffect, useState } from "react";
+import api from "../services/api";
+import "../styles/dashboard.css";
+import VehicleGrid from "./VehicleGrid";
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -17,10 +18,10 @@ function getApiErrorMessage(err, fallbackMessage) {
 }
 
 const initialForm = {
-  vehicleId: '',
-  startDate: '',
-  endDate: '',
-  purpose: '',
+  vehicleId: "",
+  startDate: "",
+  endDate: "",
+  purpose: "",
 };
 
 export default function RentalForm({ onCreated }) {
@@ -28,7 +29,7 @@ export default function RentalForm({ onCreated }) {
   const [form, setForm] = useState(initialForm);
   const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState({ type: '', message: '' });
+  const [feedback, setFeedback] = useState({ type: "", message: "" });
 
   useEffect(() => {
     let alive = true;
@@ -37,7 +38,7 @@ export default function RentalForm({ onCreated }) {
       setLoadingVehicles(true);
 
       try {
-        const res = await api.get('/vehicles');
+        const res = await api.get("/vehicles");
 
         if (!alive) return;
 
@@ -47,10 +48,10 @@ export default function RentalForm({ onCreated }) {
         if (!alive) return;
 
         setFeedback({
-          type: 'error',
+          type: "error",
           message: getApiErrorMessage(
             err,
-            'Não foi possível carregar os veículos disponíveis.'
+            "Não foi possível carregar os veículos disponíveis."
           ),
         });
       } finally {
@@ -66,6 +67,13 @@ export default function RentalForm({ onCreated }) {
     };
   }, []);
 
+  const handleSelectVehicle = (vehicleId) => {
+    setForm((current) => ({
+      ...current,
+      vehicleId,
+    }));
+  };
+
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -78,24 +86,25 @@ export default function RentalForm({ onCreated }) {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitting(true);
-    setFeedback({ type: '', message: '' });
+    setFeedback({ type: "", message: "" });
 
     try {
-      await api.post('/rentals', form);
+      await api.post("/rentals", form);
 
       setForm(initialForm);
+
       setFeedback({
-        type: 'info',
-        message: 'Solicitação enviada com sucesso.',
+        type: "info",
+        message: "Solicitação enviada com sucesso.",
       });
 
       await onCreated();
     } catch (err) {
       setFeedback({
-        type: 'error',
+        type: "error",
         message: getApiErrorMessage(
           err,
-          'Não foi possível criar a solicitação.'
+          "Não foi possível criar a solicitação."
         ),
       });
     } finally {
@@ -104,39 +113,38 @@ export default function RentalForm({ onCreated }) {
   };
 
   const availableVehicles = vehicles.filter(
-    (vehicle) => vehicle?.status === 'available'
+    (vehicle) => vehicle?.status === "available"
   );
 
   return (
     <form className="rental-form" onSubmit={handleSubmit}>
       {feedback.message && (
-        <div className={`alert ${feedback.type === 'error' ? 'alert-error' : 'alert-info'}`}>
+        <div
+          className={`alert ${
+            feedback.type === "error" ? "alert-error" : "alert-info"
+          }`}
+        >
           {feedback.message}
         </div>
       )}
 
+      <div style={{ marginBottom: "20px" }}>
+        <div className="card-titleRow">
+          <div className="card-title">Escolha um veículo</div>
+        </div>
+
+        {loadingVehicles ? (
+          <div className="card-meta">Carregando veículos...</div>
+        ) : (
+          <VehicleGrid
+            vehicles={availableVehicles}
+            selectedId={form.vehicleId}
+            onSelect={handleSelectVehicle}
+          />
+        )}
+      </div>
+
       <div className="rental-formGrid">
-        <label className="rental-field">
-          <span>Veículo</span>
-          <select
-            name="vehicleId"
-            value={form.vehicleId}
-            onChange={handleChange}
-            disabled={loadingVehicles || submitting}
-            required
-          >
-            <option value="">
-              {loadingVehicles ? 'Carregando veículos...' : 'Selecione um veículo'}
-            </option>
-
-            {availableVehicles.map((vehicle) => (
-              <option key={vehicle.id} value={vehicle.id}>
-                {vehicle.brand} {vehicle.model} - {vehicle.licensePlate}
-              </option>
-            ))}
-          </select>
-        </label>
-
         <label className="rental-field">
           <span>Data inicial</span>
           <input
@@ -167,7 +175,7 @@ export default function RentalForm({ onCreated }) {
             name="purpose"
             value={form.purpose}
             onChange={handleChange}
-            placeholder="Ex.: visita técnica, reunião externa, deslocamento corporativo..."
+            placeholder="Ex.: visita técnica, reunião externa..."
             disabled={submitting}
             required
           />
@@ -175,8 +183,12 @@ export default function RentalForm({ onCreated }) {
       </div>
 
       <div className="dashboard-actions">
-        <button type="submit" className="dashboard-linkBtn" disabled={submitting}>
-          {submitting ? 'Enviando...' : 'Criar solicitação'}
+        <button
+          type="submit"
+          className="dashboard-linkBtn"
+          disabled={submitting || !form.vehicleId}
+        >
+          {submitting ? "Enviando..." : "Criar solicitação"}
         </button>
       </div>
     </form>

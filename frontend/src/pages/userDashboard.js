@@ -13,12 +13,26 @@ function countByStatus(items, status) {
 
 function getApiErrorMessage(err, fallbackMessage) {
   const apiMessage = err?.response?.data?.error?.message;
-
-  if (apiMessage) {
-    return apiMessage;
-  }
-
+  if (apiMessage) return apiMessage;
   return fallbackMessage;
+}
+
+function getStatusBadgeClass(status) {
+  if (status === 'approved') return 'badge badge-approved';
+  if (status === 'rejected') return 'badge badge-rejected';
+  if (status === 'cancelled') return 'badge badge-cancelled';
+  return 'badge badge-pending';
+}
+
+function statusLabel(status) {
+  const map = {
+    pending: 'Pendente',
+    approved: 'Aprovado',
+    rejected: 'Rejeitado',
+    cancelled: 'Cancelado',
+    completed: 'Concluído',
+  };
+  return map[status] ?? String(status).toUpperCase();
 }
 
 export default function UserDashboard() {
@@ -35,7 +49,6 @@ export default function UserDashboard() {
 
       try {
         const rentalsRes = await api.get('/rentals/my');
-
         if (!alive) return;
 
         const rentalsData = safeArray(rentalsRes?.data?.data);
@@ -52,18 +65,14 @@ export default function UserDashboard() {
     }
 
     loadDashboard();
-
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, []);
 
-  const pendingCount = useMemo(() => countByStatus(rentals, 'pending'), [rentals]);
-  const approvedCount = useMemo(() => countByStatus(rentals, 'approved'), [rentals]);
-  const rejectedCount = useMemo(() => countByStatus(rentals, 'rejected'), [rentals]);
+  const pendingCount   = useMemo(() => countByStatus(rentals, 'pending'), [rentals]);
+  const approvedCount  = useMemo(() => countByStatus(rentals, 'approved'), [rentals]);
+  const rejectedCount  = useMemo(() => countByStatus(rentals, 'rejected'), [rentals]);
   const cancelledCount = useMemo(() => countByStatus(rentals, 'cancelled'), [rentals]);
-
-  const recentRentals = useMemo(() => rentals.slice(0, 5), [rentals]);
+  const recentRentals  = useMemo(() => rentals.slice(0, 5), [rentals]);
 
   return (
     <div className="dashboard">
@@ -74,10 +83,9 @@ export default function UserDashboard() {
             Acompanhe o status das suas reservas e faça novas solicitações.
           </div>
         </div>
-
         <div className="dashboard-actions">
           <Link className="dashboard-linkBtn" to="/rentals">
-            Abrir solicitações
+            Nova solicitação
           </Link>
         </div>
       </div>
@@ -86,92 +94,105 @@ export default function UserDashboard() {
       {!loading && errorMsg && <div className="alert alert-error">{errorMsg}</div>}
 
       {!loading && !errorMsg && (
-        <>
-          <div className="dashboard-grid">
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Minhas reservas</div>
-              </div>
-              <div className="card-kpi">{rentals.length}</div>
-              <div className="card-meta">Solicitações registradas no sistema</div>
+        <div className="dashboard-grid">
+          <div className="card">
+            <div className="card-titleRow">
+              <div className="card-title">Minhas reservas</div>
             </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Pendentes</div>
-                <span className="badge badge-pending">Pending</span>
-              </div>
-              <div className="card-kpi">{pendingCount}</div>
-              <div className="card-meta">Aguardando decisão administrativa</div>
-            </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Aprovadas</div>
-                <span className="badge badge-approved">Approved</span>
-              </div>
-              <div className="card-kpi">{approvedCount}</div>
-              <div className="card-meta">Reservas prontas para uso</div>
-            </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Rejeitadas</div>
-                <span className="badge badge-rejected">Rejected</span>
-              </div>
-              <div className="card-kpi">{rejectedCount}</div>
-              <div className="card-meta">Solicitações não aprovadas</div>
-            </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Canceladas</div>
-                <span className="badge badge-cancelled">Cancelled</span>
-              </div>
-              <div className="card-kpi">{cancelledCount}</div>
-              <div className="card-meta">Reservas encerradas por cancelamento</div>
-            </div>
-
-            <div className="card card-wide">
-              <div className="card-titleRow">
-                <div className="card-title">Últimas solicitações</div>
-              </div>
-
-              {recentRentals.length === 0 ? (
-                <div className="card-meta">Você ainda não possui solicitações.</div>
-              ) : (
-                <div className="table-wrapper">
-                  <table className="dashboard-table">
-                    <thead>
-                      <tr>
-                        <th>Veículo</th>
-                        <th>Período</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentRentals.map((rental) => (
-                        <tr key={rental.id}>
-                          <td>
-                            {rental?.vehicle?.brand} {rental?.vehicle?.model}
-                          </td>
-                          <td>
-                            {rental.startDate} até {rental.endDate}
-                          </td>
-                          <td>
-                            <span className={`badge badge-${rental.status}`}>
-                              {String(rental.status || '').toUpperCase()}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+            <div className="card-kpi">{rentals.length}</div>
+            <div className="card-meta">Solicitações registradas no sistema</div>
           </div>
-        </>
+
+          <div className="card" style={{ borderLeft: '4px solid #f59e0b' }}>
+            <div className="card-titleRow">
+              <div className="card-title">Pendentes</div>
+              <span className="badge badge-pending">Pending</span>
+            </div>
+            <div className="card-kpi">{pendingCount}</div>
+            <div className="card-meta">Aguardando decisão administrativa</div>
+          </div>
+
+          <div className="card" style={{ borderLeft: '4px solid #10b981' }}>
+            <div className="card-titleRow">
+              <div className="card-title">Aprovadas</div>
+              <span className="badge badge-approved">Approved</span>
+            </div>
+            <div className="card-kpi">{approvedCount}</div>
+            <div className="card-meta">Reservas prontas para uso</div>
+          </div>
+
+          <div className="card" style={{ borderLeft: '4px solid #ef4444' }}>
+            <div className="card-titleRow">
+              <div className="card-title">Rejeitadas</div>
+              <span className="badge badge-rejected">Rejected</span>
+            </div>
+            <div className="card-kpi">{rejectedCount}</div>
+            <div className="card-meta">Solicitações não aprovadas</div>
+          </div>
+
+          <div className="card">
+            <div className="card-titleRow">
+              <div className="card-title">Canceladas</div>
+              <span className="badge badge-cancelled">Cancelled</span>
+            </div>
+            <div className="card-kpi">{cancelledCount}</div>
+            <div className="card-meta">Reservas encerradas por cancelamento</div>
+          </div>
+
+          <div className="card card-wide">
+            <div className="card-titleRow">
+              <div className="card-title">Últimas solicitações</div>
+              <Link to="/rentals" className="dashboard-linkBtn" style={{ minHeight: 32, padding: '0 12px', fontSize: '0.82rem' }}>
+                Ver todas
+              </Link>
+            </div>
+
+            {recentRentals.length === 0 ? (
+              <div className="card-meta">Você ainda não possui solicitações.</div>
+            ) : (
+              <div className="table-wrapper">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Veículo</th>
+                      <th>Período</th>
+                      <th>Motivo</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentRentals.map((rental) => (
+                      <tr key={rental.id}>
+                        <td>
+                          <span className="cell-main">
+                            {rental?.vehicle?.brand} {rental?.vehicle?.model}
+                          </span>
+                          {rental?.vehicle?.licensePlate && (
+                            <span className="license-plate">{rental.vehicle.licensePlate}</span>
+                          )}
+                        </td>
+                        <td>
+                          <span className="cell-main">{rental.startDate}</span>
+                          <span className="cell-sub">até {rental.endDate}</span>
+                        </td>
+                        <td>
+                          <span className="cell-sub" style={{ maxWidth: 160, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {rental.purpose}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={getStatusBadgeClass(rental.status)}>
+                            {statusLabel(rental.status)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

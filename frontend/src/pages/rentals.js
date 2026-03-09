@@ -9,11 +9,7 @@ function safeArray(value) {
 
 function getApiErrorMessage(err, fallbackMessage) {
   const apiMessage = err?.response?.data?.error?.message;
-
-  if (apiMessage) {
-    return apiMessage;
-  }
-
+  if (apiMessage) return apiMessage;
   return fallbackMessage;
 }
 
@@ -22,6 +18,17 @@ function getStatusBadgeClass(status) {
   if (status === 'rejected') return 'badge badge-rejected';
   if (status === 'cancelled') return 'badge badge-cancelled';
   return 'badge badge-pending';
+}
+
+function statusLabel(status) {
+  const map = {
+    pending: 'Pendente',
+    approved: 'Aprovado',
+    rejected: 'Rejeitado',
+    cancelled: 'Cancelado',
+    completed: 'Concluído',
+  };
+  return map[status] ?? String(status).toUpperCase();
 }
 
 export default function Rentals() {
@@ -38,7 +45,6 @@ export default function Rentals() {
     try {
       const res = await api.get('/rentals/my');
       const data = safeArray(res?.data?.data);
-
       setRentals(data);
     } catch (err) {
       setErrorMsg(
@@ -71,9 +77,7 @@ export default function Rentals() {
       setActionMsg('Reserva cancelada com sucesso.');
       await loadMyRentals();
     } catch (err) {
-      setErrorMsg(
-        getApiErrorMessage(err, 'Não foi possível cancelar a reserva.')
-      );
+      setErrorMsg(getApiErrorMessage(err, 'Não foi possível cancelar a reserva.'));
     } finally {
       setCancelLoadingId('');
     }
@@ -94,17 +98,21 @@ export default function Rentals() {
       {errorMsg && <div className="alert alert-error">{errorMsg}</div>}
 
       <div className="dashboard-grid">
+        {/* Nova Solicitação */}
         <div className="card card-wide">
           <div className="card-titleRow">
             <div className="card-title">Nova solicitação</div>
           </div>
-
           <RentalForm onCreated={handleCreated} />
         </div>
 
+        {/* Histórico */}
         <div className="card card-wide">
           <div className="card-titleRow">
             <div className="card-title">Histórico</div>
+            {!loading && (
+              <span className="badge badge-cancelled">{rentals.length} total</span>
+            )}
           </div>
 
           {loading ? (
@@ -126,20 +134,36 @@ export default function Rentals() {
                 <tbody>
                   {rentals.map((rental) => {
                     const canCancel = rental.status === 'approved';
+                    const isCancelling = cancelLoadingId === rental.id;
 
                     return (
                       <tr key={rental.id}>
                         <td>
-                          {rental?.vehicle?.brand} {rental?.vehicle?.model}
+                          <span className="cell-main">
+                            {rental?.vehicle?.brand} {rental?.vehicle?.model}
+                          </span>
+                          {rental?.vehicle?.licensePlate && (
+                            <span className="license-plate">{rental.vehicle.licensePlate}</span>
+                          )}
                         </td>
                         <td>
-                          {rental.startDate} até {rental.endDate}
+                          <span className="cell-main">{rental.startDate}</span>
+                          <span className="cell-sub">até {rental.endDate}</span>
                         </td>
-                        <td>{rental.purpose}</td>
+                        <td>
+                          <span className="cell-sub" style={{ maxWidth: 180, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {rental.purpose}
+                          </span>
+                        </td>
                         <td>
                           <span className={getStatusBadgeClass(rental.status)}>
-                            {String(rental.status || '').toUpperCase()}
+                            {statusLabel(rental.status)}
                           </span>
+                          {rental.adminNotes && (
+                            <span className="cell-sub" style={{ marginTop: 4 }}>
+                              {rental.adminNotes}
+                            </span>
+                          )}
                         </td>
                         <td>
                           {canCancel ? (
@@ -147,19 +171,19 @@ export default function Rentals() {
                               type="button"
                               className="dashboard-linkBtn"
                               onClick={() => handleCancel(rental.id)}
-                              disabled={cancelLoadingId === rental.id}
+                              disabled={isCancelling}
                               style={{
-                                minHeight: '38px',
+                                minHeight: 36,
                                 padding: '0 12px',
                                 fontSize: '0.85rem',
+                                background: 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
+                                boxShadow: '0 4px 12px rgba(100, 116, 139, 0.2)',
                               }}
                             >
-                              {cancelLoadingId === rental.id
-                                ? 'Cancelando...'
-                                : 'Cancelar'}
+                              {isCancelling ? 'Cancelando...' : 'Cancelar'}
                             </button>
                           ) : (
-                            <span className="card-meta">Sem ação disponível</span>
+                            <span className="cell-sub">Sem ação</span>
                           )}
                         </td>
                       </tr>

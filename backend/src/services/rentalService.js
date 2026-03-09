@@ -30,6 +30,26 @@ const toLocalYyyyMmDd = (date) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+const listApprovedPeriodsByVehicle = async ({ licensePlate }) => {
+  const plate = String(licensePlate || '').trim().toUpperCase();
+  if (!plate) fail('licensePlate é obrigatório', 400);
+
+  const vehicle = await Vehicle.findOne({ licensePlate: plate });
+  assertExists(vehicle, 'Veículo não encontrado');
+
+  const rentals = await RentalRequest.find({
+    vehicle: vehicle._id,
+    status: RENTAL_STATUS.APPROVED,
+  })
+    .select('startDate endDate')
+    .sort({ startDate: 1 });
+
+  return rentals.map((r) => ({
+    startDate: toYyyyMmDd(r.startDate),
+    endDate: toYyyyMmDd(r.endDate),
+  }));
+};
+
 const toUtcStartDate = (input) => {
   const ymd = toYyyyMmDd(input);
   if (!ymd) return null;
@@ -382,4 +402,5 @@ module.exports = {
   rejectRequest,
   cancelRequest,
   listRequests,
+  listApprovedPeriodsByVehicle, 
 };

@@ -20,6 +20,7 @@ const assertFn = (fn, name) => {
 
 assertFn(vehicleController.listVehicles, 'listVehicles');
 assertFn(vehicleController.getByLicensePlate, 'getByLicensePlate');
+assertFn(vehicleController.getAvailability, 'getAvailability');
 assertFn(vehicleController.createVehicle, 'createVehicle');
 assertFn(vehicleController.updateMileage, 'updateMileage');
 assertFn(vehicleController.setMaintenanceStatus, 'setMaintenanceStatus');
@@ -30,6 +31,7 @@ const router = express.Router();
 // Público
 router.get('/', vehicleController.listVehicles);
 router.get('/:licensePlate', vehicleController.getByLicensePlate);
+router.get('/:licensePlate/availability', vehicleController.getAvailability);
 
 // 🔐 Admin only
 router.post(

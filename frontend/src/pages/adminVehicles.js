@@ -8,16 +8,31 @@ function safeArray(value) {
 
 function getApiErrorMessage(err, fallbackMessage) {
   const apiMessage = err?.response?.data?.error?.message;
-
-  if (apiMessage) {
-    return apiMessage;
-  }
-
+  if (apiMessage) return apiMessage;
   return fallbackMessage;
 }
 
 function countByVehicleStatus(vehicles, status) {
-  return safeArray(vehicles).filter((vehicle) => vehicle?.status === status).length;
+  return safeArray(vehicles).filter((v) => v?.status === status).length;
+}
+
+function MaintBar({ mileage, nextMaintenance }) {
+  const pct = Math.min(Math.round(((mileage || 0) / (nextMaintenance || 30000)) * 100), 100);
+  let color = '#10b981';
+  if (pct > 75) color = '#f59e0b';
+  if (pct >= 95) color = '#ef4444';
+
+  return (
+    <div style={{ minWidth: 90 }}>
+      <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: 3, display: 'flex', justifyContent: 'space-between' }}>
+        <span>{(mileage || 0).toLocaleString()} km</span>
+        <span>{pct}%</span>
+      </div>
+      <div className="maint-bar-track">
+        <div className="maint-bar-fill" style={{ width: `${pct}%`, backgroundColor: color }} />
+      </div>
+    </div>
+  );
 }
 
 export default function AdminVehicles() {
@@ -34,16 +49,13 @@ export default function AdminVehicles() {
 
       try {
         const res = await api.get('/vehicles');
-
         if (!alive) return;
 
         const data = safeArray(res?.data?.data ?? res?.data);
         setVehicles(data);
       } catch (err) {
         if (!alive) return;
-        setErrorMsg(
-          getApiErrorMessage(err, 'Não foi possível carregar os veículos.')
-        );
+        setErrorMsg(getApiErrorMessage(err, 'Não foi possível carregar os veículos.'));
       } finally {
         if (!alive) return;
         setLoading(false);
@@ -51,10 +63,7 @@ export default function AdminVehicles() {
     }
 
     loadVehicles();
-
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, []);
 
   const availableCount = useMemo(
@@ -67,14 +76,24 @@ export default function AdminVehicles() {
     [vehicles]
   );
 
+  const rentedCount = useMemo(
+    () => countByVehicleStatus(vehicles, 'rented'),
+    [vehicles]
+  );
+
+  const getStatusBadge = (status) => {
+    if (status === 'available') return <span className="badge badge-approved">Disponível</span>;
+    if (status === 'maintenance') return <span className="badge badge-rejected">Manutenção</span>;
+    if (status === 'rented') return <span className="badge badge-pending">Alugado</span>;
+    return <span className="badge badge-cancelled">{status}</span>;
+  };
+
   return (
     <div className="dashboard">
       <div className="dashboard-header">
         <div>
           <div className="dashboard-title">Veículos</div>
-          <div className="dashboard-subtitle">
-            Visão operacional da frota cadastrada.
-          </div>
+          <div className="dashboard-subtitle">Visão operacional da frota cadastrada.</div>
         </div>
       </div>
 
@@ -82,88 +101,102 @@ export default function AdminVehicles() {
       {!loading && errorMsg && <div className="alert alert-error">{errorMsg}</div>}
 
       {!loading && !errorMsg && (
-        <>
-          <div className="dashboard-grid">
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Total</div>
-              </div>
-              <div className="card-kpi">{vehicles.length}</div>
-              <div className="card-meta">Veículos cadastrados</div>
+        <div className="dashboard-grid">
+          <div className="card">
+            <div className="card-titleRow">
+              <div className="card-title">Total</div>
             </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Disponíveis</div>
-                <span className="badge badge-approved">Available</span>
-              </div>
-              <div className="card-kpi">{availableCount}</div>
-              <div className="card-meta">Prontos para reserva</div>
-            </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Manutenção</div>
-                <span className="badge badge-rejected">Maintenance</span>
-              </div>
-              <div className="card-kpi">{maintenanceCount}</div>
-              <div className="card-meta">Indisponíveis temporariamente</div>
-            </div>
-
-            <div className="card card-wide">
-              <div className="card-titleRow">
-                <div className="card-title">Lista da frota</div>
-              </div>
-
-              {vehicles.length === 0 ? (
-                <div className="card-meta">Nenhum veículo cadastrado.</div>
-              ) : (
-                <div className="table-wrapper">
-                  <table className="dashboard-table">
-                    <thead>
-                      <tr>
-                        <th>Placa</th>
-                        <th>Veículo</th>
-                        <th>Ano</th>
-                        <th>Cor</th>
-                        <th>KM</th>
-                        <th>Status</th>
-                        <th>Passageiros</th>
-                        <th>Próx. manutenção</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {vehicles.map((vehicle) => (
-                        <tr key={vehicle.id}>
-                          <td>{vehicle.licensePlate}</td>
-                          <td>
-                            {vehicle.brand} {vehicle.model}
-                          </td>
-                          <td>{vehicle.year}</td>
-                          <td>{vehicle.color}</td>
-                          <td>{vehicle.mileage}</td>
-                          <td>
-                            <span
-                              className={
-                                vehicle.status === 'available'
-                                  ? 'badge badge-approved'
-                                  : 'badge badge-rejected'
-                              }
-                            >
-                              {String(vehicle.status || '').toUpperCase()}
-                            </span>
-                          </td>
-                          <td>{vehicle.passengers}</td>
-                          <td>{vehicle.nextMaintenance}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+            <div className="card-kpi">{vehicles.length}</div>
+            <div className="card-meta">Veículos cadastrados</div>
           </div>
-        </>
+
+          <div className="card" style={{ borderLeft: '4px solid #10b981' }}>
+            <div className="card-titleRow">
+              <div className="card-title">Disponíveis</div>
+              <span className="badge badge-approved">Available</span>
+            </div>
+            <div className="card-kpi">{availableCount}</div>
+            <div className="card-meta">Prontos para reserva</div>
+          </div>
+
+          <div className="card" style={{ borderLeft: '4px solid #ef4444' }}>
+            <div className="card-titleRow">
+              <div className="card-title">Manutenção</div>
+              <span className="badge badge-rejected">Maintenance</span>
+            </div>
+            <div className="card-kpi">{maintenanceCount}</div>
+            <div className="card-meta">Indisponíveis temporariamente</div>
+          </div>
+
+          <div className="card" style={{ borderLeft: '4px solid #f59e0b' }}>
+            <div className="card-titleRow">
+              <div className="card-title">Alugados</div>
+              <span className="badge badge-pending">Rented</span>
+            </div>
+            <div className="card-kpi">{rentedCount}</div>
+            <div className="card-meta">Em uso no momento</div>
+          </div>
+
+          <div className="card card-wide">
+            <div className="card-titleRow">
+              <div className="card-title">Lista da frota</div>
+            </div>
+
+            {vehicles.length === 0 ? (
+              <div className="card-meta">Nenhum veículo cadastrado.</div>
+            ) : (
+              <div className="table-wrapper">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Veículo</th>
+                      <th>Placa</th>
+                      <th>Ano / Cor</th>
+                      <th>Passageiros</th>
+                      <th>Quilometragem</th>
+                      <th>Próx. Manutenção</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vehicles.map((vehicle) => (
+                      <tr key={vehicle.id}>
+                        <td>
+                          <span className="cell-main">
+                            {vehicle.brand} {vehicle.model}
+                          </span>
+                          <span className="cell-sub">
+                            {vehicle.fuelType} • {vehicle.transmissionType}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="license-plate">{vehicle.licensePlate}</span>
+                        </td>
+                        <td>
+                          <span className="cell-main">{vehicle.year}</span>
+                          <span className="cell-sub">{vehicle.color}</span>
+                        </td>
+                        <td>{vehicle.passengers}</td>
+                        <td>
+                          <MaintBar
+                            mileage={vehicle.mileage}
+                            nextMaintenance={vehicle.nextMaintenance}
+                          />
+                        </td>
+                        <td>
+                          <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                            {(vehicle.nextMaintenance || 0).toLocaleString()} km
+                          </span>
+                        </td>
+                        <td>{getStatusBadge(vehicle.status)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

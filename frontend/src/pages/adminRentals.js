@@ -9,11 +9,7 @@ function safeArray(value) {
 
 function getApiErrorMessage(err, fallbackMessage) {
   const apiMessage = err?.response?.data?.error?.message;
-
-  if (apiMessage) {
-    return apiMessage;
-  }
-
+  if (apiMessage) return apiMessage;
   return fallbackMessage;
 }
 
@@ -29,12 +25,9 @@ export default function AdminRentals() {
     try {
       const res = await api.get('/rentals');
       const data = safeArray(res?.data?.data);
-
       setRentals(data);
     } catch (err) {
-      setErrorMsg(
-        getApiErrorMessage(err, 'Não foi possível carregar as solicitações.')
-      );
+      setErrorMsg(getApiErrorMessage(err, 'Não foi possível carregar as solicitações.'));
     } finally {
       setLoading(false);
     }
