@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import '../styles/dashboard.css';
-import AdminRentalTable from "../components/AdminRentalTable";
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -27,7 +26,7 @@ export default function AdminDashboard() {
 
       try {
         const [vehiclesRes, rentalsRes] = await Promise.all([
-          // NOTE: baseURL do api.js já aponta para /api, então aqui usamos rotas sem prefixo /api
+          // NOTE: baseURL do api.js já aponta para /api, então aqui usamos rotas sem prefixo /api.
           api.get('/vehicles'),
           api.get('/rentals'),
         ]);
@@ -46,15 +45,28 @@ export default function AdminDashboard() {
     }
 
     load();
+
     return () => {
       alive = false;
     };
   }, []);
 
-  const pendingCount = useMemo(() => countByStatus(rentals, 'pending'), [rentals]);
-  const approvedCount = useMemo(() => countByStatus(rentals, 'approved'), [rentals]);
-  const rejectedCount = useMemo(() => countByStatus(rentals, 'rejected'), [rentals]);
-  const cancelledCount = useMemo(() => countByStatus(rentals, 'cancelled'), [rentals]);
+  const pendingCount = useMemo(
+    () => countByStatus(rentals, 'pending'),
+    [rentals]
+  );
+  const approvedCount = useMemo(
+    () => countByStatus(rentals, 'approved'),
+    [rentals]
+  );
+  const rejectedCount = useMemo(
+    () => countByStatus(rentals, 'rejected'),
+    [rentals]
+  );
+  const cancelledCount = useMemo(
+    () => countByStatus(rentals, 'cancelled'),
+    [rentals]
+  );
 
   return (
     <div className="dashboard">
@@ -68,14 +80,18 @@ export default function AdminDashboard() {
           <Link className="dashboard-linkBtn" to="/vehicles">
             Gerenciar veículos
           </Link>
-          <Link className="dashboard-linkBtn" to="/rentals">
+
+          {/* NOTE: admin precisa navegar para a tela operacional própria, não para a página de solicitações do usuário. */}
+          <Link className="dashboard-linkBtn" to="/admin/rentals">
             Ver solicitações
           </Link>
         </div>
       </div>
 
       {loading && <div className="alert alert-info">Carregando dados…</div>}
-      {!loading && errorMsg && <div className="alert alert-error">{errorMsg}</div>}
+      {!loading && errorMsg && (
+        <div className="alert alert-error">{errorMsg}</div>
+      )}
 
       {!loading && !errorMsg && (
         <div className="dashboard-grid">
@@ -115,17 +131,15 @@ export default function AdminDashboard() {
           </div>
 
           <div className="card">
-  <div className="card-titleRow">
-    <div className="card-title">Canceladas</div>
-    <span className="badge badge-cancelled">CANCELLED</span>
-  </div>
-  <div className="card-kpi">{cancelledCount}</div>
-  <div className="card-meta">Reservas canceladas</div>
-</div>
+            <div className="card-titleRow">
+              <div className="card-title">Canceladas</div>
+              <span className="badge badge-cancelled">CANCELLED</span>
+            </div>
+            <div className="card-kpi">{cancelledCount}</div>
+            <div className="card-meta">Reservas canceladas</div>
+          </div>
         </div>
-        
       )}
-      <AdminRentalTable />
     </div>
   );
 }
