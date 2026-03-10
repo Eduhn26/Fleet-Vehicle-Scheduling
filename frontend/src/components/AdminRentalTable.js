@@ -16,6 +16,8 @@ function getStatusBadgeClass(status) {
   if (status === 'approved') return 'badge badge-approved';
   if (status === 'rejected') return 'badge badge-rejected';
   if (status === 'cancelled') return 'badge badge-cancelled';
+  if (status === 'completed') return 'badge badge-approved';
+  if (status === 'return_pending') return 'badge badge-pending';
   return 'badge badge-pending';
 }
 
@@ -23,6 +25,7 @@ function statusLabel(status) {
   const map = {
     pending: 'Pendente',
     approved: 'Aprovado',
+    return_pending: 'Aguardando devolução',
     rejected: 'Rejeitado',
     cancelled: 'Cancelado',
     completed: 'Concluído',
@@ -72,11 +75,38 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
     }
   };
 
+  const handleCompleteRental = async (rentalId) => {
+    setLoadingId(rentalId);
+    setFeedback({ type: '', message: '' });
+
+    try {
+      await api.patch(`/rentals/${rentalId}/complete`, {
+        adminNotes: 'Devolução confirmada pelo admin via interface.',
+      });
+
+      setFeedback({
+        type: 'info',
+        message: 'Devolução concluída com sucesso.',
+      });
+
+      await onActionComplete();
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        message: getApiErrorMessage(err, 'Não foi possível concluir a devolução.'),
+      });
+    } finally {
+      setLoadingId('');
+    }
+  };
+
   return (
     <div className="card card-wide">
       <div className="card-titleRow">
         <div className="card-title">Fila administrativa</div>
-        <span className="badge badge-pending">{sortedRentals.filter(r => r.status === 'pending').length} pendentes</span>
+        <span className="badge badge-pending">
+          {sortedRentals.filter((r) => r.status === 'pending').length} pendentes
+        </span>
       </div>
 
       {feedback.message && (
@@ -103,6 +133,7 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
             <tbody>
               {sortedRentals.map((rental) => {
                 const isPending = rental.status === 'pending';
+                const isReturnPending = rental.status === 'return_pending';
                 const isLoading = loadingId === rental.id;
 
                 return (
@@ -124,9 +155,24 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
                       <span className="cell-sub">até {rental.endDate}</span>
                     </td>
                     <td>
-                      <span style={{ maxWidth: 180, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={rental.purpose}>
+                      <span
+                        style={{
+                          maxWidth: 180,
+                          display: 'block',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                        title={rental.purpose}
+                      >
                         {rental.purpose}
                       </span>
+
+                      {rental.returnNotes && isReturnPending && (
+                        <span className="cell-sub" style={{ marginTop: 4 }}>
+                          {rental.returnNotes}
+                        </span>
+                      )}
                     </td>
                     <td>
                       <span className={getStatusBadgeClass(rental.status)}>
@@ -161,6 +207,16 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
                             {isLoading ? '...' : '✕ Rejeitar'}
                           </button>
                         </div>
+                      ) : isReturnPending ? (
+                        <button
+                          type="button"
+                          className="dashboard-linkBtn"
+                          onClick={() => handleCompleteRental(rental.id)}
+                          disabled={isLoading}
+                          style={{ minHeight: 36, padding: '0 12px', fontSize: '0.85rem' }}
+                        >
+                          {isLoading ? '...' : 'Concluir devolução'}
+                        </button>
                       ) : (
                         <span className="cell-sub">Decisão concluída</span>
                       )}

@@ -18,6 +18,8 @@ function getStatusBadgeClass(status) {
   if (status === 'approved') return 'badge badge-approved';
   if (status === 'rejected') return 'badge badge-rejected';
   if (status === 'cancelled') return 'badge badge-cancelled';
+  if (status === 'completed') return 'badge badge-approved';
+  if (status === 'return_pending') return 'badge badge-pending';
   return 'badge badge-pending';
 }
 
@@ -25,6 +27,7 @@ function statusLabel(status) {
   const map = {
     pending: 'Pendente',
     approved: 'Aprovado',
+    return_pending: 'Aguardando devolução',
     rejected: 'Rejeitado',
     cancelled: 'Cancelado',
     completed: 'Concluído',
@@ -40,6 +43,7 @@ export default function Rentals() {
   const [errorMsg, setErrorMsg] = useState('');
   const [actionMsg, setActionMsg] = useState('');
   const [cancelLoadingId, setCancelLoadingId] = useState('');
+  const [returnLoadingId, setReturnLoadingId] = useState('');
   const [selectedVehicle, setSelectedVehicle] = useState(null);
 
   const loadMyRentals = async () => {
@@ -111,6 +115,40 @@ export default function Rentals() {
     }
   };
 
+ const handleRequestReturn = async (rentalId) => {
+  const mileageInput = window.prompt('Informe a quilometragem atual do veículo:');
+
+  if (mileageInput === null) {
+    return;
+  }
+
+  const mileage = Number(mileageInput);
+
+  setReturnLoadingId(rentalId);
+  setActionMsg('');
+  setErrorMsg('');
+
+  try {
+    await api.patch(`/rentals/${rentalId}/request-return`, {
+      mileage,
+      returnNotes: 'Devolução solicitada pelo usuário via interface.',
+    });
+
+    setActionMsg('Devolução solicitada com sucesso. Aguarde a confirmação do admin.');
+    await loadMyRentals();
+  } catch (err) {
+    const message = getApiErrorMessage(
+      err,
+      'Não foi possível solicitar a devolução.'
+    );
+
+    setErrorMsg(message);
+    setActionMsg('');
+  } finally {
+    setReturnLoadingId('');
+  }
+};
+
   const availableVehicles = vehicles.filter(
     (vehicle) => vehicle?.status === 'available'
   );
@@ -175,7 +213,9 @@ export default function Rentals() {
                 <tbody>
                   {rentals.map((rental) => {
                     const canCancel = rental.status === 'approved';
+                    const canRequestReturn = rental.status === 'approved';
                     const isCancelling = cancelLoadingId === rental.id;
+                    const isRequestingReturn = returnLoadingId === rental.id;
 
                     return (
                       <tr key={rental.id}>
@@ -211,30 +251,57 @@ export default function Rentals() {
                           <span className={getStatusBadgeClass(rental.status)}>
                             {statusLabel(rental.status)}
                           </span>
+
                           {rental.adminNotes && (
                             <span className="cell-sub" style={{ marginTop: 4 }}>
                               {rental.adminNotes}
                             </span>
                           )}
+
+                          {rental.returnNotes && rental.status === 'return_pending' && (
+                            <span className="cell-sub" style={{ marginTop: 4 }}>
+                              {rental.returnNotes}
+                            </span>
+                          )}
                         </td>
                         <td>
-                          {canCancel ? (
-                            <button
-                              type="button"
-                              className="dashboard-linkBtn"
-                              onClick={() => handleCancel(rental.id)}
-                              disabled={isCancelling}
-                              style={{
-                                minHeight: 36,
-                                padding: '0 12px',
-                                fontSize: '0.85rem',
-                                background:
-                                  'linear-gradient(135deg, #64748b 0%, #475569 100%)',
-                                boxShadow: '0 4px 12px rgba(100, 116, 139, 0.2)',
-                              }}
-                            >
-                              {isCancelling ? 'Cancelando...' : 'Cancelar'}
-                            </button>
+                          {canCancel || canRequestReturn ? (
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              {canRequestReturn && (
+                                <button
+                                  type="button"
+                                  className="dashboard-linkBtn"
+                                  onClick={() => handleRequestReturn(rental.id)}
+                                  disabled={isRequestingReturn || isCancelling}
+                                  style={{
+                                    minHeight: 36,
+                                    padding: '0 12px',
+                                    fontSize: '0.85rem',
+                                  }}
+                                >
+                                  {isRequestingReturn ? 'Enviando...' : 'Devolver'}
+                                </button>
+                              )}
+
+                              {canCancel && (
+                                <button
+                                  type="button"
+                                  className="dashboard-linkBtn"
+                                  onClick={() => handleCancel(rental.id)}
+                                  disabled={isCancelling || isRequestingReturn}
+                                  style={{
+                                    minHeight: 36,
+                                    padding: '0 12px',
+                                    fontSize: '0.85rem',
+                                    background:
+                                      'linear-gradient(135deg, #64748b 0%, #475569 100%)',
+                                    boxShadow: '0 4px 12px rgba(100, 116, 139, 0.2)',
+                                  }}
+                                >
+                                  {isCancelling ? 'Cancelando...' : 'Cancelar'}
+                                </button>
+                              )}
+                            </div>
                           ) : (
                             <span className="cell-sub">Sem ação</span>
                           )}

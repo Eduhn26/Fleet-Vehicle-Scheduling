@@ -160,13 +160,10 @@ const formatRental = (doc) => ({
   endDate: toYyyyMmDd(doc.endDate),
   purpose: doc.purpose,
   status: doc.status,
-
   adminNotes: doc.adminNotes,
   returnNotes: doc.returnNotes,
-
   returnRequestedMileage: doc.returnRequestedMileage,
   actualMileage: doc.actualMileage,
-
   createdAt: doc.createdAt,
   updatedAt: doc.updatedAt,
 });
@@ -244,7 +241,7 @@ const cancelRequest = async ({ requestId, actorUserId, actorRole, cancelNotes })
 /*
 NOTE:
 Usuário informa devolução do veículo.
-Não altera veículo ainda — apenas registra pedido.
+Pode corrigir enquanto estiver em RETURN_PENDING.
 */
 const requestReturn = async ({ requestId, userId, mileage, returnNotes }) => {
   const rId = assertObjectIdLike(requestId, 'requestId');
@@ -259,8 +256,21 @@ const requestReturn = async ({ requestId, userId, mileage, returnNotes }) => {
     fail('Você não pode solicitar devolução desta reserva', 403);
   }
 
-  if (request.status !== RENTAL_STATUS.APPROVED) {
-    fail('Somente reservas aprovadas podem solicitar devolução', 409);
+  if (
+    request.status !== RENTAL_STATUS.APPROVED &&
+    request.status !== RENTAL_STATUS.RETURN_PENDING
+  ) {
+    fail('Esta reserva não pode solicitar devolução', 409);
+  }
+
+  const vehicle = await Vehicle.findById(request.vehicle);
+  assertExists(vehicle, 'Veículo não encontrado');
+
+  if (km < vehicle.mileage) {
+    fail(
+      `KM informado (${km}) não pode ser menor que o atual do veículo (${vehicle.mileage})`,
+      409
+    );
   }
 
   request.status = RENTAL_STATUS.RETURN_PENDING;
