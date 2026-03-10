@@ -20,6 +20,16 @@ const cancelRequestSchema = z.object({
   cancelNotes: z.string().trim().max(500).optional().default(''),
 });
 
+const requestReturnSchema = z.object({
+  mileage: z
+    .number({
+      required_error: 'mileage é obrigatório',
+      invalid_type_error: 'mileage deve ser um número',
+    })
+    .min(0, 'mileage não pode ser negativo'),
+  returnNotes: z.string().trim().max(500).optional().default(''),
+});
+
 const listRequestsQuerySchema = z.object({
   status: z.string().trim().optional(),
 });
@@ -28,5 +38,6 @@ module.exports = {
   createRequestSchema,
   adminDecisionSchema,
   cancelRequestSchema,
+  requestReturnSchema,
   listRequestsQuerySchema,
 };

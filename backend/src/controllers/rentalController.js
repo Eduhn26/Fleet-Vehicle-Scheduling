@@ -77,12 +77,44 @@ const cancelRequest = async (req, res, next) => {
       requestId: id,
       actorUserId: req.user.userId,
       actorRole: req.user.role,
-      cancelNotes: req.body.cancelNotes
+      cancelNotes: req.body.cancelNotes,
     });
 
     return res.status(200).json({ data: cancelled });
   } catch (err) {
-    next(err);
+    return next(err);
+  }
+};
+
+const requestReturn = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const updated = await rentalService.requestReturn({
+      requestId: id,
+      userId: req.user.userId,
+      mileage: req.body.mileage,
+      returnNotes: req.body.returnNotes,
+    });
+
+    return res.status(200).json({ data: updated });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const completeRental = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const completed = await rentalService.completeRental({
+      requestId: id,
+      adminNotes: req.body.adminNotes,
+    });
+
+    return res.status(200).json({ data: completed });
+  } catch (err) {
+    return next(err);
   }
 };
 
@@ -93,4 +125,6 @@ module.exports = {
   approveRequest,
   rejectRequest,
   cancelRequest,
+  requestReturn,
+  completeRental,
 };

@@ -1,5 +1,11 @@
 import '../styles/dashboard.css';
 
+import { FiMoreVertical, FiUsers, FiCalendar, FiSettings } from 'react-icons/fi';
+import { BsFuelPump } from 'react-icons/bs';
+
+// Importando o contexto para pegar os dados do usuário logado
+import { useAuth } from '../context/AuthContext';
+
 import hrvImg from '../assets/vehicles/honda-hrv.png';
 import compassImg from '../assets/vehicles/jeep-compass.png';
 import etiosImg from '../assets/vehicles/toyota-etios.png';
@@ -11,14 +17,14 @@ function StatusBadge({ status }) {
   if (!status) return null;
 
   const map = {
-    available: { cls: 'badge-approved', label: 'Disponível' },
-    maintenance: { cls: 'badge-rejected', label: 'Manutenção' },
-    rented: { cls: 'badge-pending', label: 'Alugado' },
+    available: { cls: 'badge-approved', label: 'DISPONÍVEL' },
+    maintenance: { cls: 'badge-rejected', label: 'MANUTENÇÃO' },
+    rented: { cls: 'badge-pending', label: 'ALUGADO' },
   };
 
   const { cls, label } = map[status] ?? {
     cls: 'badge-cancelled',
-    label: status,
+    label: status.toUpperCase(),
   };
 
   return <span className={`badge ${cls}`}>{label}</span>;
@@ -45,13 +51,13 @@ function getVehicleImage(vehicle) {
 }
 
 export default function VehicleCard({ vehicle, selected, onSelect }) {
+  // Pegando o usuário do contexto e verificando se é admin
+  const { user } = useAuth();
+  const isAdmin = String(user?.role || '').trim() === 'admin';
+
   const mileage = vehicle.mileage ?? 0;
   const nextMaint = vehicle.nextMaintenance || 30000;
   const pct = Math.min(Math.round((mileage / nextMaint) * 100), 100);
-
-  let barColor = '#10b981';
-  if (pct > 75) barColor = '#f59e0b';
-  if (pct >= 95) barColor = '#ef4444';
 
   const transmission =
     vehicle.transmissionType === 'automatic'
@@ -60,6 +66,7 @@ export default function VehicleCard({ vehicle, selected, onSelect }) {
         ? 'Manual'
         : vehicle.transmissionType || '—';
 
+  const fuelType = vehicle.fuelType ? vehicle.fuelType.charAt(0).toUpperCase() + vehicle.fuelType.slice(1) : 'Flex';
   const imageSource = getVehicleImage(vehicle);
 
   return (
@@ -67,6 +74,13 @@ export default function VehicleCard({ vehicle, selected, onSelect }) {
       className={`vehicle-card${selected ? ' vehicle-card-selected' : ''}`}
       onClick={() => onSelect(vehicle.id)}
     >
+      <div className="vehicle-card-header">
+        <StatusBadge status={vehicle.status} />
+        <button className="vehicle-card-moreBtn" onClick={(e) => e.stopPropagation()}>
+          <FiMoreVertical size={20} />
+        </button>
+      </div>
+
       <div className="vehicle-card-imageWrapper">
         <img
           src={imageSource}
@@ -77,39 +91,59 @@ export default function VehicleCard({ vehicle, selected, onSelect }) {
           }}
           loading="lazy"
         />
-
-        <div className="vehicle-card-status">
-          <StatusBadge status={vehicle.status} />
-        </div>
       </div>
 
       <div className="vehicle-card-body">
         <div className="vehicle-card-title">
           {vehicle.brand} {vehicle.model}
         </div>
-
         <span className="vehicle-card-plate">{vehicle.licensePlate}</span>
 
         <div className="vehicle-features">
-          <div className="feature-item">⛽ {vehicle.fuelType || 'flex'}</div>
-          <div className="feature-item">👥 {vehicle.passengers || 5} lug.</div>
-          <div className="feature-item">⚙️ {transmission}</div>
-          <div className="feature-item">📅 {vehicle.year}</div>
-        </div>
-
-        <div className="maint-bar-wrapper">
-          <div className="maint-bar-label">
-            <span>Ciclo de manutenção</span>
-            <span>{pct}%</span>
+          <div className="feature-item">
+            <BsFuelPump className="feature-icon" />
+            {fuelType}
           </div>
-
-          <div className="maint-bar-track">
-            <div
-              className="maint-bar-fill"
-              style={{ width: `${pct}%`, backgroundColor: barColor }}
-            />
+          <div className="feature-item">
+            <FiUsers className="feature-icon" />
+            {vehicle.passengers || 5} Lugares
+          </div>
+          <div className="feature-item">
+            <FiSettings className="feature-icon" />
+            {transmission}
+          </div>
+          <div className="feature-item">
+            <FiCalendar className="feature-icon" />
+            {vehicle.year}
           </div>
         </div>
+
+        {/* Renderiza a barra de manutenção apenas se for admin */}
+        {isAdmin && (
+          <div className="maint-bar-wrapper">
+            <div className="maint-bar-label">
+              <span>Ciclo de Manutenção:</span>
+              <span style={{ fontWeight: 800, color: '#0f172a' }}>{pct}%</span>
+            </div>
+            <div className="maint-bar-track">
+              <div
+                className="maint-bar-fill"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        <button 
+          className="vehicle-card-actionBtn"
+          style={{ marginTop: isAdmin ? '0' : 'auto' }} /* Empurra o botão pro fundo se a barra não existir */
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect(vehicle.id);
+          }}
+        >
+          DETALHES DO VEÍCULO
+        </button>
       </div>
     </div>
   );

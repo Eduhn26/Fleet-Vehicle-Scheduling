@@ -10,6 +10,7 @@ const {
   adminDecisionSchema,
   cancelRequestSchema,
   listRequestsQuerySchema,
+  requestReturnSchema,
 } = require('../validators/rentalValidator');
 
 const router = express.Router();
@@ -53,6 +54,23 @@ router.patch(
   auth,
   validate(cancelRequestSchema),
   rentalController.cancelRequest
+);
+
+router.patch(
+  '/:id/request-return',
+  auth,
+  validate(requestReturnSchema),
+  // NOTE: o user só solicita devolução; a conclusão final continua dependendo do admin.
+  rentalController.requestReturn
+);
+
+router.patch(
+  '/:id/complete',
+  auth,
+  requireRole('admin'),
+  validate(adminDecisionSchema),
+  // NOTE: a devolução só vira conclusão operacional após aceite do admin.
+  rentalController.completeRental
 );
 
 module.exports = router;
