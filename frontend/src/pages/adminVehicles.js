@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
+import VehicleCard from '../components/VehicleCard';
 import '../styles/dashboard.css';
 
 function safeArray(value) {
@@ -17,19 +18,36 @@ function countByVehicleStatus(vehicles, status) {
 }
 
 function MaintBar({ mileage, nextMaintenance }) {
-  const pct = Math.min(Math.round(((mileage || 0) / (nextMaintenance || 30000)) * 100), 100);
-  let color = '#10b981';
-  if (pct > 75) color = '#f59e0b';
-  if (pct >= 95) color = '#ef4444';
+  const pct = Math.min(
+    Math.round(((mileage || 0) / (nextMaintenance || 30000)) * 100),
+    100
+  );
+
+  let color = '#059669';
+  if (pct > 75) color = '#d97706';
+  if (pct >= 95) color = '#dc2626';
 
   return (
     <div style={{ minWidth: 90 }}>
-      <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: 3, display: 'flex', justifyContent: 'space-between' }}>
+      <div
+        style={{
+          fontSize: '0.72rem',
+          color: '#94a3b8',
+          marginBottom: 4,
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontWeight: 600,
+        }}
+      >
         <span>{(mileage || 0).toLocaleString()} km</span>
         <span>{pct}%</span>
       </div>
+
       <div className="maint-bar-track">
-        <div className="maint-bar-fill" style={{ width: `${pct}%`, backgroundColor: color }} />
+        <div
+          className="maint-bar-fill"
+          style={{ width: `${pct}%`, backgroundColor: color }}
+        />
       </div>
     </div>
   );
@@ -49,13 +67,16 @@ export default function AdminVehicles() {
 
       try {
         const res = await api.get('/vehicles');
+
         if (!alive) return;
 
         const data = safeArray(res?.data?.data ?? res?.data);
         setVehicles(data);
       } catch (err) {
         if (!alive) return;
-        setErrorMsg(getApiErrorMessage(err, 'Não foi possível carregar os veículos.'));
+        setErrorMsg(
+          getApiErrorMessage(err, 'Não foi possível carregar os veículos.')
+        );
       } finally {
         if (!alive) return;
         setLoading(false);
@@ -63,7 +84,10 @@ export default function AdminVehicles() {
     }
 
     loadVehicles();
-    return () => { alive = false; };
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const availableCount = useMemo(
@@ -82,10 +106,23 @@ export default function AdminVehicles() {
   );
 
   const getStatusBadge = (status) => {
-    if (status === 'available') return <span className="badge badge-approved">Disponível</span>;
-    if (status === 'maintenance') return <span className="badge badge-rejected">Manutenção</span>;
-    if (status === 'rented') return <span className="badge badge-pending">Alugado</span>;
+    if (status === 'available') {
+      return <span className="badge badge-approved">Disponível</span>;
+    }
+
+    if (status === 'maintenance') {
+      return <span className="badge badge-rejected">Manutenção</span>;
+    }
+
+    if (status === 'rented') {
+      return <span className="badge badge-pending">Alugado</span>;
+    }
+
     return <span className="badge badge-cancelled">{status}</span>;
+  };
+
+  const handlePreviewSelect = () => {
+    // NOTE: no admin, o card entra como leitura visual da frota.
   };
 
   return (
@@ -93,7 +130,9 @@ export default function AdminVehicles() {
       <div className="dashboard-header">
         <div>
           <div className="dashboard-title">Veículos</div>
-          <div className="dashboard-subtitle">Visão operacional da frota cadastrada.</div>
+          <div className="dashboard-subtitle">
+            Visão operacional da frota cadastrada.
+          </div>
         </div>
       </div>
 
@@ -110,31 +149,57 @@ export default function AdminVehicles() {
             <div className="card-meta">Veículos cadastrados</div>
           </div>
 
-          <div className="card" style={{ borderLeft: '4px solid #10b981' }}>
+          <div className="card" style={{ borderTop: '3px solid #059669' }}>
             <div className="card-titleRow">
               <div className="card-title">Disponíveis</div>
-              <span className="badge badge-approved">Available</span>
+              <span className="badge badge-approved">Disponível</span>
             </div>
             <div className="card-kpi">{availableCount}</div>
             <div className="card-meta">Prontos para reserva</div>
           </div>
 
-          <div className="card" style={{ borderLeft: '4px solid #ef4444' }}>
+          <div className="card" style={{ borderTop: '3px solid #dc2626' }}>
             <div className="card-titleRow">
               <div className="card-title">Manutenção</div>
-              <span className="badge badge-rejected">Maintenance</span>
+              <span className="badge badge-rejected">Manutenção</span>
             </div>
             <div className="card-kpi">{maintenanceCount}</div>
             <div className="card-meta">Indisponíveis temporariamente</div>
           </div>
 
-          <div className="card" style={{ borderLeft: '4px solid #f59e0b' }}>
+          <div className="card" style={{ borderTop: '3px solid #f59e0b' }}>
             <div className="card-titleRow">
               <div className="card-title">Alugados</div>
-              <span className="badge badge-pending">Rented</span>
+              <span className="badge badge-pending">Alugado</span>
             </div>
             <div className="card-kpi">{rentedCount}</div>
             <div className="card-meta">Em uso no momento</div>
+          </div>
+
+          <div className="card card-wide">
+            <div className="card-titleRow">
+              <div className="card-title">Grid da frota</div>
+              <span className="badge badge-cancelled">
+                {vehicles.length} {vehicles.length === 1 ? 'veículo' : 'veículos'}
+              </span>
+            </div>
+
+            {vehicles.length === 0 ? (
+              <div className="card-meta">Nenhum veículo cadastrado.</div>
+            ) : (
+              <div className="vehicle-picker">
+                <div className="vehicle-grid">
+                  {vehicles.map((vehicle) => (
+                    <VehicleCard
+                      key={vehicle.id}
+                      vehicle={vehicle}
+                      selected={false}
+                      onSelect={handlePreviewSelect}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="card card-wide">
@@ -169,25 +234,35 @@ export default function AdminVehicles() {
                             {vehicle.fuelType} • {vehicle.transmissionType}
                           </span>
                         </td>
+
                         <td>
-                          <span className="license-plate">{vehicle.licensePlate}</span>
+                          <span className="license-plate">
+                            {vehicle.licensePlate}
+                          </span>
                         </td>
+
                         <td>
                           <span className="cell-main">{vehicle.year}</span>
                           <span className="cell-sub">{vehicle.color}</span>
                         </td>
-                        <td>{vehicle.passengers}</td>
+
+                        <td>
+                          <span className="cell-main">{vehicle.passengers}</span>
+                        </td>
+
                         <td>
                           <MaintBar
                             mileage={vehicle.mileage}
                             nextMaintenance={vehicle.nextMaintenance}
                           />
                         </td>
+
                         <td>
-                          <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
                             {(vehicle.nextMaintenance || 0).toLocaleString()} km
                           </span>
                         </td>
+
                         <td>{getStatusBadge(vehicle.status)}</td>
                       </tr>
                     ))}

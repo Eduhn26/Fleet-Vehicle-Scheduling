@@ -103,28 +103,28 @@ export default function UserDashboard() {
             <div className="card-meta">Solicitações registradas no sistema</div>
           </div>
 
-          <div className="card" style={{ borderLeft: '4px solid #f59e0b' }}>
+          <div className="card" style={{ borderTop: '3px solid #f59e0b' }}>
             <div className="card-titleRow">
               <div className="card-title">Pendentes</div>
-              <span className="badge badge-pending">Pending</span>
+              <span className="badge badge-pending">Pendente</span>
             </div>
             <div className="card-kpi">{pendingCount}</div>
             <div className="card-meta">Aguardando decisão administrativa</div>
           </div>
 
-          <div className="card" style={{ borderLeft: '4px solid #10b981' }}>
+          <div className="card" style={{ borderTop: '3px solid #059669' }}>
             <div className="card-titleRow">
               <div className="card-title">Aprovadas</div>
-              <span className="badge badge-approved">Approved</span>
+              <span className="badge badge-approved">Aprovado</span>
             </div>
             <div className="card-kpi">{approvedCount}</div>
             <div className="card-meta">Reservas prontas para uso</div>
           </div>
 
-          <div className="card" style={{ borderLeft: '4px solid #ef4444' }}>
+          <div className="card" style={{ borderTop: '3px solid #dc2626' }}>
             <div className="card-titleRow">
               <div className="card-title">Rejeitadas</div>
-              <span className="badge badge-rejected">Rejected</span>
+              <span className="badge badge-rejected">Rejeitado</span>
             </div>
             <div className="card-kpi">{rejectedCount}</div>
             <div className="card-meta">Solicitações não aprovadas</div>
@@ -133,7 +133,7 @@ export default function UserDashboard() {
           <div className="card">
             <div className="card-titleRow">
               <div className="card-title">Canceladas</div>
-              <span className="badge badge-cancelled">Cancelled</span>
+              <span className="badge badge-cancelled">Cancelado</span>
             </div>
             <div className="card-kpi">{cancelledCount}</div>
             <div className="card-meta">Reservas encerradas por cancelamento</div>

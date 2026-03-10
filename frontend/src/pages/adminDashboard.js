@@ -17,19 +17,65 @@ function getApiErrorMessage(err, fallbackMessage) {
   return fallbackMessage;
 }
 
-function StatCard({ title, value, label, badge, accent, onClick }) {
+/* ── SVG Icons ──────────────────────────────────────────────── */
+const IconFleet = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="1" y="3" width="15" height="13" rx="2"/>
+    <path d="M16 8h4l3 3v5h-7V8z"/>
+    <circle cx="5.5" cy="18.5" r="2.5"/>
+    <circle cx="18.5" cy="18.5" r="2.5"/>
+  </svg>
+);
+
+const IconClock = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <polyline points="12 6 12 12 16 14"/>
+  </svg>
+);
+
+const IconCheck = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+    <polyline points="22 4 12 14.01 9 11.01"/>
+  </svg>
+);
+
+const IconX = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="15" y1="9" x2="9" y2="15"/>
+    <line x1="9" y1="9" x2="15" y2="15"/>
+  </svg>
+);
+
+const IconSlash = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+  </svg>
+);
+
+/* ── StatCard ───────────────────────────────────────────────── */
+function StatCard({ title, value, label, badge, accent, icon, iconBg, iconColor, onClick }) {
   return (
     <div
       className="card"
-      style={accent ? { borderLeft: `4px solid ${accent}`, cursor: onClick ? 'pointer' : 'default' } : { cursor: onClick ? 'pointer' : 'default' }}
+      style={accent ? { borderTop: `3px solid ${accent}`, cursor: onClick ? 'pointer' : 'default' } : { cursor: onClick ? 'pointer' : 'default' }}
       onClick={onClick}
     >
       <div className="card-titleRow">
         <div className="card-title">{title}</div>
-        {badge}
+        {icon && (
+          <div className="card-iconWrapper" style={{ background: iconBg, color: iconColor }}>
+            {icon}
+          </div>
+        )}
+        {badge && !icon && badge}
       </div>
       <div className="card-kpi">{value}</div>
       <div className="card-meta">{label}</div>
+      {badge && icon && <div style={{ marginTop: 12 }}>{badge}</div>}
     </div>
   );
 }
@@ -108,33 +154,48 @@ export default function AdminDashboard() {
             title="Frota"
             value={vehicles.length}
             label="Veículos cadastrados no sistema"
+            icon={<IconFleet />}
+            iconBg="rgba(37, 99, 235, 0.1)"
+            iconColor="#2563eb"
           />
           <StatCard
             title="Pendentes"
             value={pendingCount}
             label="Solicitações aguardando decisão"
             accent="#f59e0b"
-            badge={<span className="badge badge-pending">Pending</span>}
+            icon={<IconClock />}
+            iconBg="rgba(245, 158, 11, 0.1)"
+            iconColor="#d97706"
+            badge={<span className="badge badge-pending">Pendente</span>}
           />
           <StatCard
             title="Aprovadas"
             value={approvedCount}
             label="Reservas confirmadas operacionalmente"
-            accent="#10b981"
-            badge={<span className="badge badge-approved">Approved</span>}
+            accent="#059669"
+            icon={<IconCheck />}
+            iconBg="rgba(5, 150, 105, 0.1)"
+            iconColor="#059669"
+            badge={<span className="badge badge-approved">Aprovado</span>}
           />
           <StatCard
             title="Rejeitadas"
             value={rejectedCount}
             label="Solicitações encerradas por negativa"
-            accent="#ef4444"
-            badge={<span className="badge badge-rejected">Rejected</span>}
+            accent="#dc2626"
+            icon={<IconX />}
+            iconBg="rgba(220, 38, 38, 0.1)"
+            iconColor="#dc2626"
+            badge={<span className="badge badge-rejected">Rejeitado</span>}
           />
           <StatCard
             title="Canceladas"
             value={cancelledCount}
             label="Reservas canceladas após criação/aprovação"
-            badge={<span className="badge badge-cancelled">Cancelled</span>}
+            icon={<IconSlash />}
+            iconBg="rgba(100, 116, 139, 0.1)"
+            iconColor="#64748b"
+            badge={<span className="badge badge-cancelled">Cancelado</span>}
           />
 
           <div className="card card-wide">
@@ -143,7 +204,7 @@ export default function AdminDashboard() {
             </div>
             <div className="card-meta">
               Use a tela de <strong>Veículos</strong> para acompanhar a frota e a tela de{' '}
-              <strong>Solicitações</strong> para operar approve/reject do fluxo administrativo.
+              <strong>Solicitações</strong> para operar aprovação/rejeição do fluxo administrativo.
             </div>
           </div>
         </div>

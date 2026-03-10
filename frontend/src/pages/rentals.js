@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import RentalForm from '../components/RentalForm';
+import VehicleGrid from '../components/VehicleGrid';
+import RentalRequestModal from '../components/RentalRequestModal';
 import '../styles/dashboard.css';
 
 function safeArray(value) {
@@ -33,13 +34,16 @@ function statusLabel(status) {
 
 export default function Rentals() {
   const [rentals, setRentals] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [vehicles, setVehicles] = useState([]);
+  const [loadingRentals, setLoadingRentals] = useState(true);
+  const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [actionMsg, setActionMsg] = useState('');
   const [cancelLoadingId, setCancelLoadingId] = useState('');
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
 
   const loadMyRentals = async () => {
-    setLoading(true);
+    setLoadingRentals(true);
     setErrorMsg('');
 
     try {
@@ -51,17 +55,41 @@ export default function Rentals() {
         getApiErrorMessage(err, 'Não foi possível carregar suas solicitações.')
       );
     } finally {
-      setLoading(false);
+      setLoadingRentals(false);
+    }
+  };
+
+  const loadVehicles = async () => {
+    setLoadingVehicles(true);
+
+    try {
+      const res = await api.get('/vehicles');
+      const data = safeArray(res?.data?.data ?? res?.data);
+      setVehicles(data);
+    } catch (err) {
+      setErrorMsg(
+        getApiErrorMessage(err, 'Não foi possível carregar os veículos.')
+      );
+    } finally {
+      setLoadingVehicles(false);
     }
   };
 
   useEffect(() => {
     loadMyRentals();
+    loadVehicles();
   }, []);
 
   const handleCreated = async () => {
     setActionMsg('Solicitação criada com sucesso.');
+    setSelectedVehicle(null);
     await loadMyRentals();
+  };
+
+  const handleSelectVehicle = (vehicleId) => {
+    const vehicle = vehicles.find((item) => item.id === vehicleId);
+    if (!vehicle) return;
+    setSelectedVehicle(vehicle);
   };
 
   const handleCancel = async (rentalId) => {
@@ -83,6 +111,10 @@ export default function Rentals() {
     }
   };
 
+  const availableVehicles = vehicles.filter(
+    (vehicle) => vehicle?.status === 'available'
+  );
+
   return (
     <div className="dashboard">
       <div className="dashboard-header">
@@ -98,24 +130,33 @@ export default function Rentals() {
       {errorMsg && <div className="alert alert-error">{errorMsg}</div>}
 
       <div className="dashboard-grid">
-        {/* Nova Solicitação */}
         <div className="card card-wide">
           <div className="card-titleRow">
             <div className="card-title">Nova solicitação</div>
           </div>
-          <RentalForm onCreated={handleCreated} />
+
+          <div className="vehicle-picker">
+            {loadingVehicles ? (
+              <div className="card-meta">Carregando veículos...</div>
+            ) : (
+              <VehicleGrid
+                vehicles={availableVehicles}
+                selectedId={selectedVehicle?.id ?? ''}
+                onSelect={handleSelectVehicle}
+              />
+            )}
+          </div>
         </div>
 
-        {/* Histórico */}
         <div className="card card-wide">
           <div className="card-titleRow">
             <div className="card-title">Histórico</div>
-            {!loading && (
+            {!loadingRentals && (
               <span className="badge badge-cancelled">{rentals.length} total</span>
             )}
           </div>
 
-          {loading ? (
+          {loadingRentals ? (
             <div className="card-meta">Carregando solicitações...</div>
           ) : rentals.length === 0 ? (
             <div className="card-meta">Nenhuma solicitação encontrada.</div>
@@ -143,7 +184,9 @@ export default function Rentals() {
                             {rental?.vehicle?.brand} {rental?.vehicle?.model}
                           </span>
                           {rental?.vehicle?.licensePlate && (
-                            <span className="license-plate">{rental.vehicle.licensePlate}</span>
+                            <span className="license-plate">
+                              {rental.vehicle.licensePlate}
+                            </span>
                           )}
                         </td>
                         <td>
@@ -151,7 +194,16 @@ export default function Rentals() {
                           <span className="cell-sub">até {rental.endDate}</span>
                         </td>
                         <td>
-                          <span className="cell-sub" style={{ maxWidth: 180, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <span
+                            className="cell-sub"
+                            style={{
+                              maxWidth: 180,
+                              display: 'block',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
                             {rental.purpose}
                           </span>
                         </td>
@@ -176,7 +228,8 @@ export default function Rentals() {
                                 minHeight: 36,
                                 padding: '0 12px',
                                 fontSize: '0.85rem',
-                                background: 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
+                                background:
+                                  'linear-gradient(135deg, #64748b 0%, #475569 100%)',
                                 boxShadow: '0 4px 12px rgba(100, 116, 139, 0.2)',
                               }}
                             >
@@ -195,6 +248,12 @@ export default function Rentals() {
           )}
         </div>
       </div>
+
+      <RentalRequestModal
+        vehicle={selectedVehicle}
+        onClose={() => setSelectedVehicle(null)}
+        onCreated={handleCreated}
+      />
     </div>
   );
 }
