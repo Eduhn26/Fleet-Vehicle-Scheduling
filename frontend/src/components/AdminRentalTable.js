@@ -39,6 +39,7 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
 
   const sortedRentals = useMemo(() => {
     const items = safeArray(rentals);
+
     return [...items].sort((a, b) => {
       return new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0);
     });
@@ -130,6 +131,7 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
                 <th>Ações</th>
               </tr>
             </thead>
+
             <tbody>
               {sortedRentals.map((rental) => {
                 const isPending = rental.status === 'pending';
@@ -137,23 +139,32 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
                 const isLoading = loadingId === rental.id;
 
                 return (
-                  <tr key={rental.id}>
+                  <tr
+                    key={rental.id}
+                    className={isReturnPending ? 'return-pending-row' : ''}
+                  >
                     <td>
                       <span className="cell-main">{rental?.user?.name || 'Usuário'}</span>
                       <span className="cell-sub">{rental?.user?.email || '-'}</span>
                     </td>
+
                     <td>
                       <span className="cell-main">
                         {rental?.vehicle?.brand} {rental?.vehicle?.model}
                       </span>
+
                       {rental?.vehicle?.licensePlate && (
-                        <span className="license-plate">{rental.vehicle.licensePlate}</span>
+                        <span className="license-plate">
+                          {rental.vehicle.licensePlate}
+                        </span>
                       )}
                     </td>
+
                     <td>
                       <span className="cell-main">{rental.startDate}</span>
                       <span className="cell-sub">até {rental.endDate}</span>
                     </td>
+
                     <td>
                       <span
                         style={{
@@ -168,17 +179,29 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
                         {rental.purpose}
                       </span>
 
-                      {rental.returnNotes && isReturnPending && (
-                        <span className="cell-sub" style={{ marginTop: 4 }}>
-                          {rental.returnNotes}
-                        </span>
+                      {isReturnPending && (
+                        <>
+                          {rental.returnNotes && (
+                            <span className="cell-sub" style={{ marginTop: 4 }}>
+                              {rental.returnNotes}
+                            </span>
+                          )}
+
+                          {typeof rental.mileage === 'number' && (
+                            <span className="cell-sub return-mileage">
+                              KM informado: {rental.mileage}
+                            </span>
+                          )}
+                        </>
                       )}
                     </td>
+
                     <td>
                       <span className={getStatusBadgeClass(rental.status)}>
                         {statusLabel(rental.status)}
                       </span>
                     </td>
+
                     <td>
                       {isPending ? (
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -191,6 +214,7 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
                           >
                             {isLoading ? '...' : '✓ Aprovar'}
                           </button>
+
                           <button
                             type="button"
                             className="dashboard-linkBtn"

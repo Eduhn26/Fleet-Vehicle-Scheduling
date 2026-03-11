@@ -41,6 +41,13 @@ const IconCheck = () => (
   </svg>
 );
 
+const IconReturn = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 10 4 15 9 20"/>
+    <path d="M20 4v7a4 4 0 0 1-4 4H4"/>
+  </svg>
+);
+
 const IconX = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10"/>
@@ -73,8 +80,10 @@ function StatCard({ title, value, label, badge, accent, icon, iconBg, iconColor,
         )}
         {badge && !icon && badge}
       </div>
+
       <div className="card-kpi">{value}</div>
       <div className="card-meta">{label}</div>
+
       {badge && icon && <div style={{ marginTop: 12 }}>{badge}</div>}
     </div>
   );
@@ -108,6 +117,7 @@ export default function AdminDashboard() {
         setRentals(rentalsData);
       } catch (err) {
         if (!alive) return;
+
         setErrorMsg(
           getApiErrorMessage(err, 'Não foi possível carregar o dashboard administrativo.')
         );
@@ -118,12 +128,16 @@ export default function AdminDashboard() {
     }
 
     loadDashboard();
-    return () => { alive = false; };
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  const pendingCount   = useMemo(() => countByStatus(rentals, 'pending'), [rentals]);
-  const approvedCount  = useMemo(() => countByStatus(rentals, 'approved'), [rentals]);
-  const rejectedCount  = useMemo(() => countByStatus(rentals, 'rejected'), [rentals]);
+  const pendingCount = useMemo(() => countByStatus(rentals, 'pending'), [rentals]);
+  const approvedCount = useMemo(() => countByStatus(rentals, 'approved'), [rentals]);
+  const returnPendingCount = useMemo(() => countByStatus(rentals, 'return_pending'), [rentals]);
+  const rejectedCount = useMemo(() => countByStatus(rentals, 'rejected'), [rentals]);
   const cancelledCount = useMemo(() => countByStatus(rentals, 'cancelled'), [rentals]);
 
   return (
@@ -135,18 +149,29 @@ export default function AdminDashboard() {
             Visão geral da frota, reservas e fila operacional.
           </div>
         </div>
+
         <div className="dashboard-actions">
           <Link className="dashboard-linkBtn" to="/admin/vehicles">
             Gerenciar veículos
           </Link>
+
           <Link className="dashboard-linkBtn" to="/admin/rentals">
             Ver solicitações
           </Link>
         </div>
       </div>
 
-      {loading && <div className="alert alert-info">Carregando indicadores...</div>}
-      {!loading && errorMsg && <div className="alert alert-error">{errorMsg}</div>}
+      {loading && (
+        <div className="alert alert-info">
+          Carregando indicadores...
+        </div>
+      )}
+
+      {!loading && errorMsg && (
+        <div className="alert alert-error">
+          {errorMsg}
+        </div>
+      )}
 
       {!loading && !errorMsg && (
         <div className="dashboard-grid">
@@ -158,6 +183,7 @@ export default function AdminDashboard() {
             iconBg="rgba(37, 99, 235, 0.1)"
             iconColor="#2563eb"
           />
+
           <StatCard
             title="Pendentes"
             value={pendingCount}
@@ -168,6 +194,7 @@ export default function AdminDashboard() {
             iconColor="#d97706"
             badge={<span className="badge badge-pending">Pendente</span>}
           />
+
           <StatCard
             title="Aprovadas"
             value={approvedCount}
@@ -178,6 +205,18 @@ export default function AdminDashboard() {
             iconColor="#059669"
             badge={<span className="badge badge-approved">Aprovado</span>}
           />
+
+          <StatCard
+            title="Devoluções"
+            value={returnPendingCount}
+            label="Veículos aguardando confirmação de devolução"
+            accent="#2563eb"
+            icon={<IconReturn />}
+            iconBg="rgba(37, 99, 235, 0.1)"
+            iconColor="#2563eb"
+            badge={<span className="badge badge-pending">Devolução</span>}
+          />
+
           <StatCard
             title="Rejeitadas"
             value={rejectedCount}
@@ -188,6 +227,7 @@ export default function AdminDashboard() {
             iconColor="#dc2626"
             badge={<span className="badge badge-rejected">Rejeitado</span>}
           />
+
           <StatCard
             title="Canceladas"
             value={cancelledCount}
@@ -202,9 +242,11 @@ export default function AdminDashboard() {
             <div className="card-titleRow">
               <div className="card-title">Próximas ações</div>
             </div>
+
             <div className="card-meta">
               Use a tela de <strong>Veículos</strong> para acompanhar a frota e a tela de{' '}
-              <strong>Solicitações</strong> para operar aprovação/rejeição do fluxo administrativo.
+              <strong>Solicitações</strong> para operar aprovação, rejeição e confirmação
+              das devoluções dos veículos.
             </div>
           </div>
         </div>

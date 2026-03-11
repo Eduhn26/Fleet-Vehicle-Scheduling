@@ -35,6 +35,11 @@ function statusLabel(status) {
   return map[status] ?? String(status).toUpperCase();
 }
 
+const initialReturnForm = {
+  mileage: '',
+  returnNotes: '',
+};
+
 export default function Rentals() {
   const [rentals, setRentals] = useState([]);
   const [vehicles, setVehicles] = useState([]);
@@ -45,6 +50,10 @@ export default function Rentals() {
   const [cancelLoadingId, setCancelLoadingId] = useState('');
   const [returnLoadingId, setReturnLoadingId] = useState('');
   const [selectedVehicle, setSelectedVehicle] = useState(null);
+
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [selectedReturnRental, setSelectedReturnRental] = useState(null);
+  const [returnForm, setReturnForm] = useState(initialReturnForm);
 
   const loadMyRentals = async () => {
     setLoadingRentals(true);
@@ -115,39 +124,66 @@ export default function Rentals() {
     }
   };
 
- const handleRequestReturn = async (rentalId) => {
-  const mileageInput = window.prompt('Informe a quilometragem atual do veículo:');
-
-  if (mileageInput === null) {
-    return;
-  }
-
-  const mileage = Number(mileageInput);
-
-  setReturnLoadingId(rentalId);
-  setActionMsg('');
-  setErrorMsg('');
-
-  try {
-    await api.patch(`/rentals/${rentalId}/request-return`, {
-      mileage,
+  const openReturnModal = (rental) => {
+    setSelectedReturnRental(rental);
+    setReturnForm({
+      mileage: rental?.vehicle?.mileage ? String(rental.vehicle.mileage) : '',
       returnNotes: 'Devolução solicitada pelo usuário via interface.',
     });
-
-    setActionMsg('Devolução solicitada com sucesso. Aguarde a confirmação do admin.');
-    await loadMyRentals();
-  } catch (err) {
-    const message = getApiErrorMessage(
-      err,
-      'Não foi possível solicitar a devolução.'
-    );
-
-    setErrorMsg(message);
     setActionMsg('');
-  } finally {
-    setReturnLoadingId('');
-  }
-};
+    setErrorMsg('');
+    setReturnModalOpen(true);
+  };
+
+  const closeReturnModal = () => {
+    if (returnLoadingId) return;
+
+    setReturnModalOpen(false);
+    setSelectedReturnRental(null);
+    setReturnForm(initialReturnForm);
+  };
+
+  const handleReturnFormChange = (event) => {
+    const { name, value } = event.target;
+
+    setReturnForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  };
+
+  const handleRequestReturn = async (event) => {
+    event.preventDefault();
+
+    if (!selectedReturnRental) return;
+
+    const mileage = Number(returnForm.mileage);
+
+    setReturnLoadingId(selectedReturnRental.id);
+    setActionMsg('');
+    setErrorMsg('');
+
+    try {
+      await api.patch(`/rentals/${selectedReturnRental.id}/request-return`, {
+        mileage,
+        returnNotes: returnForm.returnNotes.trim(),
+      });
+
+      setActionMsg('Devolução solicitada com sucesso. Aguarde a confirmação do admin.');
+      closeReturnModal();
+      await loadMyRentals();
+    } catch (err) {
+      const message = getApiErrorMessage(
+        err,
+        'Não foi possível solicitar a devolução.'
+      );
+
+      setErrorMsg(message);
+      setActionMsg('');
+    } finally {
+      setReturnLoadingId('');
+    }
+  };
 
   const availableVehicles = vehicles.filter(
     (vehicle) => vehicle?.status === 'available'
@@ -263,6 +299,20 @@ export default function Rentals() {
                               {rental.returnNotes}
                             </span>
                           )}
+
+                          {typeof rental.returnRequestedMileage === 'number' &&
+                            rental.status === 'return_pending' && (
+                              <span className="cell-sub" style={{ marginTop: 4 }}>
+                                KM informado: {rental.returnRequestedMileage.toLocaleString()} km
+                              </span>
+                            )}
+
+                          {typeof rental.actualMileage === 'number' &&
+                            rental.status === 'completed' && (
+                              <span className="cell-sub" style={{ marginTop: 4 }}>
+                                KM final: {rental.actualMileage.toLocaleString()} km
+                              </span>
+                            )}
                         </td>
                         <td>
                           {canCancel || canRequestReturn ? (
@@ -271,7 +321,7 @@ export default function Rentals() {
                                 <button
                                   type="button"
                                   className="dashboard-linkBtn"
-                                  onClick={() => handleRequestReturn(rental.id)}
+                                  onClick={() => openReturnModal(rental)}
                                   disabled={isRequestingReturn || isCancelling}
                                   style={{
                                     minHeight: 36,
@@ -321,6 +371,108 @@ export default function Rentals() {
         onClose={() => setSelectedVehicle(null)}
         onCreated={handleCreated}
       />
+
+      {returnModalOpen && selectedReturnRental && (
+        <div className="modal-overlay" onClick={closeReturnModal}>
+          <div
+            className="modal-content-card rental-modal return-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="rental-modalHeader">
+              <div>
+                <h2 className="rental-modalTitle">Solicitar devolução</h2>
+                <p className="rental-modalSubtitle">
+                  {selectedReturnRental?.vehicle?.brand} {selectedReturnRental?.vehicle?.model} •{' '}
+                  {selectedReturnRental?.vehicle?.licensePlate}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="rental-modalClose"
+                onClick={closeReturnModal}
+                disabled={Boolean(returnLoadingId)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="rental-modalBody">
+              <form className="return-modalForm" onSubmit={handleRequestReturn}>
+                <div className="return-modalInfo card">
+                  <div className="card-title">Resumo da reserva</div>
+
+                  <div className="return-modalInfoGrid">
+                    <div>
+                      <span className="rental-summaryLabel">Período</span>
+                      <p className="rental-summaryValue">
+                        {selectedReturnRental.startDate} até {selectedReturnRental.endDate}
+                      </p>
+                    </div>
+
+                    <div>
+                      <span className="rental-summaryLabel">KM atual do veículo</span>
+                      <p className="rental-summaryValue">
+                        {selectedReturnRental?.vehicle?.mileage?.toLocaleString()} km
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="return-modalFields card">
+                  <div className="card-title">Dados da devolução</div>
+
+                  <div className="rental-formGrid">
+                    <label className="rental-field">
+                      <span>Quilometragem devolvida</span>
+                      <input
+                        type="number"
+                        name="mileage"
+                        min="0"
+                        value={returnForm.mileage}
+                        onChange={handleReturnFormChange}
+                        disabled={Boolean(returnLoadingId)}
+                        required
+                      />
+                    </label>
+
+                    <label className="rental-field rental-fieldWide">
+                      <span>Observações</span>
+                      <textarea
+                        name="returnNotes"
+                        value={returnForm.returnNotes}
+                        onChange={handleReturnFormChange}
+                        placeholder="Ex.: devolvido no estacionamento da empresa."
+                        disabled={Boolean(returnLoadingId)}
+                        rows="4"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="return-modalActions">
+                  <button
+                    type="submit"
+                    className="dashboard-linkBtn"
+                    disabled={Boolean(returnLoadingId) || !returnForm.mileage}
+                  >
+                    {returnLoadingId ? 'Enviando...' : 'Confirmar devolução'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="rental-cancelBtn"
+                    onClick={closeReturnModal}
+                    disabled={Boolean(returnLoadingId)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

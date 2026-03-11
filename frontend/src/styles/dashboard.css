@@ -376,6 +376,7 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
   outline: none;
 }
+
 /* ── Vehicle Grid ─────────────────────────────────────────── */
 .vehicle-picker {
   display: flex;
@@ -398,10 +399,10 @@
 .vehicle-card {
   cursor: pointer;
   overflow: hidden;
-  border-radius: 24px; /* Cantos mais suaves e arredondados */
-  border: none; /* Sem borda dura, visual mais limpo */
+  border-radius: 24px;
+  border: none;
   background: #ffffff;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04); /* Sombra suave */
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
   transition: all 0.3s ease;
   position: relative;
   display: flex;
@@ -414,7 +415,6 @@
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
 }
 
-/* O Header com Badge e 3 pontinhos flutuando sobre a imagem */
 .vehicle-card-header {
   display: flex;
   justify-content: space-between;
@@ -427,10 +427,9 @@
   z-index: 10;
 }
 
-/* Forçando o estilo do Badge para ficar idêntico ao modelo (verde sólido) */
 .vehicle-card-header .badge-approved {
   color: #ffffff !important;
-  background: #4ade80 !important; /* Verde mais claro e vibrante */
+  background: #4ade80 !important;
   border: none !important;
   padding: 6px 14px !important;
   font-size: 0.75rem !important;
@@ -450,25 +449,23 @@
   justify-content: center;
 }
 
-/* Container da imagem forçando fundo branco para a mágica do multiply funcionar */
 .vehicle-card-imageWrapper {
   height: 200px;
-  background: #ffffff !important; 
+  background: #ffffff !important;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  margin-top: 40px; /* Desce o carro para não bater no badge */
+  margin-top: 40px;
   padding: 0 20px;
 }
 
-/* Imagem do carro grande e com a mágica para remover o fundo cinza */
 .vehicle-card-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.15)); /* Sombra realista embaixo do pneu */
-  mix-blend-mode: multiply !important; /* Apaga fundos brancos/cinzas de JPGs e PNGs */
+  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.15));
+  mix-blend-mode: multiply !important;
   transition: transform 0.3s ease;
 }
 
@@ -500,14 +497,14 @@
   font-weight: 600;
   letter-spacing: 0.05em;
   margin-bottom: 24px;
-  background: transparent !important; /* Tira o fundo azulzinho do código original */
+  background: transparent !important;
   padding: 0;
 }
 
 .vehicle-features {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px 8px; /* Mais espaço vertical para não ficar espremido */
+  gap: 16px 8px;
   margin-bottom: 30px;
 }
 
@@ -521,7 +518,7 @@
 }
 
 .feature-icon {
-  color: #1e3a8a; /* Azul escuro igual ao modelo */
+  color: #1e3a8a;
   font-size: 1.2rem;
 }
 
@@ -555,14 +552,13 @@
   transition: width 0.3s ease;
 }
 
-/* Botão escuro arredondado */
 .vehicle-card-actionBtn {
   width: 100%;
   padding: 14px;
   background: #0f172a;
   color: #ffffff;
   border: none;
-  border-radius: 12px; /* Mais arredondado */
+  border-radius: 12px;
   font-weight: 700;
   font-size: 0.85rem;
   letter-spacing: 0.02em;
@@ -927,6 +923,36 @@
   margin-top: 4px;
 }
 
+/* ── Return modal ─────────────────────────────────────────── */
+.return-modal {
+  max-width: 760px;
+}
+
+.return-modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.return-modalInfo,
+.return-modalFields {
+  width: 100%;
+}
+
+.return-modalInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.return-modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 /* ── Table cell helpers ───────────────────────────────────── */
 .cell-main {
   display: block;
@@ -996,7 +1022,8 @@
     grid-column: span 12;
   }
 
-  .rental-summaryGrid {
+  .rental-summaryGrid,
+  .return-modalInfoGrid {
     grid-template-columns: 1fr;
   }
 
@@ -1007,4 +1034,23 @@
   .vehicle-features {
     grid-template-columns: 1fr;
   }
+
+  .return-modalActions {
+    flex-direction: column;
+  }
+}
+
+/* ── Highlight para devoluções aguardando ───────────────── */
+
+.return-pending-row {
+  background: #fef9c3;
+}
+
+.return-pending-row:hover {
+  background: #fef08a;
+}
+
+.return-mileage {
+  font-weight: 600;
+  color: #92400e;
 }

@@ -153,6 +153,7 @@ const formatRental = (doc) => ({
         brand: doc.vehicle.brand,
         model: doc.vehicle.model,
         licensePlate: doc.vehicle.licensePlate,
+        mileage: doc.vehicle.mileage,
       }
     : doc.vehicle,
 
