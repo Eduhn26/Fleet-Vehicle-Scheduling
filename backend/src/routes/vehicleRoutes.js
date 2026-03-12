@@ -66,4 +66,11 @@ router.patch(
   vehicleController.recordMaintenance
 );
 
+router.delete(
+  '/:licensePlate',
+  auth,
+  requireRole('admin'),
+  vehicleController.deleteVehicle
+);
+
 module.exports = router;

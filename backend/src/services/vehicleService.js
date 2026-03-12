@@ -123,6 +123,22 @@ const updateMileage = async ({ licensePlate, mileage }) => {
   return formatVehicle(vehicle);
 };
 
+const deleteVehicle = async ({ licensePlate }) => {
+  const plate = normalizeLicensePlate(licensePlate);
+  if (!plate) fail('Placa é obrigatória', 400);
+
+  const vehicle = await Vehicle.findOne({ licensePlate: plate });
+  assertVehicleExists(vehicle);
+
+  if (vehicle.status === 'rented') {
+    fail('Não é possível excluir um veículo que está alugado', 409);
+  }
+
+  await Vehicle.deleteOne({ licensePlate: plate });
+
+  return { deleted: true };
+};
+
 const setMaintenanceStatus = async ({ licensePlate, status }) => {
   const plate = normalizeLicensePlate(licensePlate);
   if (!plate) fail('Placa é obrigatória', 400);
@@ -172,4 +188,5 @@ module.exports = {
   updateMileage,
   setMaintenanceStatus,
   recordMaintenance,
+  deleteVehicle,
 };

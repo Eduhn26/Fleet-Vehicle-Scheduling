@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import VehicleCard from '../components/VehicleCard';
 import AddVehicleModal from '../components/AddVehicleModal';
+import RentalRequestModal from '../components/RentalRequestModal';
+import VehicleDetailsModal from '../components/VehicleDetailsModal';
 import '../styles/dashboard.css';
 
 function safeArray(value) {
@@ -61,6 +63,8 @@ export default function AdminVehicles() {
   const [actionMsg, setActionMsg] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [actionLoadingPlate, setActionLoadingPlate] = useState('');
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [detailsVehicle, setDetailsVehicle] = useState(null);
 
   const loadVehicles = async () => {
     setLoading(true);
@@ -118,6 +122,35 @@ export default function AdminVehicles() {
     await loadVehicles();
   };
 
+  const handleAdminRentalCreated = async () => {
+    setActionMsg('Reserva administrativa criada com sucesso.');
+    setSelectedVehicle(null);
+    await loadVehicles();
+  };
+
+  const handleOpenVehicle = (vehicleId) => {
+    const vehicle = vehicles.find((item) => item.id === vehicleId);
+    if (!vehicle) return;
+
+    setActionMsg('');
+    setErrorMsg('');
+    setDetailsVehicle(vehicle);
+  };
+
+  const handleReserveFromDetails = (vehicle) => {
+    if (!vehicle) return;
+
+    if (vehicle.status !== 'available') {
+      setDetailsVehicle(null);
+      setActionMsg('');
+      setErrorMsg('Apenas veículos disponíveis podem ser reservados.');
+      return;
+    }
+
+    setDetailsVehicle(null);
+    setSelectedVehicle(vehicle);
+  };
+
   const handleSendToMaintenance = async (vehicle) => {
     setActionLoadingPlate(vehicle.licensePlate);
     setActionMsg('');
@@ -169,6 +202,30 @@ export default function AdminVehicles() {
     }
   };
 
+  const handleDeleteVehicle = async (vehicle) => {
+    const confirmed = window.confirm(
+      `Excluir o veículo ${vehicle.brand} ${vehicle.model}?`
+    );
+
+    if (!confirmed) return;
+
+    setActionLoadingPlate(vehicle.licensePlate);
+    setActionMsg('');
+    setErrorMsg('');
+
+    try {
+      await api.delete(`/vehicles/${vehicle.licensePlate}`);
+      setActionMsg(`${vehicle.brand} ${vehicle.model} excluído com sucesso.`);
+      await loadVehicles();
+    } catch (err) {
+      setErrorMsg(
+        getApiErrorMessage(err, 'Não foi possível excluir o veículo.')
+      );
+    } finally {
+      setActionLoadingPlate('');
+    }
+  };
+
   const availableCount = useMemo(
     () => countByVehicleStatus(vehicles, 'available'),
     [vehicles]
@@ -198,10 +255,6 @@ export default function AdminVehicles() {
     }
 
     return <span className="badge badge-cancelled">{status}</span>;
-  };
-
-  const handlePreviewSelect = () => {
-    // NOTE: no admin, o card entra como leitura visual da frota.
   };
 
   return (
@@ -287,8 +340,11 @@ export default function AdminVehicles() {
                     <VehicleCard
                       key={vehicle.id}
                       vehicle={vehicle}
-                      selected={false}
-                      onSelect={handlePreviewSelect}
+                      selected={detailsVehicle?.id === vehicle.id || selectedVehicle?.id === vehicle.id}
+                      onSelect={handleOpenVehicle}
+                      onSendMaintenance={handleSendToMaintenance}
+                      onCompleteMaintenance={handleCompleteMaintenance}
+                      onDeleteVehicle={handleDeleteVehicle}
                     />
                   ))}
                 </div>
@@ -315,97 +371,51 @@ export default function AdminVehicles() {
                       <th>Quilometragem</th>
                       <th>Próx. Manutenção</th>
                       <th>Status</th>
-                      <th>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {vehicles.map((vehicle) => {
-                      const isLoading = actionLoadingPlate === vehicle.licensePlate;
-                      const canSendToMaintenance =
-                        vehicle.status === 'available';
-                      const canCompleteMaintenance =
-                        vehicle.status === 'maintenance';
+                    {vehicles.map((vehicle) => (
+                      <tr key={vehicle.id}>
+                        <td>
+                          <span className="cell-main">
+                            {vehicle.brand} {vehicle.model}
+                          </span>
+                          <span className="cell-sub">
+                            {vehicle.fuelType} • {vehicle.transmissionType}
+                          </span>
+                        </td>
 
-                      return (
-                        <tr key={vehicle.id}>
-                          <td>
-                            <span className="cell-main">
-                              {vehicle.brand} {vehicle.model}
-                            </span>
-                            <span className="cell-sub">
-                              {vehicle.fuelType} • {vehicle.transmissionType}
-                            </span>
-                          </td>
+                        <td>
+                          <span className="license-plate">
+                            {vehicle.licensePlate}
+                          </span>
+                        </td>
 
-                          <td>
-                            <span className="license-plate">
-                              {vehicle.licensePlate}
-                            </span>
-                          </td>
+                        <td>
+                          <span className="cell-main">{vehicle.year}</span>
+                          <span className="cell-sub">{vehicle.color}</span>
+                        </td>
 
-                          <td>
-                            <span className="cell-main">{vehicle.year}</span>
-                            <span className="cell-sub">{vehicle.color}</span>
-                          </td>
+                        <td>
+                          <span className="cell-main">{vehicle.passengers}</span>
+                        </td>
 
-                          <td>
-                            <span className="cell-main">{vehicle.passengers}</span>
-                          </td>
+                        <td>
+                          <MaintBar
+                            mileage={vehicle.mileage}
+                            nextMaintenance={vehicle.nextMaintenance}
+                          />
+                        </td>
 
-                          <td>
-                            <MaintBar
-                              mileage={vehicle.mileage}
-                              nextMaintenance={vehicle.nextMaintenance}
-                            />
-                          </td>
+                        <td>
+                          <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                            {(vehicle.nextMaintenance || 0).toLocaleString()} km
+                          </span>
+                        </td>
 
-                          <td>
-                            <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-                              {(vehicle.nextMaintenance || 0).toLocaleString()} km
-                            </span>
-                          </td>
-
-                          <td>{getStatusBadge(vehicle.status)}</td>
-
-                          <td>
-                            {canSendToMaintenance ? (
-                              <button
-                                type="button"
-                                className="dashboard-linkBtn"
-                                onClick={() => handleSendToMaintenance(vehicle)}
-                                disabled={isLoading}
-                                style={{
-                                  minHeight: 36,
-                                  padding: '0 12px',
-                                  fontSize: '0.85rem',
-                                  background:
-                                    'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                                  boxShadow: '0 6px 18px rgba(245, 158, 11, 0.22)',
-                                }}
-                              >
-                                {isLoading ? 'Processando...' : 'Enviar manutenção'}
-                              </button>
-                            ) : canCompleteMaintenance ? (
-                              <button
-                                type="button"
-                                className="dashboard-linkBtn"
-                                onClick={() => handleCompleteMaintenance(vehicle)}
-                                disabled={isLoading}
-                                style={{
-                                  minHeight: 36,
-                                  padding: '0 12px',
-                                  fontSize: '0.85rem',
-                                }}
-                              >
-                                {isLoading ? 'Processando...' : 'Finalizar manutenção'}
-                              </button>
-                            ) : (
-                              <span className="cell-sub">Sem ação</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                        <td>{getStatusBadge(vehicle.status)}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -418,6 +428,18 @@ export default function AdminVehicles() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onCreated={handleVehicleCreated}
+      />
+
+      <VehicleDetailsModal
+        vehicle={detailsVehicle}
+        onClose={() => setDetailsVehicle(null)}
+        onReserve={handleReserveFromDetails}
+      />
+
+      <RentalRequestModal
+        vehicle={selectedVehicle}
+        onClose={() => setSelectedVehicle(null)}
+        onCreated={handleAdminRentalCreated}
       />
     </div>
   );

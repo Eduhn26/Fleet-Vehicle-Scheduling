@@ -59,6 +59,18 @@ const updateMileage = async (req, res, next) => {
   }
 };
 
+const deleteVehicle = async (req, res, next) => {
+  try {
+    const { licensePlate } = req.params;
+
+    const result = await vehicleService.deleteVehicle({ licensePlate });
+
+    return res.status(200).json({ data: result });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 const setMaintenanceStatus = async (req, res, next) => {
   try {
     const { licensePlate } = req.params;
@@ -97,4 +109,5 @@ module.exports = {
   updateMileage,
   setMaintenanceStatus,
   recordMaintenance,
+  deleteVehicle,
 };
