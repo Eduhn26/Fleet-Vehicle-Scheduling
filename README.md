@@ -1,12 +1,18 @@
 # Fleet Vehicle Scheduling
 
+![Node](https://img.shields.io/badge/Node.js-18+-green)
+![React](https://img.shields.io/badge/React-18-blue)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)
+![Deployment](https://img.shields.io/badge/Deployment-Render%20%7C%20Vercel-black)
+![License](https://img.shields.io/badge/License-MIT-blue)
+
 Full-stack fleet rental and vehicle scheduling system built with **Node.js**, **Express**, **MongoDB**, and **React**.
 
 The project focuses on software architecture, separation of concerns, and progressive system evolution, simulating how a real production system grows over time. Instead of implementing everything at once, the system is built through incremental engineering phases, each introducing new architectural capabilities.
 
 ---
 
-## 🚀 Live System
+# 🚀 Live System
 
 | Service | URL |
 |---|---|
@@ -16,7 +22,7 @@ The project focuses on software architecture, separation of concerns, and progre
 
 ---
 
-## 🧠 System Architecture
+# 🧠 System Architecture
 
 The application is deployed using a modern full-stack cloud architecture.
 
@@ -37,7 +43,24 @@ MongoDB Atlas
 
 ---
 
-## 🎯 Project Goals
+# ⚡ Tech Stack
+
+| Category | Stack |
+|---|---|
+| Backend | Node.js, Express |
+| Database | MongoDB Atlas |
+| ORM | Mongoose |
+| Authentication | JWT |
+| Frontend | React |
+| Routing | React Router |
+| API Client | Axios |
+| Hosting | Render |
+| Frontend Hosting | Vercel |
+| Tooling | ESLint, Prettier, Nodemon |
+
+---
+
+# 🎯 Project Goals
 
 This project was created as a full-stack architecture learning exercise, with a strong emphasis on backend system design.
 
@@ -54,7 +77,19 @@ Main goals:
 
 ---
 
-## 🔎 System Overview
+# 🧩 Why This Project Exists
+
+Most tutorials focus on isolated features.
+
+This project focuses on **system evolution and architecture discipline**.
+
+Instead of implementing everything at once, the system was built through **engineering phases**, simulating how real software evolves in production environments.
+
+Each phase introduced new architectural capabilities while preserving previous layers.
+
+---
+
+# 🔎 System Overview
 
 Fleet Vehicle Scheduling manages:
 
@@ -64,22 +99,24 @@ Fleet Vehicle Scheduling manages:
 - administrative approval workflows
 - reservation lifecycle management
 - role-based user access
+- vehicle mileage tracking
+- vehicle maintenance lifecycle
 
-The project follows a **backend-first** development strategy, where the API and business logic are implemented before the UI layer.
+The project follows a **backend-first development strategy**, where the API and business logic are implemented before the UI layer.
 
 ---
 
-## 🏗️ Backend Architecture
+# 🏗️ Backend Architecture
 
 The backend follows a layered architecture designed to isolate responsibilities.
 
-### Request Flow
+## Request Flow
 
 ```
 Route → Controller → Service → Database Model
 ```
 
-### Layer Responsibilities
+## Layer Responsibilities
 
 | Layer | Responsibility | Examples |
 |---|---|---|
@@ -88,27 +125,34 @@ Route → Controller → Service → Database Model
 | Services | Business logic | `createRental()`, `approveRequest()` |
 | Models | Database schemas | Mongoose schemas |
 
-### Backend Design Principles
+---
 
-**Service Isolation**
+## Backend Design Principles
+
+### Service Isolation
+
 Business rules live exclusively inside Services.
 
-**Thin Controllers**
+### Thin Controllers
+
 Controllers orchestrate calls but do not contain business logic.
 
-**Standardized Errors**
+### Standardized Errors
+
 Centralized `AppError` system ensures consistent API responses.
 
-**Validation Split**
+### Validation Split
+
 - Request structure → validated in middleware
 - Business rules → validated in Services
 
-**Lifecycle Protection**
+### Lifecycle Protection
+
 Reservation transitions are validated explicitly to prevent invalid state changes.
 
 ---
 
-## 🖥️ Frontend Architecture
+# 🖥️ Frontend Architecture
 
 The frontend is implemented with React and focuses on authentication, dashboards, and workflow interaction.
 
@@ -119,12 +163,16 @@ Core responsibilities:
 - role-based dashboards
 - API consumption
 - workflow interaction
+- fleet visualization dashboards
+- operational UI for administrators
 
-### Authentication System
+---
+
+## Authentication System
 
 Authentication uses JWT tokens.
 
-**Login Flow:**
+**Login Flow**
 
 ```
 User login
@@ -140,18 +188,46 @@ Axios attaches token to future requests
 
 Session state is managed through React Context (`AuthContext`).
 
-### Routing & Navigation
+---
+
+## Routing & Navigation
 
 | Feature | Description |
 |---|---|
-| `PrivateRoute` | Prevents access to protected pages |
+| PrivateRoute | Prevents access to protected pages |
 | Role-Based Navigation | Admin vs User dashboards |
 | Central Layout | Shared UI components |
 | Axios Interceptors | Injects JWT and handles 401 logout |
 
 ---
 
-## 📂 Project Structure
+# 🚗 Fleet Lifecycle Model
+
+The system models the **complete operational lifecycle of fleet vehicles**.
+
+```
+Vehicle Available
+        ↓
+Reservation Requested
+        ↓
+Admin Approval
+        ↓
+Vehicle In Use
+        ↓
+Return Request (Mileage Submitted)
+        ↓
+Admin Confirmation
+        ↓
+Mileage Update
+        ↓
+Maintenance Check
+```
+
+If the return mileage exceeds the maintenance threshold, the vehicle automatically moves to **maintenance status**.
+
+---
+
+# 📂 Project Structure
 
 ```
 fleet-vehicle-scheduling/
@@ -192,40 +268,62 @@ fleet-vehicle-scheduling/
 │   ├── phase-4.md
 │   ├── phase-5.md
 │   ├── phase-6.md
-│   └── phase-7.md
+│   ├── phase-7.md
+│   ├── phase-8.md
+│   └── phase-9.md
 │
 └── README.md
 ```
 
 ---
 
-## 🛠 Development Utilities
+# 🖥️ Application Screenshots
+
+### Admin Fleet Dashboard
+
+![Admin Dashboard](docs/screenshots/admin-dashboard.png)
+
+### Vehicle Management
+
+![Vehicles](docs/screenshots/vehicles.png)
+
+### Reservation Workflow
+
+![Reservations](docs/screenshots/reservations.png)
+
+---
+
+# 🛠 Development Utilities
 
 Helper scripts exist for debugging and development.
 
 **List users**
+
 ```bash
 node backend/scripts/list-users.js
 ```
 
 **Reset admin password**
+
 ```bash
 node backend/scripts/reset-admin-password.js <email> <newPassword>
 ```
 
 **Vehicle smoke test**
+
 ```bash
 node backend/scripts/smoke-vehicle.js
 ```
 
 **Rental smoke test**
+
 ```bash
 node backend/scripts/smoke-rental.js
 ```
 
 ---
 
-## 🚀 Engineering Phases
+# 🚀 Engineering Phases
 
 The system evolved through incremental architectural phases.
 
@@ -239,10 +337,11 @@ The system evolved through incremental architectural phases.
 | Phase 6 | Reservation lifecycle rules |
 | Phase 7 | UX improvements and admin workflow |
 | Phase 8 | Production deployment |
+| Phase 9 | Fleet lifecycle management and admin fleet operations |
 
 ---
 
-## ⚙️ Current Capabilities
+# ⚙️ Current Capabilities
 
 The system currently supports:
 
@@ -254,31 +353,14 @@ The system currently supports:
 - scheduling conflict protection
 - lifecycle validation
 - defensive frontend UX states
+- vehicle fleet management
+- vehicle maintenance lifecycle
+- vehicle mileage tracking
+- return workflow with administrative confirmation
 
 ---
 
-## ✅ Reservation Lifecycle
-
-```
-User creates reservation
-        ↓
-Status = pending
-        ↓
-Admin reviews request
-        ↓
-Approve or Reject
-        ↓
-Approved reservations block schedule conflicts
-        ↓
-User can cancel approved reservations
-```
-
-**Example enforced rule:**
-An approved reservation prevents overlapping reservations for the same vehicle.
-
----
-
-## 💻 Technology Stack
+# 💻 Technology Stack
 
 | Layer | Technology |
 |---|---|
@@ -291,7 +373,7 @@ An approved reservation prevents overlapping reservations for the same vehicle.
 
 ---
 
-## 🧠 Learning Focus
+# 🧠 Learning Focus
 
 This project prioritizes **architecture and engineering practices** over rapid feature delivery.
 
@@ -303,12 +385,14 @@ Focus areas:
 - API design
 - lifecycle modeling
 - scheduling conflict validation
+- fleet lifecycle management
+- operational dashboards
 - scalable project structure
 - real production deployment
 
 ---
 
-## 👨‍💻 Author
+# 👨‍💻 Author
 
 **Eduardo Henrique**
 
