@@ -16,7 +16,7 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "eslint": "^10.0.2",
+    "eslint": "^8.57.1",
     "eslint-config-prettier": "^10.1.8",
     "jest": "^30.0.5",
     "mongodb-memory-server": "^10.1.4",
