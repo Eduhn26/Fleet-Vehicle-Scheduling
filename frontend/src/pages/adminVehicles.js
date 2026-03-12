@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import VehicleCard from '../components/VehicleCard';
+import AddVehicleModal from '../components/AddVehicleModal';
 import '../styles/dashboard.css';
 
 function safeArray(value) {
@@ -57,11 +58,31 @@ export default function AdminVehicles() {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const [actionMsg, setActionMsg] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [actionLoadingPlate, setActionLoadingPlate] = useState('');
+
+  const loadVehicles = async () => {
+    setLoading(true);
+    setErrorMsg('');
+
+    try {
+      const res = await api.get('/vehicles');
+      const data = safeArray(res?.data?.data ?? res?.data);
+      setVehicles(data);
+    } catch (err) {
+      setErrorMsg(
+        getApiErrorMessage(err, 'Não foi possível carregar os veículos.')
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let alive = true;
 
-    async function loadVehicles() {
+    async function loadInitial() {
       setLoading(true);
       setErrorMsg('');
 
@@ -74,6 +95,7 @@ export default function AdminVehicles() {
         setVehicles(data);
       } catch (err) {
         if (!alive) return;
+
         setErrorMsg(
           getApiErrorMessage(err, 'Não foi possível carregar os veículos.')
         );
@@ -83,12 +105,69 @@ export default function AdminVehicles() {
       }
     }
 
-    loadVehicles();
+    loadInitial();
 
     return () => {
       alive = false;
     };
   }, []);
+
+  const handleVehicleCreated = async () => {
+    setActionMsg('Veículo cadastrado com sucesso.');
+    setIsAddModalOpen(false);
+    await loadVehicles();
+  };
+
+  const handleSendToMaintenance = async (vehicle) => {
+    setActionLoadingPlate(vehicle.licensePlate);
+    setActionMsg('');
+    setErrorMsg('');
+
+    try {
+      await api.patch(`/vehicles/${vehicle.licensePlate}/status`, {
+        status: 'maintenance',
+      });
+
+      setActionMsg(
+        `${vehicle.brand} ${vehicle.model} enviado para manutenção com sucesso.`
+      );
+      await loadVehicles();
+    } catch (err) {
+      setErrorMsg(
+        getApiErrorMessage(err, 'Não foi possível enviar o veículo para manutenção.')
+      );
+    } finally {
+      setActionLoadingPlate('');
+    }
+  };
+
+  const handleCompleteMaintenance = async (vehicle) => {
+    setActionLoadingPlate(vehicle.licensePlate);
+    setActionMsg('');
+    setErrorMsg('');
+
+    try {
+      const suggestedNextMaintenance = Math.max(
+        (vehicle.mileage || 0) + 20000,
+        (vehicle.nextMaintenance || 0) + 20000
+      );
+
+      await api.patch(`/vehicles/${vehicle.licensePlate}/maintenance`, {
+        newNextMaintenance: suggestedNextMaintenance,
+      });
+
+      setActionMsg(
+        `${vehicle.brand} ${vehicle.model} teve a manutenção registrada com sucesso.`
+      );
+      await loadVehicles();
+    } catch (err) {
+      setErrorMsg(
+        getApiErrorMessage(err, 'Não foi possível finalizar a manutenção do veículo.')
+      );
+    } finally {
+      setActionLoadingPlate('');
+    }
+  };
 
   const availableCount = useMemo(
     () => countByVehicleStatus(vehicles, 'available'),
@@ -134,8 +213,23 @@ export default function AdminVehicles() {
             Visão operacional da frota cadastrada.
           </div>
         </div>
+
+        <div className="dashboard-actions">
+          <button
+            type="button"
+            className="dashboard-linkBtn"
+            onClick={() => {
+              setActionMsg('');
+              setErrorMsg('');
+              setIsAddModalOpen(true);
+            }}
+          >
+            Novo veículo
+          </button>
+        </div>
       </div>
 
+      {actionMsg && <div className="alert alert-info">{actionMsg}</div>}
       {loading && <div className="alert alert-info">Carregando veículos...</div>}
       {!loading && errorMsg && <div className="alert alert-error">{errorMsg}</div>}
 
@@ -221,51 +315,97 @@ export default function AdminVehicles() {
                       <th>Quilometragem</th>
                       <th>Próx. Manutenção</th>
                       <th>Status</th>
+                      <th>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {vehicles.map((vehicle) => (
-                      <tr key={vehicle.id}>
-                        <td>
-                          <span className="cell-main">
-                            {vehicle.brand} {vehicle.model}
-                          </span>
-                          <span className="cell-sub">
-                            {vehicle.fuelType} • {vehicle.transmissionType}
-                          </span>
-                        </td>
+                    {vehicles.map((vehicle) => {
+                      const isLoading = actionLoadingPlate === vehicle.licensePlate;
+                      const canSendToMaintenance =
+                        vehicle.status === 'available';
+                      const canCompleteMaintenance =
+                        vehicle.status === 'maintenance';
 
-                        <td>
-                          <span className="license-plate">
-                            {vehicle.licensePlate}
-                          </span>
-                        </td>
+                      return (
+                        <tr key={vehicle.id}>
+                          <td>
+                            <span className="cell-main">
+                              {vehicle.brand} {vehicle.model}
+                            </span>
+                            <span className="cell-sub">
+                              {vehicle.fuelType} • {vehicle.transmissionType}
+                            </span>
+                          </td>
 
-                        <td>
-                          <span className="cell-main">{vehicle.year}</span>
-                          <span className="cell-sub">{vehicle.color}</span>
-                        </td>
+                          <td>
+                            <span className="license-plate">
+                              {vehicle.licensePlate}
+                            </span>
+                          </td>
 
-                        <td>
-                          <span className="cell-main">{vehicle.passengers}</span>
-                        </td>
+                          <td>
+                            <span className="cell-main">{vehicle.year}</span>
+                            <span className="cell-sub">{vehicle.color}</span>
+                          </td>
 
-                        <td>
-                          <MaintBar
-                            mileage={vehicle.mileage}
-                            nextMaintenance={vehicle.nextMaintenance}
-                          />
-                        </td>
+                          <td>
+                            <span className="cell-main">{vehicle.passengers}</span>
+                          </td>
 
-                        <td>
-                          <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-                            {(vehicle.nextMaintenance || 0).toLocaleString()} km
-                          </span>
-                        </td>
+                          <td>
+                            <MaintBar
+                              mileage={vehicle.mileage}
+                              nextMaintenance={vehicle.nextMaintenance}
+                            />
+                          </td>
 
-                        <td>{getStatusBadge(vehicle.status)}</td>
-                      </tr>
-                    ))}
+                          <td>
+                            <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                              {(vehicle.nextMaintenance || 0).toLocaleString()} km
+                            </span>
+                          </td>
+
+                          <td>{getStatusBadge(vehicle.status)}</td>
+
+                          <td>
+                            {canSendToMaintenance ? (
+                              <button
+                                type="button"
+                                className="dashboard-linkBtn"
+                                onClick={() => handleSendToMaintenance(vehicle)}
+                                disabled={isLoading}
+                                style={{
+                                  minHeight: 36,
+                                  padding: '0 12px',
+                                  fontSize: '0.85rem',
+                                  background:
+                                    'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                  boxShadow: '0 6px 18px rgba(245, 158, 11, 0.22)',
+                                }}
+                              >
+                                {isLoading ? 'Processando...' : 'Enviar manutenção'}
+                              </button>
+                            ) : canCompleteMaintenance ? (
+                              <button
+                                type="button"
+                                className="dashboard-linkBtn"
+                                onClick={() => handleCompleteMaintenance(vehicle)}
+                                disabled={isLoading}
+                                style={{
+                                  minHeight: 36,
+                                  padding: '0 12px',
+                                  fontSize: '0.85rem',
+                                }}
+                              >
+                                {isLoading ? 'Processando...' : 'Finalizar manutenção'}
+                              </button>
+                            ) : (
+                              <span className="cell-sub">Sem ação</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -273,6 +413,12 @@ export default function AdminVehicles() {
           </div>
         </div>
       )}
+
+      <AddVehicleModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onCreated={handleVehicleCreated}
+      />
     </div>
   );
 }
