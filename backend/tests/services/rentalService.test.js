@@ -10,6 +10,7 @@ const {
   FUEL_TYPE,
 } = require('../../src/models/Vehicle');
 const { RentalRequest, RENTAL_STATUS } = require('../../src/models/RentalRequest');
+const { VehicleMileageHistory } = require('../../src/models/VehicleMileageHistory');
 
 const { expectAppError } = require('../helpers/appErrorAssert');
 
@@ -62,6 +63,7 @@ describe('rentalService', () => {
 
   afterEach(async () => {
     await Promise.all([
+      VehicleMileageHistory.deleteMany({}),
       RentalRequest.deleteMany({}),
       User.deleteMany({}),
       Vehicle.deleteMany({}),
@@ -260,6 +262,201 @@ describe('rentalService', () => {
         rentalService.approveRequest({
           requestId: created.id,
           adminNotes: 'Approve indevido',
+        }),
+        {
+          statusCode: 409,
+        }
+      );
+    });
+  });
+
+  describe('requestReturn', () => {
+    it('moves an approved rental to return_pending and stores requested mileage', async () => {
+      const user = await User.create(buildUserPayload({ role: USER_ROLE.USER }));
+      const vehicle = await Vehicle.create(buildVehiclePayload({ mileage: 4500 }));
+
+      const created = await rentalService.createRequest({
+        userId: user._id.toString(),
+        vehicleId: vehicle._id.toString(),
+        startDate: buildFutureDate(10),
+        endDate: buildFutureDate(12),
+        purpose: 'Teste request return',
+      });
+
+      await rentalService.approveRequest({
+        requestId: created.id,
+        adminNotes: 'Aprovado para devolução',
+      });
+
+      const updated = await rentalService.requestReturn({
+        requestId: created.id,
+        userId: user._id.toString(),
+        mileage: 4800,
+        returnNotes: 'Retorno sem avarias',
+      });
+
+      expect(updated.status).toBe(RENTAL_STATUS.RETURN_PENDING);
+      expect(updated.returnRequestedMileage).toBe(4800);
+      expect(updated.returnNotes).toBe('Retorno sem avarias');
+
+      const persisted = await RentalRequest.findById(created.id);
+      expect(persisted.status).toBe(RENTAL_STATUS.RETURN_PENDING);
+      expect(persisted.returnRequestedMileage).toBe(4800);
+      expect(persisted.returnRequestedAt).toBeTruthy();
+    });
+
+    it('blocks return request with mileage lower than current vehicle mileage', async () => {
+      const user = await User.create(buildUserPayload({ role: USER_ROLE.USER }));
+      const vehicle = await Vehicle.create(buildVehiclePayload({ mileage: 4500 }));
+
+      const created = await rentalService.createRequest({
+        userId: user._id.toString(),
+        vehicleId: vehicle._id.toString(),
+        startDate: buildFutureDate(10),
+        endDate: buildFutureDate(12),
+        purpose: 'Teste km inválido',
+      });
+
+      await rentalService.approveRequest({
+        requestId: created.id,
+        adminNotes: 'Aprovado para teste',
+      });
+
+      await expectAppError(
+        rentalService.requestReturn({
+          requestId: created.id,
+          userId: user._id.toString(),
+          mileage: 4400,
+          returnNotes: 'KM inválido',
+        }),
+        {
+          statusCode: 409,
+        }
+      );
+    });
+  });
+
+  describe('completeRental', () => {
+    it('completes the rental, updates vehicle mileage and writes mileage history', async () => {
+      const user = await User.create(buildUserPayload({ role: USER_ROLE.USER }));
+      const vehicle = await Vehicle.create(
+        buildVehiclePayload({
+          mileage: 4500,
+          nextMaintenance: 30000,
+          lastMaintenanceMileage: 0,
+        })
+      );
+
+      const created = await rentalService.createRequest({
+        userId: user._id.toString(),
+        vehicleId: vehicle._id.toString(),
+        startDate: buildFutureDate(10),
+        endDate: buildFutureDate(12),
+        purpose: 'Teste complete rental',
+      });
+
+      await rentalService.approveRequest({
+        requestId: created.id,
+        adminNotes: 'Aprovado para conclusão',
+      });
+
+      await rentalService.requestReturn({
+        requestId: created.id,
+        userId: user._id.toString(),
+        mileage: 4900,
+        returnNotes: 'Solicitando conclusão',
+      });
+
+      const completed = await rentalService.completeRental({
+        requestId: created.id,
+        adminNotes: 'Concluído pelo admin',
+      });
+
+      expect(completed.status).toBe(RENTAL_STATUS.COMPLETED);
+      expect(completed.actualMileage).toBe(4900);
+
+      const persistedRental = await RentalRequest.findById(created.id);
+      expect(persistedRental.status).toBe(RENTAL_STATUS.COMPLETED);
+      expect(persistedRental.actualMileage).toBe(4900);
+      expect(persistedRental.completedAt).toBeTruthy();
+
+      const updatedVehicle = await Vehicle.findById(vehicle._id);
+      expect(updatedVehicle.mileage).toBe(4900);
+      expect(updatedVehicle.status).toBe(VEHICLE_STATUS.AVAILABLE);
+
+      const history = await VehicleMileageHistory.findOne({
+        rental: created.id,
+        vehicle: vehicle._id,
+      });
+
+      expect(history).not.toBeNull();
+      expect(history.previousMileage).toBe(4500);
+      expect(history.newMileage).toBe(4900);
+    });
+
+    it('moves vehicle to maintenance when returned mileage reaches maintenance threshold', async () => {
+      const user = await User.create(buildUserPayload({ role: USER_ROLE.USER }));
+      const vehicle = await Vehicle.create(
+        buildVehiclePayload({
+          mileage: 29500,
+          nextMaintenance: 30000,
+          lastMaintenanceMileage: 0,
+        })
+      );
+
+      const created = await rentalService.createRequest({
+        userId: user._id.toString(),
+        vehicleId: vehicle._id.toString(),
+        startDate: buildFutureDate(10),
+        endDate: buildFutureDate(12),
+        purpose: 'Teste manutenção automática',
+      });
+
+      await rentalService.approveRequest({
+        requestId: created.id,
+        adminNotes: 'Aprovado para manutenção',
+      });
+
+      await rentalService.requestReturn({
+        requestId: created.id,
+        userId: user._id.toString(),
+        mileage: 30000,
+        returnNotes: 'Bateu threshold',
+      });
+
+      const completed = await rentalService.completeRental({
+        requestId: created.id,
+        adminNotes: 'Concluído e enviado para manutenção',
+      });
+
+      expect(completed.status).toBe(RENTAL_STATUS.COMPLETED);
+
+      const updatedVehicle = await Vehicle.findById(vehicle._id);
+      expect(updatedVehicle.mileage).toBe(30000);
+      expect(updatedVehicle.status).toBe(VEHICLE_STATUS.MAINTENANCE);
+    });
+
+    it('blocks completion when rental is not in return_pending', async () => {
+      const user = await User.create(buildUserPayload({ role: USER_ROLE.USER }));
+      const vehicle = await Vehicle.create(buildVehiclePayload());
+
+      const created = await rentalService.createRequest({
+        userId: user._id.toString(),
+        vehicleId: vehicle._id.toString(),
+        startDate: buildFutureDate(10),
+        endDate: buildFutureDate(12),
+        purpose: 'Teste conclusão inválida',
+      });
+
+      await rentalService.approveRequest({
+        requestId: created.id,
+        adminNotes: 'Aprovado sem return',
+      });
+
+      await expectAppError(
+        rentalService.completeRental({
+          requestId: created.id,
+          adminNotes: 'Tentativa inválida',
         }),
         {
           statusCode: 409,
