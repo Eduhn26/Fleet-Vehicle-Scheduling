@@ -2,6 +2,7 @@ const { RentalRequest, RENTAL_STATUS } = require('../models/RentalRequest');
 const { Vehicle, VEHICLE_STATUS } = require('../models/Vehicle');
 const { User } = require('../models/User');
 const AppError = require('../utils/AppError');
+const { VehicleMileageHistory } = require('../models/VehicleMileageHistory');
 
 const fail = (message, statusCode) => {
   throw new AppError(message, statusCode);
@@ -308,6 +309,8 @@ const completeRental = async ({ requestId, adminNotes }) => {
     fail('KM informado não pode ser menor que o atual do veículo', 409);
   }
 
+  const previousMileage = vehicle.mileage;
+
   vehicle.mileage = km;
 
   if (vehicle.nextMaintenance && km >= vehicle.nextMaintenance) {
@@ -315,6 +318,13 @@ const completeRental = async ({ requestId, adminNotes }) => {
   }
 
   await vehicle.save();
+
+  await VehicleMileageHistory.create({
+    vehicle: vehicle._id,
+    rental: request._id,
+    previousMileage,
+    newMileage: km,
+  });
 
   request.status = RENTAL_STATUS.COMPLETED;
   request.actualMileage = km;
