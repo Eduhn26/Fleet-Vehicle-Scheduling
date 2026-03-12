@@ -16,9 +16,9 @@ This phase establishes the project as a **real production-running full-stack sys
 
 ---
 
-# 🧱 Core Components Implemented
+## 🧱 Core Components Implemented
 
-## Backend Deployment (Render)
+### Backend Deployment (Render)
 
 Business rules validated in production:
 
@@ -34,7 +34,7 @@ Real risks prevented:
 
 ---
 
-## Frontend Deployment (Vercel)
+### Frontend Deployment (Vercel)
 
 Business rules validated:
 
@@ -50,7 +50,7 @@ Real risks prevented:
 
 ---
 
-# 🛡️ Structural or Architectural Additions
+## 🛡️ Structural or Architectural Additions
 
 Introduced new mechanisms:
 
@@ -59,7 +59,7 @@ Introduced new mechanisms:
 - MongoDB Atlas network access configuration
 - Health check endpoint verification
 
-Architectural decision:
+**Architectural decision:**
 
 > Infrastructure services (hosting and database) remain external to the application architecture and are configured through environment variables, preserving backend code portability.
 
@@ -67,13 +67,11 @@ This ensures that the system can be redeployed across different environments wit
 
 ---
 
-# 🔍 Debugging & Production Issues Solved
+## 🔍 Debugging & Production Issues Solved
 
 Several real production deployment issues were discovered and resolved during this phase.
 
----
-
-## Missing Environment Variables
+### Missing Environment Variables
 
 **Problem**
 
@@ -85,7 +83,7 @@ Environment variables were configured directly in the Render service environment
 
 ---
 
-## MongoDB Atlas Network Access
+### MongoDB Atlas Network Access
 
 **Problem**
 
@@ -97,7 +95,7 @@ MongoDB Atlas Network Access was configured to allow external connections.
 
 ---
 
-## Incorrect Frontend API URL
+### Incorrect Frontend API URL
 
 **Problem**
 
@@ -107,81 +105,68 @@ Frontend initially attempted to call `localhost` APIs in production.
 
 A production environment variable was created:
 
-
-REACT_APP_API_URL
-
-
-Pointing to:
-
-
-https://fleet-vehicle-scheduling.onrender.com/api
-
+```text
+REACT_APP_API_URL=https://fleet-vehicle-scheduling.onrender.com/api
+```
 
 ---
 
-## Backend Health Verification
+### Backend Health Verification
 
 To confirm the backend was properly running in production, the health endpoint was validated:
 
-
+```text
 /api/health
-
+```
 
 This allowed fast operational verification during deployment debugging.
 
 ---
 
-# 🌐 Final Production Architecture
+## 🌐 Final Production Architecture
 
 The system now runs in a distributed cloud environment.
 
-
+```
 User Browser
-↓
+     ↓
 Vercel (React Frontend)
-↓
+     ↓
 Render (Node.js API)
-↓
+     ↓
 MongoDB Atlas (Database)
-
+```
 
 Each layer runs independently and communicates through HTTP APIs.
 
 ---
 
-# 📂 Main Files Touched
+## 📂 Main Files Touched
 
-## Backend
-
+**Backend**
 - `backend/server.js`
 - `backend/.env.example`
 
-## Frontend
-
+**Frontend**
 - `frontend/src/services/api.js`
 
-## Infrastructure
-
+**Infrastructure**
 - Render service configuration
 - Vercel deployment configuration
 - MongoDB Atlas cluster configuration
 
 ---
 
-# 🧪 Validation Performed
+## 🧪 Validation Performed
 
 Deployment validation included:
 
-## Smoke Tests
-
+**Smoke Tests**
 - Backend API startup
 - MongoDB connection verification
 - Health endpoint response
 
----
-
-## Manual Tests
-
+**Manual Tests**
 - User login
 - JWT authentication
 - User dashboard access
@@ -191,17 +176,17 @@ Deployment validation included:
 - Reservation approval / rejection
 - Reservation cancellation
 
-Full flow validation:
+**Full flow validation:**
 
-
+```
 Frontend → Backend → Database
-
+```
 
 All systems operated successfully in production.
 
 ---
 
-# 🧠 Key Engineering Lessons
+## 🧠 Key Engineering Lessons
 
 This phase introduced practical experience with:
 
@@ -215,7 +200,7 @@ Most importantly, it demonstrated how a locally developed system transitions int
 
 ---
 
-# 🚀 Phase Outcome
+## 🚀 Phase Outcome
 
 At the end of Phase 8:
 
@@ -225,4 +210,4 @@ At the end of Phase 8:
 - Full system is publicly accessible online
 - All core workflows operate successfully in production
 
-The project has now transitioned from development architecture to **production-running software**.
+The project has now transitioned from **development architecture** to **production-running software**.

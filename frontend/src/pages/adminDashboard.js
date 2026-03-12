@@ -13,12 +13,80 @@ function countByStatus(items, status) {
 
 function getApiErrorMessage(err, fallbackMessage) {
   const apiMessage = err?.response?.data?.error?.message;
-
-  if (apiMessage) {
-    return apiMessage;
-  }
-
+  if (apiMessage) return apiMessage;
   return fallbackMessage;
+}
+
+/* ── SVG Icons ──────────────────────────────────────────────── */
+const IconFleet = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="1" y="3" width="15" height="13" rx="2"/>
+    <path d="M16 8h4l3 3v5h-7V8z"/>
+    <circle cx="5.5" cy="18.5" r="2.5"/>
+    <circle cx="18.5" cy="18.5" r="2.5"/>
+  </svg>
+);
+
+const IconClock = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <polyline points="12 6 12 12 16 14"/>
+  </svg>
+);
+
+const IconCheck = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+    <polyline points="22 4 12 14.01 9 11.01"/>
+  </svg>
+);
+
+const IconReturn = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 10 4 15 9 20"/>
+    <path d="M20 4v7a4 4 0 0 1-4 4H4"/>
+  </svg>
+);
+
+const IconX = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="15" y1="9" x2="9" y2="15"/>
+    <line x1="9" y1="9" x2="15" y2="15"/>
+  </svg>
+);
+
+const IconSlash = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+  </svg>
+);
+
+/* ── StatCard ───────────────────────────────────────────────── */
+function StatCard({ title, value, label, badge, accent, icon, iconBg, iconColor, onClick }) {
+  return (
+    <div
+      className="card"
+      style={accent ? { borderTop: `3px solid ${accent}`, cursor: onClick ? 'pointer' : 'default' } : { cursor: onClick ? 'pointer' : 'default' }}
+      onClick={onClick}
+    >
+      <div className="card-titleRow">
+        <div className="card-title">{title}</div>
+        {icon && (
+          <div className="card-iconWrapper" style={{ background: iconBg, color: iconColor }}>
+            {icon}
+          </div>
+        )}
+        {badge && !icon && badge}
+      </div>
+
+      <div className="card-kpi">{value}</div>
+      <div className="card-meta">{label}</div>
+
+      {badge && icon && <div style={{ marginTop: 12 }}>{badge}</div>}
+    </div>
+  );
 }
 
 export default function AdminDashboard() {
@@ -49,6 +117,7 @@ export default function AdminDashboard() {
         setRentals(rentalsData);
       } catch (err) {
         if (!alive) return;
+
         setErrorMsg(
           getApiErrorMessage(err, 'Não foi possível carregar o dashboard administrativo.')
         );
@@ -67,6 +136,7 @@ export default function AdminDashboard() {
 
   const pendingCount = useMemo(() => countByStatus(rentals, 'pending'), [rentals]);
   const approvedCount = useMemo(() => countByStatus(rentals, 'approved'), [rentals]);
+  const returnPendingCount = useMemo(() => countByStatus(rentals, 'return_pending'), [rentals]);
   const rejectedCount = useMemo(() => countByStatus(rentals, 'rejected'), [rentals]);
   const cancelledCount = useMemo(() => countByStatus(rentals, 'cancelled'), [rentals]);
 
@@ -91,69 +161,95 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {loading && <div className="alert alert-info">Carregando indicadores...</div>}
+      {loading && (
+        <div className="alert alert-info">
+          Carregando indicadores...
+        </div>
+      )}
 
-      {!loading && errorMsg && <div className="alert alert-error">{errorMsg}</div>}
+      {!loading && errorMsg && (
+        <div className="alert alert-error">
+          {errorMsg}
+        </div>
+      )}
 
       {!loading && !errorMsg && (
-        <>
-          <div className="dashboard-grid">
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Frota</div>
-              </div>
-              <div className="card-kpi">{vehicles.length}</div>
-              <div className="card-meta">Veículos cadastrados no sistema</div>
+        <div className="dashboard-grid">
+          <StatCard
+            title="Frota"
+            value={vehicles.length}
+            label="Veículos cadastrados no sistema"
+            icon={<IconFleet />}
+            iconBg="rgba(37, 99, 235, 0.1)"
+            iconColor="#2563eb"
+          />
+
+          <StatCard
+            title="Pendentes"
+            value={pendingCount}
+            label="Solicitações aguardando decisão"
+            accent="#f59e0b"
+            icon={<IconClock />}
+            iconBg="rgba(245, 158, 11, 0.1)"
+            iconColor="#d97706"
+            badge={<span className="badge badge-pending">Pendente</span>}
+          />
+
+          <StatCard
+            title="Aprovadas"
+            value={approvedCount}
+            label="Reservas confirmadas operacionalmente"
+            accent="#059669"
+            icon={<IconCheck />}
+            iconBg="rgba(5, 150, 105, 0.1)"
+            iconColor="#059669"
+            badge={<span className="badge badge-approved">Aprovado</span>}
+          />
+
+          <StatCard
+            title="Devoluções"
+            value={returnPendingCount}
+            label="Veículos aguardando confirmação de devolução"
+            accent="#2563eb"
+            icon={<IconReturn />}
+            iconBg="rgba(37, 99, 235, 0.1)"
+            iconColor="#2563eb"
+            badge={<span className="badge badge-pending">Devolução</span>}
+          />
+
+          <StatCard
+            title="Rejeitadas"
+            value={rejectedCount}
+            label="Solicitações encerradas por negativa"
+            accent="#dc2626"
+            icon={<IconX />}
+            iconBg="rgba(220, 38, 38, 0.1)"
+            iconColor="#dc2626"
+            badge={<span className="badge badge-rejected">Rejeitado</span>}
+          />
+
+          <StatCard
+            title="Canceladas"
+            value={cancelledCount}
+            label="Reservas canceladas após criação/aprovação"
+            icon={<IconSlash />}
+            iconBg="rgba(100, 116, 139, 0.1)"
+            iconColor="#64748b"
+            badge={<span className="badge badge-cancelled">Cancelado</span>}
+          />
+
+          <div className="card card-wide">
+            <div className="card-titleRow">
+              <div className="card-title">Próximas ações</div>
             </div>
 
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Pendentes</div>
-                <span className="badge badge-pending">Pending</span>
-              </div>
-              <div className="card-kpi">{pendingCount}</div>
-              <div className="card-meta">Solicitações aguardando decisão</div>
-            </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Aprovadas</div>
-                <span className="badge badge-approved">Approved</span>
-              </div>
-              <div className="card-kpi">{approvedCount}</div>
-              <div className="card-meta">Reservas confirmadas operacionalmente</div>
-            </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Rejeitadas</div>
-                <span className="badge badge-rejected">Rejected</span>
-              </div>
-              <div className="card-kpi">{rejectedCount}</div>
-              <div className="card-meta">Solicitações encerradas por negativa</div>
-            </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Canceladas</div>
-                <span className="badge badge-cancelled">Cancelled</span>
-              </div>
-              <div className="card-kpi">{cancelledCount}</div>
-              <div className="card-meta">Reservas canceladas após criação/aprovação</div>
-            </div>
-
-            <div className="card card-wide">
-              <div className="card-titleRow">
-                <div className="card-title">Próximas ações</div>
-              </div>
-
-              <div className="card-meta">
-                Use a tela de <strong>Veículos</strong> para acompanhar a frota e a tela de
-                <strong> Solicitações</strong> para operar approve/reject do fluxo administrativo.
-              </div>
+            <div className="card-meta">
+              Use a tela de <strong>Veículos</strong> para acompanhar a frota e a tela de{' '}
+              <strong>Solicitações</strong> para operar aprovação, rejeição e confirmação
+              das devoluções dos veículos.
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

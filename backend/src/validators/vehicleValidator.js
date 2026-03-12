@@ -24,6 +24,13 @@ const createVehicleSchema = z.object({
   passengers: z.number().int().min(1).max(15),
   nextMaintenance: z.number().min(0),
   lastMaintenanceMileage: z.number().min(0).optional().default(0),
+
+  imageUrl: z
+    .string()
+    .trim()
+    .url('imageUrl deve ser uma URL válida')
+    .optional()
+    .or(z.literal('')),
 });
 
 const updateMileageSchema = z.object({

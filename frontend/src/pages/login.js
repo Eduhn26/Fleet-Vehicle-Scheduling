@@ -28,24 +28,20 @@ export default function Login() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = async (e) => {
     e.preventDefault();
-
     setError('');
     setIsSubmitting(true);
 
     try {
       await login(email, password);
 
-      // NOTE: usamos localStorage como fonte imediata para evitar depender do timing do setState do contexto.
       const user = safeParseUser();
       const role = String(user?.role || '').trim();
 
-      // NOTE: rotas são placeholders; serão finalizadas na micro-etapa de App.js/rotas protegidas.
       if (role === 'admin') return navigate('/admin', { replace: true });
       return navigate('/user', { replace: true });
     } catch (err) {
@@ -59,7 +55,8 @@ export default function Login() {
     <div className="login-page">
       <form className="login-card" onSubmit={onSubmit}>
         <header className="login-header">
-          <h1 className="login-title">Frota Manager</h1>
+          <div className="login-badge">FM</div>
+          <h1 className="login-title">Fleet Manager</h1>
           <p className="login-subtitle">Acesse sua conta para continuar.</p>
         </header>
 

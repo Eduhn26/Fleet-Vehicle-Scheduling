@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
+import VehicleCard from '../components/VehicleCard';
+import AddVehicleModal from '../components/AddVehicleModal';
+import RentalRequestModal from '../components/RentalRequestModal';
+import VehicleDetailsModal from '../components/VehicleDetailsModal';
 import '../styles/dashboard.css';
 
 function safeArray(value) {
@@ -8,27 +12,81 @@ function safeArray(value) {
 
 function getApiErrorMessage(err, fallbackMessage) {
   const apiMessage = err?.response?.data?.error?.message;
-
-  if (apiMessage) {
-    return apiMessage;
-  }
-
+  if (apiMessage) return apiMessage;
   return fallbackMessage;
 }
 
 function countByVehicleStatus(vehicles, status) {
-  return safeArray(vehicles).filter((vehicle) => vehicle?.status === status).length;
+  return safeArray(vehicles).filter((v) => v?.status === status).length;
+}
+
+function MaintBar({ mileage, nextMaintenance }) {
+  const pct = Math.min(
+    Math.round(((mileage || 0) / (nextMaintenance || 30000)) * 100),
+    100
+  );
+
+  let color = '#059669';
+  if (pct > 75) color = '#d97706';
+  if (pct >= 95) color = '#dc2626';
+
+  return (
+    <div style={{ minWidth: 90 }}>
+      <div
+        style={{
+          fontSize: '0.72rem',
+          color: '#94a3b8',
+          marginBottom: 4,
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontWeight: 600,
+        }}
+      >
+        <span>{(mileage || 0).toLocaleString()} km</span>
+        <span>{pct}%</span>
+      </div>
+
+      <div className="maint-bar-track">
+        <div
+          className="maint-bar-fill"
+          style={{ width: `${pct}%`, backgroundColor: color }}
+        />
+      </div>
+    </div>
+  );
 }
 
 export default function AdminVehicles() {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const [actionMsg, setActionMsg] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [actionLoadingPlate, setActionLoadingPlate] = useState('');
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [detailsVehicle, setDetailsVehicle] = useState(null);
+
+  const loadVehicles = async () => {
+    setLoading(true);
+    setErrorMsg('');
+
+    try {
+      const res = await api.get('/vehicles');
+      const data = safeArray(res?.data?.data ?? res?.data);
+      setVehicles(data);
+    } catch (err) {
+      setErrorMsg(
+        getApiErrorMessage(err, 'Não foi possível carregar os veículos.')
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let alive = true;
 
-    async function loadVehicles() {
+    async function loadInitial() {
       setLoading(true);
       setErrorMsg('');
 
@@ -41,6 +99,7 @@ export default function AdminVehicles() {
         setVehicles(data);
       } catch (err) {
         if (!alive) return;
+
         setErrorMsg(
           getApiErrorMessage(err, 'Não foi possível carregar os veículos.')
         );
@@ -50,12 +109,122 @@ export default function AdminVehicles() {
       }
     }
 
-    loadVehicles();
+    loadInitial();
 
     return () => {
       alive = false;
     };
   }, []);
+
+  const handleVehicleCreated = async () => {
+    setActionMsg('Veículo cadastrado com sucesso.');
+    setIsAddModalOpen(false);
+    await loadVehicles();
+  };
+
+  const handleAdminRentalCreated = async () => {
+    setActionMsg('Reserva administrativa criada com sucesso.');
+    setSelectedVehicle(null);
+    await loadVehicles();
+  };
+
+  const handleOpenVehicle = (vehicleId) => {
+    const vehicle = vehicles.find((item) => item.id === vehicleId);
+    if (!vehicle) return;
+
+    setActionMsg('');
+    setErrorMsg('');
+    setDetailsVehicle(vehicle);
+  };
+
+  const handleReserveFromDetails = (vehicle) => {
+    if (!vehicle) return;
+
+    if (vehicle.status !== 'available') {
+      setDetailsVehicle(null);
+      setActionMsg('');
+      setErrorMsg('Apenas veículos disponíveis podem ser reservados.');
+      return;
+    }
+
+    setDetailsVehicle(null);
+    setSelectedVehicle(vehicle);
+  };
+
+  const handleSendToMaintenance = async (vehicle) => {
+    setActionLoadingPlate(vehicle.licensePlate);
+    setActionMsg('');
+    setErrorMsg('');
+
+    try {
+      await api.patch(`/vehicles/${vehicle.licensePlate}/status`, {
+        status: 'maintenance',
+      });
+
+      setActionMsg(
+        `${vehicle.brand} ${vehicle.model} enviado para manutenção com sucesso.`
+      );
+      await loadVehicles();
+    } catch (err) {
+      setErrorMsg(
+        getApiErrorMessage(err, 'Não foi possível enviar o veículo para manutenção.')
+      );
+    } finally {
+      setActionLoadingPlate('');
+    }
+  };
+
+  const handleCompleteMaintenance = async (vehicle) => {
+    setActionLoadingPlate(vehicle.licensePlate);
+    setActionMsg('');
+    setErrorMsg('');
+
+    try {
+      const suggestedNextMaintenance = Math.max(
+        (vehicle.mileage || 0) + 20000,
+        (vehicle.nextMaintenance || 0) + 20000
+      );
+
+      await api.patch(`/vehicles/${vehicle.licensePlate}/maintenance`, {
+        newNextMaintenance: suggestedNextMaintenance,
+      });
+
+      setActionMsg(
+        `${vehicle.brand} ${vehicle.model} teve a manutenção registrada com sucesso.`
+      );
+      await loadVehicles();
+    } catch (err) {
+      setErrorMsg(
+        getApiErrorMessage(err, 'Não foi possível finalizar a manutenção do veículo.')
+      );
+    } finally {
+      setActionLoadingPlate('');
+    }
+  };
+
+  const handleDeleteVehicle = async (vehicle) => {
+    const confirmed = window.confirm(
+      `Excluir o veículo ${vehicle.brand} ${vehicle.model}?`
+    );
+
+    if (!confirmed) return;
+
+    setActionLoadingPlate(vehicle.licensePlate);
+    setActionMsg('');
+    setErrorMsg('');
+
+    try {
+      await api.delete(`/vehicles/${vehicle.licensePlate}`);
+      setActionMsg(`${vehicle.brand} ${vehicle.model} excluído com sucesso.`);
+      await loadVehicles();
+    } catch (err) {
+      setErrorMsg(
+        getApiErrorMessage(err, 'Não foi possível excluir o veículo.')
+      );
+    } finally {
+      setActionLoadingPlate('');
+    }
+  };
 
   const availableCount = useMemo(
     () => countByVehicleStatus(vehicles, 'available'),
@@ -67,6 +236,27 @@ export default function AdminVehicles() {
     [vehicles]
   );
 
+  const rentedCount = useMemo(
+    () => countByVehicleStatus(vehicles, 'rented'),
+    [vehicles]
+  );
+
+  const getStatusBadge = (status) => {
+    if (status === 'available') {
+      return <span className="badge badge-approved">Disponível</span>;
+    }
+
+    if (status === 'maintenance') {
+      return <span className="badge badge-rejected">Manutenção</span>;
+    }
+
+    if (status === 'rented') {
+      return <span className="badge badge-pending">Alugado</span>;
+    }
+
+    return <span className="badge badge-cancelled">{status}</span>;
+  };
+
   return (
     <div className="dashboard">
       <div className="dashboard-header">
@@ -76,95 +266,181 @@ export default function AdminVehicles() {
             Visão operacional da frota cadastrada.
           </div>
         </div>
+
+        <div className="dashboard-actions">
+          <button
+            type="button"
+            className="dashboard-linkBtn"
+            onClick={() => {
+              setActionMsg('');
+              setErrorMsg('');
+              setIsAddModalOpen(true);
+            }}
+          >
+            Novo veículo
+          </button>
+        </div>
       </div>
 
+      {actionMsg && <div className="alert alert-info">{actionMsg}</div>}
       {loading && <div className="alert alert-info">Carregando veículos...</div>}
       {!loading && errorMsg && <div className="alert alert-error">{errorMsg}</div>}
 
       {!loading && !errorMsg && (
-        <>
-          <div className="dashboard-grid">
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Total</div>
-              </div>
-              <div className="card-kpi">{vehicles.length}</div>
-              <div className="card-meta">Veículos cadastrados</div>
+        <div className="dashboard-grid">
+          <div className="card">
+            <div className="card-titleRow">
+              <div className="card-title">Total</div>
             </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Disponíveis</div>
-                <span className="badge badge-approved">Available</span>
-              </div>
-              <div className="card-kpi">{availableCount}</div>
-              <div className="card-meta">Prontos para reserva</div>
-            </div>
-
-            <div className="card">
-              <div className="card-titleRow">
-                <div className="card-title">Manutenção</div>
-                <span className="badge badge-rejected">Maintenance</span>
-              </div>
-              <div className="card-kpi">{maintenanceCount}</div>
-              <div className="card-meta">Indisponíveis temporariamente</div>
-            </div>
-
-            <div className="card card-wide">
-              <div className="card-titleRow">
-                <div className="card-title">Lista da frota</div>
-              </div>
-
-              {vehicles.length === 0 ? (
-                <div className="card-meta">Nenhum veículo cadastrado.</div>
-              ) : (
-                <div className="table-wrapper">
-                  <table className="dashboard-table">
-                    <thead>
-                      <tr>
-                        <th>Placa</th>
-                        <th>Veículo</th>
-                        <th>Ano</th>
-                        <th>Cor</th>
-                        <th>KM</th>
-                        <th>Status</th>
-                        <th>Passageiros</th>
-                        <th>Próx. manutenção</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {vehicles.map((vehicle) => (
-                        <tr key={vehicle.id}>
-                          <td>{vehicle.licensePlate}</td>
-                          <td>
-                            {vehicle.brand} {vehicle.model}
-                          </td>
-                          <td>{vehicle.year}</td>
-                          <td>{vehicle.color}</td>
-                          <td>{vehicle.mileage}</td>
-                          <td>
-                            <span
-                              className={
-                                vehicle.status === 'available'
-                                  ? 'badge badge-approved'
-                                  : 'badge badge-rejected'
-                              }
-                            >
-                              {String(vehicle.status || '').toUpperCase()}
-                            </span>
-                          </td>
-                          <td>{vehicle.passengers}</td>
-                          <td>{vehicle.nextMaintenance}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+            <div className="card-kpi">{vehicles.length}</div>
+            <div className="card-meta">Veículos cadastrados</div>
           </div>
-        </>
+
+          <div className="card" style={{ borderTop: '3px solid #059669' }}>
+            <div className="card-titleRow">
+              <div className="card-title">Disponíveis</div>
+              <span className="badge badge-approved">Disponível</span>
+            </div>
+            <div className="card-kpi">{availableCount}</div>
+            <div className="card-meta">Prontos para reserva</div>
+          </div>
+
+          <div className="card" style={{ borderTop: '3px solid #dc2626' }}>
+            <div className="card-titleRow">
+              <div className="card-title">Manutenção</div>
+              <span className="badge badge-rejected">Manutenção</span>
+            </div>
+            <div className="card-kpi">{maintenanceCount}</div>
+            <div className="card-meta">Indisponíveis temporariamente</div>
+          </div>
+
+          <div className="card" style={{ borderTop: '3px solid #f59e0b' }}>
+            <div className="card-titleRow">
+              <div className="card-title">Alugados</div>
+              <span className="badge badge-pending">Alugado</span>
+            </div>
+            <div className="card-kpi">{rentedCount}</div>
+            <div className="card-meta">Em uso no momento</div>
+          </div>
+
+          <div className="card card-wide">
+            <div className="card-titleRow">
+              <div className="card-title">Grid da frota</div>
+              <span className="badge badge-cancelled">
+                {vehicles.length} {vehicles.length === 1 ? 'veículo' : 'veículos'}
+              </span>
+            </div>
+
+            {vehicles.length === 0 ? (
+              <div className="card-meta">Nenhum veículo cadastrado.</div>
+            ) : (
+              <div className="vehicle-picker">
+                <div className="vehicle-grid">
+                  {vehicles.map((vehicle) => (
+                    <VehicleCard
+                      key={vehicle.id}
+                      vehicle={vehicle}
+                      selected={detailsVehicle?.id === vehicle.id || selectedVehicle?.id === vehicle.id}
+                      onSelect={handleOpenVehicle}
+                      onSendMaintenance={handleSendToMaintenance}
+                      onCompleteMaintenance={handleCompleteMaintenance}
+                      onDeleteVehicle={handleDeleteVehicle}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="card card-wide">
+            <div className="card-titleRow">
+              <div className="card-title">Lista da frota</div>
+            </div>
+
+            {vehicles.length === 0 ? (
+              <div className="card-meta">Nenhum veículo cadastrado.</div>
+            ) : (
+              <div className="table-wrapper">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Veículo</th>
+                      <th>Placa</th>
+                      <th>Ano / Cor</th>
+                      <th>Passageiros</th>
+                      <th>Quilometragem</th>
+                      <th>Próx. Manutenção</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vehicles.map((vehicle) => (
+                      <tr key={vehicle.id}>
+                        <td>
+                          <span className="cell-main">
+                            {vehicle.brand} {vehicle.model}
+                          </span>
+                          <span className="cell-sub">
+                            {vehicle.fuelType} • {vehicle.transmissionType}
+                          </span>
+                        </td>
+
+                        <td>
+                          <span className="license-plate">
+                            {vehicle.licensePlate}
+                          </span>
+                        </td>
+
+                        <td>
+                          <span className="cell-main">{vehicle.year}</span>
+                          <span className="cell-sub">{vehicle.color}</span>
+                        </td>
+
+                        <td>
+                          <span className="cell-main">{vehicle.passengers}</span>
+                        </td>
+
+                        <td>
+                          <MaintBar
+                            mileage={vehicle.mileage}
+                            nextMaintenance={vehicle.nextMaintenance}
+                          />
+                        </td>
+
+                        <td>
+                          <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                            {(vehicle.nextMaintenance || 0).toLocaleString()} km
+                          </span>
+                        </td>
+
+                        <td>{getStatusBadge(vehicle.status)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
       )}
+
+      <AddVehicleModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onCreated={handleVehicleCreated}
+      />
+
+      <VehicleDetailsModal
+        vehicle={detailsVehicle}
+        onClose={() => setDetailsVehicle(null)}
+        onReserve={handleReserveFromDetails}
+      />
+
+      <RentalRequestModal
+        vehicle={selectedVehicle}
+        onClose={() => setSelectedVehicle(null)}
+        onCreated={handleAdminRentalCreated}
+      />
     </div>
   );
 }

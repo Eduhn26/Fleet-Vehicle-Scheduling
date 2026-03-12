@@ -1,4 +1,5 @@
 const vehicleService = require('../services/vehicleService');
+const rentalService = require('../services/rentalService');
 
 const listVehicles = async (_req, res, next) => {
   try {
@@ -15,6 +16,20 @@ const getByLicensePlate = async (req, res, next) => {
 
     const vehicle = await vehicleService.findByLicensePlate(licensePlate);
     return res.status(200).json({ data: vehicle });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const getAvailability = async (req, res, next) => {
+  try {
+    const { licensePlate } = req.params;
+
+    const periods = await rentalService.listApprovedPeriodsByVehicle({
+      licensePlate,
+    });
+
+    return res.status(200).json({ data: periods });
   } catch (err) {
     return next(err);
   }
@@ -39,6 +54,18 @@ const updateMileage = async (req, res, next) => {
     });
 
     return res.status(200).json({ data: updated });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const deleteVehicle = async (req, res, next) => {
+  try {
+    const { licensePlate } = req.params;
+
+    const result = await vehicleService.deleteVehicle({ licensePlate });
+
+    return res.status(200).json({ data: result });
   } catch (err) {
     return next(err);
   }
@@ -77,8 +104,10 @@ const recordMaintenance = async (req, res, next) => {
 module.exports = {
   listVehicles,
   getByLicensePlate,
+  getAvailability,
   createVehicle,
   updateMileage,
   setMaintenanceStatus,
   recordMaintenance,
+  deleteVehicle,
 };
