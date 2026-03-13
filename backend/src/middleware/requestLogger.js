@@ -1,3 +1,5 @@
+const getClientIp = require('../utils/requestClientIp');
+
 // NOTE:
 // Middleware de observabilidade inicial.
 // Registra método, rota, status e tempo de resposta.
@@ -12,12 +14,13 @@ const requestLogger = (req, res, next) => {
 
     const timestamp = new Date().toISOString();
     const requestId = req.id || 'unknown-request';
+    const clientIp = getClientIp(req);
     const method = req.method;
     const path = req.originalUrl;
     const status = res.statusCode;
 
     console.log(
-      `[${timestamp}] [req:${requestId}] ${method} ${path} ${status} ${duration}ms`
+      `[${timestamp}] [req:${requestId}] [ip:${clientIp}] ${method} ${path} ${status} ${duration}ms`
     );
   });
 

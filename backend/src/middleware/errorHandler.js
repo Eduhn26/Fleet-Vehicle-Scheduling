@@ -1,4 +1,5 @@
 const AppError = require('../utils/AppError');
+const getClientIp = require('../utils/requestClientIp');
 
 const isLikelyMongooseCastError = (err) =>
   err?.name === 'CastError' && err?.kind === 'ObjectId';
@@ -14,11 +15,18 @@ const isLikelyJsonSyntaxError = (err) =>
 
 const isProd = process.env.NODE_ENV === 'production';
 
+const resolveLogLevel = (statusCode) => {
+  if (statusCode >= 500) return 'error';
+  if (statusCode >= 400) return 'warn';
+  return 'info';
+};
+
 const buildErrorLogPayload = ({ err, req, statusCode, category }) => ({
   timestamp: new Date().toISOString(),
-  level: 'error',
+  level: resolveLogLevel(statusCode),
   category,
   requestId: req?.id || 'unknown-request',
+  clientIp: getClientIp(req),
   method: req?.method || 'unknown-method',
   path: req?.originalUrl || req?.url || 'unknown-path',
   statusCode,

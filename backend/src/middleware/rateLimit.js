@@ -1,4 +1,5 @@
 const AppError = require('../utils/AppError');
+const getClientIp = require('../utils/requestClientIp');
 
 const clients = new Map();
 
@@ -22,18 +23,7 @@ const getWindowMs = () =>
 const getMaxRequests = () =>
   toPositiveInteger(process.env.RATE_LIMIT_MAX_REQUESTS, DEFAULT_MAX_REQUESTS);
 
-const getClientKey = (req) => {
-  const forwardedFor = String(req.headers['x-forwarded-for'] || '').trim();
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
-  }
-
-  return (
-    req.ip ||
-    req.socket?.remoteAddress ||
-    'unknown-client'
-  );
-};
+const getClientKey = (req) => getClientIp(req);
 
 const setRateLimitHeaders = (res, { limit, remaining, resetAt }) => {
   res.setHeader('X-RateLimit-Limit', String(limit));
