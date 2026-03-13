@@ -6,6 +6,7 @@ const AppError = require('./utils/AppError');
 const errorHandler = require('./middleware/errorHandler');
 const requestId = require('./middleware/requestId');
 const requestLogger = require('./middleware/requestLogger');
+const rateLimit = require('./middleware/rateLimit');
 
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const rentalRoutes = require('./routes/rentalRoutes');
@@ -41,6 +42,7 @@ app.use(express.json());
 
 app.use(requestId);
 app.use(requestLogger);
+app.use(rateLimit);
 
 // 🔐 AUTH
 app.use('/api/auth', authRoutes);
