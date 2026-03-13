@@ -1,19 +1,12 @@
 # Fleet Vehicle Scheduling
 
-![Node](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white)
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
-![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white)
-![JWT](https://img.shields.io/badge/Auth-JWT-000000?logo=jsonwebtokens&logoColor=white)
-![CI](https://github.com/Eduhn26/Fleet-Vehicle-Scheduling/actions/workflows/backend-ci.yml/badge.svg)
-![License](https://img.shields.io/badge/License-MIT-blue)
+> Full-stack fleet rental and vehicle scheduling system built with **Node.js**, **Express**, **MongoDB**, and **React**.
 
-Full-stack platform for fleet rental and vehicle scheduling — built with **Node.js, Express, MongoDB, and React**.
-
-The project isn't just a CRUD app. It was built through **10 incremental engineering phases**, each introducing new architectural layers while keeping previous ones intact. The goal was to simulate how real production systems grow — messy, evolving, and under pressure.
+The project focuses on software architecture, separation of concerns, and progressive system evolution — simulating how real production systems grow over time. Instead of implementing everything at once, the system was built through **incremental engineering phases**, each introducing new architectural capabilities while preserving the existing foundation.
 
 ---
 
-## Live
+## Live System
 
 | Service | URL |
 |---|---|
@@ -23,67 +16,78 @@ The project isn't just a CRUD app. It was built through **10 incremental enginee
 
 ---
 
-## What it does
+## Tech Stack
 
-Fleet Vehicle Scheduling manages the full operational lifecycle of a vehicle fleet:
-
-- Vehicle registration and availability tracking
-- Rental request creation by users
-- Admin approval/rejection workflows
-- Scheduling conflict protection
-- Vehicle return with mileage submission
-- Automatic maintenance triggers based on mileage thresholds
-- Role-based dashboards for users and administrators
-
-The core design decision: **business logic lives exclusively in the service layer**, not in routes or controllers.
-
----
-
-## Architecture
-
-```
-React (Vercel)  →  Node.js API (Render)  →  MongoDB Atlas
-```
-
-### Request flow
-
-```
-Route → Controller → Service → Model
-```
-
-| Layer | Responsibility |
-|---|---|
-| Routes | Define API surface |
-| Controllers | Parse requests, format responses |
-| Services | Business rules — the only place decisions are made |
-| Models | Mongoose schemas and database interaction |
-
-### Design principles
-
-- **Thin controllers** — no business logic leaks into HTTP handlers
-- **Service isolation** — `createRental()`, `approveRequest()`, `confirmReturn()` are self-contained
-- **Centralized errors** — `AppError` system produces consistent API responses
-- **Validation split** — request shape validated in middleware, business rules validated in services
-- **Lifecycle protection** — reservation state transitions are explicitly validated
-
----
-
-## Tech stack
-
-| Area | Tech |
+| Category | Stack |
 |---|---|
 | Backend | Node.js, Express |
-| Database | MongoDB Atlas, Mongoose |
-| Auth | JWT |
-| Frontend | React, React Router, Axios |
+| Database | MongoDB Atlas |
+| ORM | Mongoose |
+| Authentication | JWT |
+| Frontend | React |
+| Routing | React Router |
+| API Client | Axios |
+| Hosting | Render |
+| Frontend Hosting | Vercel |
 | Testing | Jest, Supertest, MongoMemoryServer |
 | CI | GitHub Actions |
-| Hosting | Vercel (frontend), Render (backend) |
+| Containerization | Docker, Docker Compose |
 | Tooling | ESLint, Prettier, Nodemon |
 
 ---
 
-## Vehicle lifecycle
+## Running Locally with Docker
+
+Starting in Phase 12, the project includes a containerized local development environment via Docker Compose.
+
+```bash
+# Start everything (frontend + backend)
+docker compose up --build
+
+# Stop containers
+docker compose down
+```
+
+| Service | Local URL |
+|---|---|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:5000 |
+| Health Check | http://localhost:5000/api/health |
+
+A new developer can get the full system running with just:
+
+```bash
+git clone <repository>
+docker compose up
+```
+
+No manual Node.js installation or dependency setup required.
+
+---
+
+## System Architecture
+
+```
+React (Vercel)
+      ↓
+Node.js API (Render)
+      ↓
+MongoDB Atlas
+```
+
+| Layer | Responsibility |
+|---|---|
+| Frontend (React) | User interface, authentication flow, dashboards, workflow interaction |
+| Backend (Node.js / Express) | Business logic, reservation lifecycle, authentication, validation |
+| Database (MongoDB Atlas) | Persistent storage for users, vehicles, and reservations |
+
+---
+
+## Backend Architecture
+
+The backend follows a strict layered architecture designed to isolate responsibilities.
+
+**Request flow:**
 
 ```
 Available
@@ -98,11 +102,52 @@ Available
   → Maintenance Status
 ```
 
+| Layer | Responsibility | Examples |
+|---|---|---|
+| Routes | Defines API endpoints | `POST /api/auth/login` |
+| Controllers | Handles HTTP concerns | Request parsing, response formatting |
+| Services | Business logic | `createRental()`, `approveRequest()` |
+| Models | Database schemas | Mongoose schemas |
+
+**Design principles:**
+
+- **Service isolation** — Business rules live exclusively inside Services
+- **Thin controllers** — Controllers orchestrate calls but contain no business logic
+- **Standardized errors** — Centralized `AppError` system ensures consistent API responses
+- **Validation split** — Request structure validated in middleware; business rules in services
+- **Lifecycle protection** — Reservation state transitions are validated explicitly
+
+---
+
+## Fleet Lifecycle Model
+
+```
+Vehicle Available
+       ↓
+Reservation Requested
+       ↓
+Admin Approval
+       ↓
+Vehicle In Use
+       ↓
+Return Request (Mileage Submitted)
+       ↓
+Admin Confirmation
+       ↓
+Mileage Update → Maintenance Check
+```
+
+If return mileage exceeds the maintenance threshold, the vehicle automatically moves to **maintenance status**.
+
 ---
 
 ## Testing
 
-Backend tests cover the critical paths of the reservation lifecycle.
+```bash
+npm test
+```
+
+**Test stack:** Jest · Supertest · MongoMemoryServer
 
 ```
 backend/tests/
@@ -114,33 +159,37 @@ backend/tests/
     └── rentalService.test.js
 ```
 
-Coverage includes:
-- rental request creation
-- approval workflow
-- cancellation rules
-- return flow and mileage validation
-- maintenance threshold logic
-- HTTP endpoint contracts
+Covered flows: rental request creation, admin approval workflow, cancellation rules, return lifecycle, mileage validation, maintenance threshold logic, HTTP endpoint validation.
 
-```bash
-npm test
+---
+
+## CI Pipeline
+
+Runs automatically on every push and pull request via GitHub Actions (`.github/workflows/backend-ci.yml`).
+
+```
+npm ci → npm run lint → npm test
 ```
 
 ---
 
-## CI pipeline
+## Observability (Phase 11)
 
-Every push and pull request runs the full backend validation suite automatically via GitHub Actions:
+Every request is logged with a correlation ID for end-to-end tracing:
 
 ```bash
 npm ci
 npm run lint
 npm test
 ```
+[2026-03-13T12:15:53.590Z] [req:54bd0435] [ip:127.0.0.1] GET /api/vehicles 200 19ms
+```
+
+Additional features: structured JSON error logging, API rate limiting (HTTP 429 on threshold breach), reverse proxy support, and an enhanced `/api/health` endpoint exposing service metadata (name, version, environment, uptime, requestId).
 
 ---
 
-## Project structure
+## Project Structure
 
 ```
 fleet-vehicle-scheduling/
@@ -156,8 +205,11 @@ fleet-vehicle-scheduling/
 │   │   └── validators/
 │   ├── tests/
 │   ├── scripts/
+│   ├── Dockerfile
+│   ├── jest.config.js
 │   └── server.js
 ├── frontend/
+│   ├── Dockerfile
 │   └── src/
 │       ├── components/
 │       ├── context/
@@ -165,50 +217,50 @@ fleet-vehicle-scheduling/
 │       ├── services/
 │       └── styles/
 └── docs/
-    └── phase-1.md → phase-10.md
+    ├── phase-1.md
+    ├── ...
+    └── phase-12.md
 ```
 
 ---
 
-## Development scripts
-
-```bash
-# List users
-node backend/scripts/list-users.js
-
-# Reset admin password
-node backend/scripts/reset-admin-password.js <email> <newPassword>
-
-# Smoke test: vehicles
-node backend/scripts/smoke-vehicle.js
-
-# Smoke test: rentals
-node backend/scripts/smoke-rental.js
-```
-
----
-
-## Engineering phases
+## Engineering Phases
 
 | Phase | Focus |
 |---|---|
-| 1 | Backend foundation and environment setup |
-| 2 | Services layer and business logic centralization |
-| 3 | HTTP API, authentication, validation |
-| 4 | React frontend foundation |
-| 5 | Rental request workflow |
-| 6 | Reservation lifecycle rules |
-| 7 | UX improvements and admin workflow |
-| 8 | Production deployment |
-| 9 | Fleet lifecycle management |
-| 10 | Backend test automation and CI |
-
-Full documentation for each phase in `/docs`.
+| Phase 1 | Backend foundation and environment setup |
+| Phase 2 | Services layer and business logic centralization |
+| Phase 3 | HTTP API, authentication, validation |
+| Phase 4 | React frontend foundation |
+| Phase 5 | Rental request workflow |
+| Phase 6 | Reservation lifecycle rules |
+| Phase 7 | UX improvements and admin workflow |
+| Phase 8 | Production deployment |
+| Phase 9 | Fleet lifecycle management |
+| Phase 10 | Backend testing and CI pipeline |
+| Phase 11 | Observability and operational diagnostics |
+| Phase 12 | Docker containerization and local infrastructure |
 
 ---
 
-## About
+## Current Capabilities
 
-Built by **Eduardo Henrique** as an architecture learning project — not to ship features fast, but to practice how real software systems are structured, evolved, and hardened over time.
+- JWT authentication and role-based dashboards
+- Vehicle rental request creation
+- Admin approval and rejection workflows
+- Reservation cancellation and scheduling conflict protection
+- Full fleet lifecycle and mileage tracking
+- Automatic maintenance lifecycle transitions
+- Automated backend tests and CI pipeline
+- Structured request logging with correlation IDs
+- API rate limiting
+- Operational health diagnostics
+- Containerized local development environment
 
-The emphasis is on backend engineering: layered architecture, separation of concerns, lifecycle modeling, and the discipline of keeping business logic where it belongs.
+---
+
+## Author
+
+**Eduardo Henrique** — Full-stack developer focused on backend architecture, system design, scalable APIs, and production-ready applications.
+
+If you found this project useful, consider giving the repository a ⭐
