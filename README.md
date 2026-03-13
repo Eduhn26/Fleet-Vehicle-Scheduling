@@ -3,16 +3,19 @@
 ![Node](https://img.shields.io/badge/Node.js-18+-green)
 ![React](https://img.shields.io/badge/React-18-blue)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)
+![CI](https://github.com/Eduhn26/Fleet-Vehicle-Scheduling/actions/workflows/backend-ci.yml/badge.svg)
 ![Deployment](https://img.shields.io/badge/Deployment-Render%20%7C%20Vercel-black)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
-Full-stack fleet rental and vehicle scheduling system built with **Node.js**, **Express**, **MongoDB**, and **React**.
+Full-stack fleet rental and vehicle scheduling platform built with **Node.js, Express, MongoDB, and React**.
 
-The project focuses on software architecture, separation of concerns, and progressive system evolution, simulating how a real production system grows over time. Instead of implementing everything at once, the system is built through incremental engineering phases, each introducing new architectural capabilities.
+The project focuses on **backend architecture, lifecycle modeling, and progressive engineering evolution**, simulating how real production systems grow over time.
+
+Instead of implementing everything at once, the system was built through **incremental engineering phases**, each introducing new architectural capabilities while preserving system stability.
 
 ---
 
-# 🚀 Live System
+## 🚀 Live System
 
 | Service | URL |
 |---|---|
@@ -22,17 +25,11 @@ The project focuses on software architecture, separation of concerns, and progre
 
 ---
 
-# 🧠 System Architecture
+## 🧠 System Architecture
 
 The application is deployed using a modern full-stack cloud architecture.
 
-```
-React (Vercel)
-      ↓
-Node.js API (Render)
-      ↓
-MongoDB Atlas
-```
+`React (Vercel) ↓ Node.js API (Render) ↓ MongoDB Atlas`
 
 | Layer | Responsibility |
 |---|---|
@@ -43,9 +40,9 @@ MongoDB Atlas
 
 ---
 
-# ⚡ Tech Stack
+## ⚡ Tech Stack
 
-| Category | Stack |
+| Category | Technology |
 |---|---|
 | Backend | Node.js, Express |
 | Database | MongoDB Atlas |
@@ -54,45 +51,100 @@ MongoDB Atlas
 | Frontend | React |
 | Routing | React Router |
 | API Client | Axios |
-| Hosting | Render |
-| Frontend Hosting | Vercel |
+| Testing | Jest, Supertest |
+| CI | GitHub Actions |
+| Hosting | Render, Vercel |
 | Tooling | ESLint, Prettier, Nodemon |
 
 ---
 
-# 🎯 Project Goals
+## 🧪 Testing & Quality Assurance
 
-This project was created as a full-stack architecture learning exercise, with a strong emphasis on backend system design.
+The backend includes automated tests to protect critical business rules and API contracts.
 
-Main goals:
+Testing stack:
+- **Jest** — unit and service testing
+- **Supertest** — HTTP integration tests
+- **MongoMemoryServer** — isolated database for testing
 
-- Practice layered backend architecture
-- Implement clear separation of concerns
-- Build real authentication flows
-- Simulate real SaaS backend design
-- Design a codebase that evolves in engineering phases
-- Demonstrate clean architecture thinking
+Test coverage includes:
+- rental request lifecycle
+- approval workflow
+- cancellation rules
+- return workflow
+- mileage validation
+- maintenance threshold logic
+- HTTP endpoint validation
 
-> The focus is **engineering quality** over feature speed.
+Test structure:
+```text
+backend/tests
+├── helpers
+│   └── appErrorAssert.js
+├── http
+│   └── rentalRoutes.test.js
+└── services
+    └── rentalService.test.js
+```
+
+These tests ensure that the **business logic remains correct regardless of transport or UI changes**.
 
 ---
 
-# 🧩 Why This Project Exists
+## 🤖 Continuous Integration
+
+The project includes an automated **GitHub Actions CI pipeline** to validate backend quality.
+
+Pipeline steps:
+1. Install dependencies
+2. Run ESLint
+3. Execute automated tests
+
+```bash
+npm ci
+npm run lint
+npm test
+```
+
+The pipeline runs automatically on:
+- push
+- pull requests
+
+This ensures every backend change is **automatically verified before integration**.
+
+---
+
+## 🎯 Project Goals
+
+This project was created as a full-stack architecture learning exercise with a strong emphasis on backend engineering.
+
+Main goals:
+- practice layered backend architecture
+- implement clear separation of concerns
+- build real authentication flows
+- simulate SaaS backend design
+- design a codebase that evolves through engineering phases
+- demonstrate clean architecture thinking
+
+> The focus is **engineering quality over feature speed.**
+
+---
+
+## 🧩 Why This Project Exists
 
 Most tutorials focus on isolated features.
 
-This project focuses on **system evolution and architecture discipline**.
+This project focuses on **system evolution and architectural discipline**.
 
-Instead of implementing everything at once, the system was built through **engineering phases**, simulating how real software evolves in production environments.
+Instead of implementing everything at once, the system was built through **incremental engineering phases**, simulating how real software evolves in production environments.
 
 Each phase introduced new architectural capabilities while preserving previous layers.
 
 ---
 
-# 🔎 System Overview
+## 🔎 System Overview
 
 Fleet Vehicle Scheduling manages:
-
 - vehicle fleets
 - rental requests
 - resource scheduling
@@ -106,17 +158,14 @@ The project follows a **backend-first development strategy**, where the API and 
 
 ---
 
-# 🏗️ Backend Architecture
+## 🏗️ Backend Architecture
 
 The backend follows a layered architecture designed to isolate responsibilities.
 
-## Request Flow
+### Request Flow
+`Route → Controller → Service → Database Model`
 
-```
-Route → Controller → Service → Database Model
-```
-
-## Layer Responsibilities
+### Layer Responsibilities
 
 | Layer | Responsibility | Examples |
 |---|---|---|
@@ -127,37 +176,31 @@ Route → Controller → Service → Database Model
 
 ---
 
-## Backend Design Principles
+### Backend Design Principles
 
-### Service Isolation
-
+**Service Isolation**
 Business rules live exclusively inside Services.
 
-### Thin Controllers
-
+**Thin Controllers**
 Controllers orchestrate calls but do not contain business logic.
 
-### Standardized Errors
-
+**Standardized Errors**
 Centralized `AppError` system ensures consistent API responses.
 
-### Validation Split
-
+**Validation Split**
 - Request structure → validated in middleware
 - Business rules → validated in Services
 
-### Lifecycle Protection
-
+**Lifecycle Protection**
 Reservation transitions are validated explicitly to prevent invalid state changes.
 
 ---
 
-# 🖥️ Frontend Architecture
+## 🖥️ Frontend Architecture
 
 The frontend is implemented with React and focuses on authentication, dashboards, and workflow interaction.
 
 Core responsibilities:
-
 - authentication flow
 - protected routes
 - role-based dashboards
@@ -168,29 +211,18 @@ Core responsibilities:
 
 ---
 
-## Authentication System
+### Authentication System
 
-Authentication uses JWT tokens.
+Authentication uses **JWT tokens**.
 
-**Login Flow**
+#### Login Flow
+`User login ↓ Backend validates credentials ↓ JWT token issued ↓ Token stored in localStorage ↓ Axios attaches token to future requests`
 
-```
-User login
-     ↓
-Backend validates credentials
-     ↓
-JWT token issued
-     ↓
-Token stored in localStorage
-     ↓
-Axios attaches token to future requests
-```
-
-Session state is managed through React Context (`AuthContext`).
+Session state is managed through **React Context (`AuthContext`)**.
 
 ---
 
-## Routing & Navigation
+### Routing & Navigation
 
 | Feature | Description |
 |---|---|
@@ -201,35 +233,19 @@ Session state is managed through React Context (`AuthContext`).
 
 ---
 
-# 🚗 Fleet Lifecycle Model
+## 🚗 Fleet Lifecycle Model
 
 The system models the **complete operational lifecycle of fleet vehicles**.
 
-```
-Vehicle Available
-        ↓
-Reservation Requested
-        ↓
-Admin Approval
-        ↓
-Vehicle In Use
-        ↓
-Return Request (Mileage Submitted)
-        ↓
-Admin Confirmation
-        ↓
-Mileage Update
-        ↓
-Maintenance Check
-```
+`Vehicle Available ↓ Reservation Requested ↓ Admin Approval ↓ Vehicle In Use ↓ Return Request (Mileage Submitted) ↓ Admin Confirmation ↓ Mileage Update ↓ Maintenance Check`
 
 If the return mileage exceeds the maintenance threshold, the vehicle automatically moves to **maintenance status**.
 
 ---
 
-# 📂 Project Structure
+## 📂 Project Structure
 
-```
+```text
 fleet-vehicle-scheduling/
 │
 ├── backend/
@@ -243,6 +259,11 @@ fleet-vehicle-scheduling/
 │   │   ├── utils/
 │   │   └── validators/
 │   │
+│   ├── tests/
+│   │   ├── helpers/
+│   │   ├── http/
+│   │   └── services/
+│   │
 │   ├── scripts/
 │   │   ├── seed-user.js
 │   │   ├── seed-vehicle.js
@@ -251,6 +272,7 @@ fleet-vehicle-scheduling/
 │   │   └── smoke-rental.js
 │   │
 │   ├── server.js
+│   ├── jest.config.js
 │   └── .env.example
 │
 ├── frontend/
@@ -270,60 +292,41 @@ fleet-vehicle-scheduling/
 │   ├── phase-6.md
 │   ├── phase-7.md
 │   ├── phase-8.md
-│   └── phase-9.md
+│   ├── phase-9.md
+│   └── phase-10.md
 │
 └── README.md
 ```
 
 ---
 
-# 🖥️ Application Screenshots
-
-### Admin Fleet Dashboard
-
-![Admin Dashboard](docs/screenshots/admin-dashboard.png)
-
-### Vehicle Management
-
-![Vehicles](docs/screenshots/vehicles.png)
-
-### Reservation Workflow
-
-![Reservations](docs/screenshots/reservations.png)
-
----
-
-# 🛠 Development Utilities
+## 🛠 Development Utilities
 
 Helper scripts exist for debugging and development.
 
 **List users**
-
 ```bash
 node backend/scripts/list-users.js
 ```
 
 **Reset admin password**
-
 ```bash
 node backend/scripts/reset-admin-password.js <email> <newPassword>
 ```
 
 **Vehicle smoke test**
-
 ```bash
 node backend/scripts/smoke-vehicle.js
 ```
 
 **Rental smoke test**
-
 ```bash
 node backend/scripts/smoke-rental.js
 ```
 
 ---
 
-# 🚀 Engineering Phases
+## 🚀 Engineering Phases
 
 The system evolved through incremental architectural phases.
 
@@ -337,14 +340,14 @@ The system evolved through incremental architectural phases.
 | Phase 6 | Reservation lifecycle rules |
 | Phase 7 | UX improvements and admin workflow |
 | Phase 8 | Production deployment |
-| Phase 9 | Fleet lifecycle management and admin fleet operations |
+| Phase 9 | Fleet lifecycle management |
+| Phase 10 | Engineering hardening, automated tests and CI |
 
 ---
 
-# ⚙️ Current Capabilities
+## ⚙️ Current Capabilities
 
 The system currently supports:
-
 - JWT authentication
 - role-based dashboards
 - vehicle rental request creation
@@ -357,28 +360,16 @@ The system currently supports:
 - vehicle maintenance lifecycle
 - vehicle mileage tracking
 - return workflow with administrative confirmation
+- automated backend tests
+- CI validation pipeline
 
 ---
 
-# 💻 Technology Stack
+## 🧠 Learning Focus
 
-| Layer | Technology |
-|---|---|
-| Backend | Node.js, Express, MongoDB, Mongoose |
-| Authentication | JWT |
-| Frontend | React, React Router, Axios |
-| Database | MongoDB Atlas |
-| Hosting | Render, Vercel |
-| Tooling | ESLint, Prettier, Nodemon |
-
----
-
-# 🧠 Learning Focus
-
-This project prioritizes **architecture and engineering practices** over rapid feature delivery.
+This project prioritizes architecture and engineering practices over rapid feature delivery.
 
 Focus areas:
-
 - layered backend architecture
 - separation of concerns
 - authentication and authorization
@@ -389,15 +380,13 @@ Focus areas:
 - operational dashboards
 - scalable project structure
 - real production deployment
+- backend test automation
+- CI/CD engineering practices
 
 ---
 
-# 👨‍💻 Author
+## 👨‍💻 Author
 
-**Eduardo Henrique**
+**Eduardo Henrique** Full-stack developer focused on backend architecture, system design, scalable APIs, and production-ready applications.
 
-Full-stack developer focused on backend architecture, system design, scalable APIs, and production-ready applications.
-
----
-
-⭐ If you found this project interesting, consider giving the repository a star.
+⭐ *If you found this project interesting, consider giving the repository a star.*
