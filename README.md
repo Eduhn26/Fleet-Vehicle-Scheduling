@@ -10,8 +10,8 @@ The project focuses on software architecture, separation of concerns, and progre
 
 | Service | URL |
 |---|---|
-| Frontend (Vercel) | https://fleet-vehicle-scheduling.vercel.app |
-| Backend API (Render) | https://fleet-vehicle-scheduling.onrender.com |
+| Frontend | https://fleet-vehicle-scheduling.vercel.app |
+| Backend API | https://fleet-vehicle-scheduling.onrender.com |
 | Health Check | https://fleet-vehicle-scheduling.onrender.com/api/health |
 
 ---
@@ -90,7 +90,16 @@ The backend follows a strict layered architecture designed to isolate responsibi
 **Request flow:**
 
 ```
-Route → Controller → Service → Database Model
+Available
+  → Reservation Requested
+  → Admin Approval
+  → In Use
+  → Return Requested (mileage submitted)
+  → Admin Confirms Return
+  → Mileage Updated
+  → Maintenance Check
+       ↓ (if threshold exceeded)
+  → Maintenance Status
 ```
 
 | Layer | Responsibility | Examples |
@@ -168,6 +177,10 @@ npm ci → npm run lint → npm test
 
 Every request is logged with a correlation ID for end-to-end tracing:
 
+```bash
+npm ci
+npm run lint
+npm test
 ```
 [2026-03-13T12:15:53.590Z] [req:54bd0435] [ip:127.0.0.1] GET /api/vehicles 200 19ms
 ```
