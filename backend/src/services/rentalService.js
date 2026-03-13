@@ -226,7 +226,7 @@ const rejectRequest = async ({ requestId, adminNotes }) => {
   return formatRental(request);
 };
 
-const cancelRequest = async ({ requestId, actorUserId, actorRole, cancelNotes }) => {
+const cancelRequest = async ({ requestId, cancelNotes }) => {
   const rId = assertObjectIdLike(requestId, 'requestId');
   const notes = normalizeNotes(cancelNotes);
 
