@@ -4,10 +4,11 @@ const helmet = require('helmet');
 
 const AppError = require('./utils/AppError');
 const errorHandler = require('./middleware/errorHandler');
+const requestLogger = require('./middleware/requestLogger');
 
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const rentalRoutes = require('./routes/rentalRoutes');
-const authRoutes = require('./routes/authRoutes'); // 🔐 novo
+const authRoutes = require('./routes/authRoutes'); 
 
 const app = express();
 
@@ -37,6 +38,8 @@ app.use(helmet());
 app.use(cors(buildCorsOptions()));
 app.use(express.json());
 
+
+app.use(requestLogger);
 // 🔐 AUTH
 app.use('/api/auth', authRoutes);
 
@@ -54,5 +57,7 @@ app.use((req, res, next) => {
 });
 
 app.use(errorHandler);
+
+
 
 module.exports = app;
