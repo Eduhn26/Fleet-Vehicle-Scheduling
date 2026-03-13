@@ -15,6 +15,8 @@ const authRoutes = require('./routes/authRoutes');
 const app = express();
 
 const isProd = process.env.NODE_ENV === 'production';
+const serviceName = 'fleet-vehicle-scheduling-api';
+const serviceVersion = process.env.npm_package_version || '1.0.0';
 
 const buildCorsOptions = () => {
   const frontendUrl = String(process.env.FRONTEND_URL || '').trim();
@@ -58,6 +60,11 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
     message: 'Frota Manager API is running!',
+    service: serviceName,
+    version: serviceVersion,
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()),
     requestId: req.id,
   });
 });
