@@ -4,11 +4,12 @@ const helmet = require('helmet');
 
 const AppError = require('./utils/AppError');
 const errorHandler = require('./middleware/errorHandler');
+const requestId = require('./middleware/requestId');
 const requestLogger = require('./middleware/requestLogger');
 
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const rentalRoutes = require('./routes/rentalRoutes');
-const authRoutes = require('./routes/authRoutes'); 
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
@@ -38,8 +39,9 @@ app.use(helmet());
 app.use(cors(buildCorsOptions()));
 app.use(express.json());
 
-
+app.use(requestId);
 app.use(requestLogger);
+
 // 🔐 AUTH
 app.use('/api/auth', authRoutes);
 
@@ -49,7 +51,11 @@ app.use('/api/rentals', rentalRoutes);
 
 // Health
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Frota Manager API is running!' });
+  res.status(200).json({
+    status: 'OK',
+    message: 'Frota Manager API is running!',
+    requestId: req.id,
+  });
 });
 
 app.use((req, res, next) => {
@@ -57,7 +63,5 @@ app.use((req, res, next) => {
 });
 
 app.use(errorHandler);
-
-
 
 module.exports = app;

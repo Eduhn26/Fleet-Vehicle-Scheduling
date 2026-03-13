@@ -1,7 +1,8 @@
 // NOTE:
 // Middleware de observabilidade inicial.
 // Registra método, rota, status e tempo de resposta.
-// Mantido isolado da lógica de negócio.
+// O request id entra no log para permitir correlação entre eventos
+// da mesma requisição sem contaminar a camada de negócio.
 
 const requestLogger = (req, res, next) => {
   const start = Date.now();
@@ -10,12 +11,13 @@ const requestLogger = (req, res, next) => {
     const duration = Date.now() - start;
 
     const timestamp = new Date().toISOString();
+    const requestId = req.id || 'unknown-request';
     const method = req.method;
     const path = req.originalUrl;
     const status = res.statusCode;
 
     console.log(
-      `[${timestamp}] ${method} ${path} ${status} ${duration}ms`
+      `[${timestamp}] [req:${requestId}] ${method} ${path} ${status} ${duration}ms`
     );
   });
 

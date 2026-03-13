@@ -14,11 +14,13 @@ const isLikelyJsonSyntaxError = (err) =>
 
 const errorHandler = (err, req, res, next) => {
   // NOTE: Express exige a assinatura com `next` mesmo se não usamos.
+  const requestId = req?.id || 'unknown-request';
 
   if (isLikelyJsonSyntaxError(err)) {
     return res.status(400).json({
       error: {
         message: 'JSON inválido no body',
+        requestId,
       },
     });
   }
@@ -29,6 +31,7 @@ const errorHandler = (err, req, res, next) => {
     const payload = {
       error: {
         message: err.message,
+        requestId,
       },
     };
 
@@ -43,6 +46,7 @@ const errorHandler = (err, req, res, next) => {
     return res.status(400).json({
       error: {
         message: 'ID inválido',
+        requestId,
       },
     });
   }
@@ -51,6 +55,7 @@ const errorHandler = (err, req, res, next) => {
     return res.status(400).json({
       error: {
         message: 'Dados inválidos',
+        requestId,
       },
     });
   }
@@ -59,16 +64,18 @@ const errorHandler = (err, req, res, next) => {
     return res.status(409).json({
       error: {
         message: 'Recurso já existe',
+        requestId,
       },
     });
   }
 
   // SEC: em produção, nunca devolvemos stack/erro bruto pro cliente.
-  console.error('❌ Unhandled error:', err);
+  console.error(`[req:${requestId}] ❌ Unhandled error:`, err);
 
   return res.status(500).json({
     error: {
       message: 'Erro interno do servidor',
+      requestId,
     },
   });
 };
