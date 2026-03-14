@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import '../styles/dashboard.css';
 
 function safeArray(value) {
@@ -18,10 +19,12 @@ function getApiErrorMessage(err, fallbackMessage) {
 }
 
 function getStatusBadgeClass(status) {
-  if (status === 'approved') return 'badge badge-approved';
-  if (status === 'rejected') return 'badge badge-rejected';
-  if (status === 'cancelled') return 'badge badge-cancelled';
-  return 'badge badge-pending';
+  if (status === 'approved') return 'badge badge-aprovado';
+  if (status === 'rejected') return 'badge badge-rejeitado';
+  if (status === 'cancelled') return 'badge badge-cancelado';
+  if (status === 'completed') return 'badge badge-concluido';
+  if (status === 'return_pending') return 'badge badge-devolucao';
+  return 'badge badge-pendente';
 }
 
 function statusLabel(status) {
@@ -31,11 +34,31 @@ function statusLabel(status) {
     rejected: 'Rejeitado',
     cancelled: 'Cancelado',
     completed: 'Concluído',
+    return_pending: 'Aguardando devolução',
   };
   return map[status] ?? String(status).toUpperCase();
 }
 
+function getInitials(name) {
+  if (!name) return '?';
+  return name.split(' ').slice(0, 2).map((n) => n[0].toUpperCase()).join('');
+}
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Bom dia';
+  if (h < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
+const IconPlus = () => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+    <path d="M8 3v10M3 8h10"/>
+  </svg>
+);
+
 export default function UserDashboard() {
+  const { user } = useAuth();
   const [rentals, setRentals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
@@ -50,14 +73,10 @@ export default function UserDashboard() {
       try {
         const rentalsRes = await api.get('/rentals/my');
         if (!alive) return;
-
-        const rentalsData = safeArray(rentalsRes?.data?.data);
-        setRentals(rentalsData);
+        setRentals(safeArray(rentalsRes?.data?.data));
       } catch (err) {
         if (!alive) return;
-        setErrorMsg(
-          getApiErrorMessage(err, 'Não foi possível carregar o dashboard do usuário.')
-        );
+        setErrorMsg(getApiErrorMessage(err, 'Não foi possível carregar o dashboard.'));
       } finally {
         if (!alive) return;
         setLoading(false);
@@ -76,81 +95,75 @@ export default function UserDashboard() {
 
   return (
     <div className="dashboard">
-      <div className="dashboard-header">
-        <div>
-          <div className="dashboard-title">Meu Dashboard</div>
-          <div className="dashboard-subtitle">
-            Acompanhe o status das suas reservas e faça novas solicitações.
+
+      {/* ── User Hero ─────────────────────────────────────────── */}
+      <div className="user-hero">
+        <div className="user-hero-left">
+          <div className="user-hero-avatar">
+            {getInitials(user?.name)}
+          </div>
+          <div>
+            <div className="user-hero-greeting">
+              {greeting()}, {user?.name?.split(' ')[0] || 'Usuário'}
+            </div>
+            <div className="user-hero-sub">
+              {user?.email || ''}
+            </div>
           </div>
         </div>
-        <div className="dashboard-actions">
-          <Link className="dashboard-linkBtn" to="/rentals">
-            Nova solicitação
-          </Link>
-        </div>
+        <Link className="btn btn-primary btn-sm" to="/rentals">
+          <IconPlus /> Nova solicitação
+        </Link>
       </div>
 
       {loading && <div className="alert alert-info">Carregando dados...</div>}
       {!loading && errorMsg && <div className="alert alert-error">{errorMsg}</div>}
 
       {!loading && !errorMsg && (
-        <div className="dashboard-grid">
-          <div className="card">
-            <div className="card-titleRow">
-              <div className="card-title">Minhas reservas</div>
+        <>
+          <div className="user-metrics-row">
+            <div className="metric-card blue">
+              <div className="metric-label" style={{ marginBottom: 6 }}>Total</div>
+              <div className="metric-value" style={{ fontSize: '1.6rem' }}>{rentals.length}</div>
+              <div className="metric-desc">Minhas reservas</div>
             </div>
-            <div className="card-kpi">{rentals.length}</div>
-            <div className="card-meta">Solicitações registradas no sistema</div>
+            <div className="metric-card amber">
+              <div className="metric-label" style={{ marginBottom: 6 }}>Pendentes</div>
+              <div className="metric-value" style={{ fontSize: '1.6rem' }}>{pendingCount}</div>
+              <div className="metric-desc">Aguardando admin</div>
+            </div>
+            <div className="metric-card green">
+              <div className="metric-label" style={{ marginBottom: 6 }}>Aprovadas</div>
+              <div className="metric-value" style={{ fontSize: '1.6rem' }}>{approvedCount}</div>
+              <div className="metric-desc">Prontas para uso</div>
+            </div>
+            <div className="metric-card red">
+              <div className="metric-label" style={{ marginBottom: 6 }}>Rejeitadas</div>
+              <div className="metric-value" style={{ fontSize: '1.6rem' }}>{rejectedCount}</div>
+              <div className="metric-desc">Não aprovadas</div>
+            </div>
+            <div className="metric-card gray">
+              <div className="metric-label" style={{ marginBottom: 6 }}>Canceladas</div>
+              <div className="metric-value" style={{ fontSize: '1.6rem' }}>{cancelledCount}</div>
+              <div className="metric-desc">Encerradas</div>
+            </div>
           </div>
 
-          <div className="card" style={{ borderTop: '3px solid #f59e0b' }}>
-            <div className="card-titleRow">
-              <div className="card-title">Pendentes</div>
-              <span className="badge badge-pending">Pendente</span>
-            </div>
-            <div className="card-kpi">{pendingCount}</div>
-            <div className="card-meta">Aguardando decisão administrativa</div>
-          </div>
-
-          <div className="card" style={{ borderTop: '3px solid #059669' }}>
-            <div className="card-titleRow">
-              <div className="card-title">Aprovadas</div>
-              <span className="badge badge-approved">Aprovado</span>
-            </div>
-            <div className="card-kpi">{approvedCount}</div>
-            <div className="card-meta">Reservas prontas para uso</div>
-          </div>
-
-          <div className="card" style={{ borderTop: '3px solid #dc2626' }}>
-            <div className="card-titleRow">
-              <div className="card-title">Rejeitadas</div>
-              <span className="badge badge-rejected">Rejeitado</span>
-            </div>
-            <div className="card-kpi">{rejectedCount}</div>
-            <div className="card-meta">Solicitações não aprovadas</div>
-          </div>
-
-          <div className="card">
-            <div className="card-titleRow">
-              <div className="card-title">Canceladas</div>
-              <span className="badge badge-cancelled">Cancelado</span>
-            </div>
-            <div className="card-kpi">{cancelledCount}</div>
-            <div className="card-meta">Reservas encerradas por cancelamento</div>
-          </div>
-
-          <div className="card card-wide">
-            <div className="card-titleRow">
-              <div className="card-title">Últimas solicitações</div>
-              <Link to="/rentals" className="dashboard-linkBtn" style={{ minHeight: 32, padding: '0 12px', fontSize: '0.82rem' }}>
-                Ver todas
-              </Link>
+          <div className="table-card">
+            <div className="table-header">
+              <div>
+                <span className="table-title">Últimas solicitações</span>
+                <span className="table-count">{rentals.length} total</span>
+              </div>
+              <Link to="/rentals" className="btn btn-ghost btn-sm">Ver todas →</Link>
             </div>
 
             {recentRentals.length === 0 ? (
-              <div className="card-meta">Você ainda não possui solicitações.</div>
+              <div style={{ padding: '1.5rem', color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+                Você ainda não possui solicitações.
+              </div>
             ) : (
-              <div className="table-wrapper">
+              <div className="table-wrapper" style={{ border: 'none', borderRadius: 0, marginTop: 0 }}>
                 <table className="dashboard-table">
                   <thead>
                     <tr>
@@ -162,7 +175,14 @@ export default function UserDashboard() {
                   </thead>
                   <tbody>
                     {recentRentals.map((rental) => (
-                      <tr key={rental.id}>
+                      <tr
+                        key={rental.id}
+                        style={
+                          rental.status === 'return_pending'
+                            ? { background: 'linear-gradient(90deg, #fffbeb, transparent)' }
+                            : {}
+                        }
+                      >
                         <td>
                           <span className="cell-main">
                             {rental?.vehicle?.brand} {rental?.vehicle?.model}
@@ -192,7 +212,7 @@ export default function UserDashboard() {
               </div>
             )}
           </div>
-        </div>
+        </>
       )}
     </div>
   );

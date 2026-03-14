@@ -81,6 +81,12 @@ function getMileageTone(mileage, nextMaintenance) {
   };
 }
 
+function getMaintenanceBarColor(percentage) {
+  if (percentage >= 95) return '#dc2626';
+  if (percentage > 75) return '#d97706';
+  return '#059669';
+}
+
 export default function VehicleCard({
   vehicle,
   selected,
@@ -98,6 +104,7 @@ export default function VehicleCard({
   const mileage = vehicle.mileage ?? 0;
   const nextMaint = vehicle.nextMaintenance || 30000;
   const pct = Math.min(Math.round((mileage / nextMaint) * 100), 100);
+  const maintenanceBarColor = getMaintenanceBarColor(pct);
 
   const transmission =
     vehicle.transmissionType === 'automatic'
@@ -279,7 +286,10 @@ export default function VehicleCard({
             <div className="maint-bar-track">
               <div
                 className="maint-bar-fill"
-                style={{ width: `${pct}%` }}
+                style={{
+                  width: `${pct}%`,
+                  backgroundColor: maintenanceBarColor,
+                }}
               />
             </div>
           </div>
