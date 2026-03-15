@@ -3,6 +3,13 @@ const mongoose = require('mongoose');
 
 const { User } = require('../src/models/User');
 
+/*
+ENGINEERING NOTE:
+Operational helper script used to list registered users directly from
+the database. This is useful for debugging authentication issues or
+verifying seed execution in local environments.
+*/
+
 function resolveMongoUri() {
   return (
     process.env.MONGO_URI ||

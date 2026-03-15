@@ -4,6 +4,7 @@ import VehicleGrid from '../components/VehicleGrid';
 import RentalRequestModal from '../components/RentalRequestModal';
 import '../styles/dashboard.css';
 
+// NOTE: User-facing reservation workspace for requesting and tracking rentals.
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }

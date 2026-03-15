@@ -3,6 +3,7 @@ import api from "../services/api";
 import "../styles/dashboard.css";
 import VehicleGrid from "./VehicleGrid";
 
+// NOTE: User reservation form that creates rental requests from available vehicles.
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }

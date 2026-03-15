@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import '../styles/dashboard.css';
 
+// NOTE: Reservation modal that combines calendar availability and request submission flow.
 function getApiErrorMessage(err, fallbackMessage) {
   const apiMessage = err?.response?.data?.error?.message;
   if (apiMessage) return apiMessage;

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 import '../styles/dashboard.css';
 
+// NOTE: Modal used by admins to create fleet vehicles from the dashboard UI.
 function getApiErrorMessage(err, fallbackMessage) {
   const apiMessage = err?.response?.data?.error?.message;
   if (apiMessage) return apiMessage;

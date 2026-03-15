@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import api from '../services/api';
 import '../styles/dashboard.css';
 
+// NOTE: Admin table that centralizes rental review, filtering and approval actions.
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -38,7 +39,7 @@ function getInitials(name) {
   return name.split(' ').slice(0, 2).map((n) => n[0].toUpperCase()).join('');
 }
 
-/* Generates a consistent gradient color per user name */
+/* Gera uma cor de gradiente consistente por nome */
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg,#6366f1,#8b5cf6)',
   'linear-gradient(135deg,#0ea5e9,#0284c7)',
@@ -58,11 +59,27 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
   const [loadingId, setLoadingId] = useState('');
   const [feedback, setFeedback] = useState({ type: '', message: '' });
 
-  const sortedRentals = useMemo(() => {
-    return [...safeArray(rentals)].sort(
-      (a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0)
-    );
-  }, [rentals]);
+const STATUS_PRIORITY = {
+  pending: 1,
+  return_pending: 2,
+  approved: 3,
+  rejected: 4,
+  cancelled: 5,
+  completed: 6,
+};
+
+const sortedRentals = useMemo(() => {
+  return [...safeArray(rentals)].sort((a, b) => {
+    const statusA = STATUS_PRIORITY[a?.status] ?? 99;
+    const statusB = STATUS_PRIORITY[b?.status] ?? 99;
+
+    if (statusA !== statusB) {
+      return statusA - statusB;
+    }
+
+    return new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0);
+  });
+}, [rentals]);
 
   const pendingCount = useMemo(
     () => sortedRentals.filter((r) => r.status === 'pending').length,
@@ -156,7 +173,7 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
               key={rental.id}
               className={`sol-table-row${isReturnPending ? ' highlight' : ''}`}
             >
-              {/* User with avatar */}
+              {/* Usuário com avatar */}
               <div className="user-cell">
                 <div
                   className="user-initials"
@@ -171,7 +188,7 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
                 </div>
               </div>
 
-              {/* Vehicle */}
+              {/* Veículo */}
               <div>
                 <div className="cell-main">
                   {rental?.vehicle?.brand} {rental?.vehicle?.model}
@@ -181,13 +198,13 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
                 )}
               </div>
 
-              {/* Period */}
+              {/* Período */}
               <div>
                 <div className="cell-main" style={{ fontSize: '0.82rem' }}>{rental.startDate}</div>
                 <div className="cell-sub">até {rental.endDate}</div>
               </div>
 
-              {/* Purpose */}
+              {/* Motivo */}
               <div>
                 <div
                   style={{
@@ -219,7 +236,7 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
                 </span>
               </div>
 
-              {/* Actions */}
+              {/* Ações */}
               <div className="row-actions">
                 {isPending ? (
                   <>
