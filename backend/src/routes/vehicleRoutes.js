@@ -28,12 +28,12 @@ assertFn(vehicleController.recordMaintenance, 'recordMaintenance');
 
 const router = express.Router();
 
-// Público
+// Public
 router.get('/', vehicleController.listVehicles);
 router.get('/:licensePlate', vehicleController.getByLicensePlate);
 router.get('/:licensePlate/availability', vehicleController.getAvailability);
 
-// 🔐 Admin only
+// Admin only
 router.post(
   '/',
   auth,

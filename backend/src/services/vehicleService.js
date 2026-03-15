@@ -21,6 +21,7 @@ const assertVehicleExists = (vehicle) => {
   if (!vehicle) fail('Veículo não encontrado', 404);
 };
 
+// NOTE: only serializable fields are returned — Mongoose document methods are stripped.
 const formatVehicle = (vehicleDoc) => ({
   id: vehicleDoc._id.toString(),
   brand: vehicleDoc.brand,
@@ -40,6 +41,8 @@ const formatVehicle = (vehicleDoc) => ({
   updatedAt: vehicleDoc.updatedAt,
 });
 
+// A vehicle enters maintenance as soon as it reaches
+// or exceeds the configured maintenance threshold.
 const shouldEnterMaintenance = (mileage, nextMaintenance) => mileage >= nextMaintenance;
 
 const findByLicensePlate = async (licensePlate) => {
@@ -57,6 +60,13 @@ const listVehicles = async () => {
   return vehicles.map(formatVehicle);
 };
 
+/*
+ENGINEERING NOTE:
+createVehicle enforces consistency at import time.
+If a vehicle is seeded or imported with mileage already past the maintenance
+threshold, its status is forced to MAINTENANCE rather than AVAILABLE.
+This prevents a vehicle from entering the fleet in an operationally invalid state.
+*/
 const createVehicle = async (input) => {
   const licensePlate = normalizeLicensePlate(input?.licensePlate);
   if (!licensePlate) fail('Placa é obrigatória', 400);
@@ -89,6 +99,9 @@ const createVehicle = async (input) => {
     fail('lastMaintenanceMileage não pode ser maior que mileage', 400);
   }
 
+  // Defensive consistency:
+  // if imported or seeded mileage already crossed the threshold,
+  // the vehicle must not start as available.
   if (shouldEnterMaintenance(payload.mileage, payload.nextMaintenance)) {
     payload.status = VEHICLE_STATUS.MAINTENANCE;
   }
@@ -109,6 +122,8 @@ const updateMileage = async ({ licensePlate, mileage }) => {
   const vehicle = await Vehicle.findOne({ licensePlate: plate });
   assertVehicleExists(vehicle);
 
+  // Mileage is monotonic in this domain.
+  // Decreasing values would corrupt maintenance history.
   if (mileage < vehicle.mileage) {
     fail('mileage não pode diminuir', 400);
   }
@@ -158,6 +173,14 @@ const setMaintenanceStatus = async ({ licensePlate, status }) => {
   return formatVehicle(vehicle);
 };
 
+/*
+ENGINEERING NOTE:
+recordMaintenance is the only operation that resets the maintenance cycle.
+It snapshots the current mileage as the last serviced point, sets a new
+threshold, and returns the vehicle to AVAILABLE status.
+This is intentionally separate from setMaintenanceStatus to prevent
+accidental resets via a generic status update.
+*/
 const recordMaintenance = async ({ licensePlate, newNextMaintenance }) => {
   const plate = normalizeLicensePlate(licensePlate);
   if (!plate) fail('Placa é obrigatória', 400);
@@ -171,6 +194,9 @@ const recordMaintenance = async ({ licensePlate, newNextMaintenance }) => {
     fail('newNextMaintenance deve ser maior que a mileage atual', 400);
   }
 
+  // Recording maintenance resets the operational checkpoint:
+  // the current mileage becomes the last serviced mileage,
+  // a new threshold is defined, and the vehicle returns to availability.
   vehicle.lastMaintenanceMileage = vehicle.mileage;
   vehicle.nextMaintenance = newNextMaintenance;
   vehicle.status = VEHICLE_STATUS.AVAILABLE;

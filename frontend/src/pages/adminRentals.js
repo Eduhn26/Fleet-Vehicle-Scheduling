@@ -3,6 +3,7 @@ import api from '../services/api';
 import AdminRentalTable from '../components/AdminRentalTable';
 import '../styles/dashboard.css';
 
+// NOTE: Admin rental management page for reviewing and processing reservation workflows.
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }

@@ -15,14 +15,14 @@ const rentalRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      // NOTE: mantemos referência ao usuário para evitar snapshot duplicado.
+      // NOTE: stores a reference to avoid a duplicated user snapshot on every rental.
     },
 
     vehicle: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Vehicle',
       required: true,
-      // NOTE: a fonte da verdade do veículo continua sendo o documento Vehicle.
+      // NOTE: the Vehicle document remains the single source of truth for vehicle data.
     },
 
     startDate: {
@@ -48,9 +48,9 @@ const rentalRequestSchema = new mongoose.Schema(
       enum: Object.values(RENTAL_STATUS),
       default: RENTAL_STATUS.PENDING,
       required: true,
-      // NOTE: cancelled entra na Fase 6 para fechar o lifecycle da reserva.
-      // NOTE: return_pending entra na Fase 9B para separar solicitação de devolução do aceite administrativo.
-      // NOTE: completed passa a representar encerramento operacional real da reserva.
+      // NOTE: cancelled was added to close the reservation lifecycle on user or admin abort.
+      // NOTE: return_pending separates the user's return request from the admin's final confirmation.
+      // NOTE: completed represents the real operational closure of a reservation.
     },
 
     adminNotes: {
@@ -58,19 +58,19 @@ const rentalRequestSchema = new mongoose.Schema(
       trim: true,
       maxlength: 500,
       default: '',
-      // TODO: se a auditoria crescer, separar em campos distintos: approvalNotes, rejectionNotes, cancelNotes, completionNotes.
+      // TODO: if audit grows, split into distinct fields: approvalNotes, rejectionNotes, cancelNotes, completionNotes.
     },
 
     returnRequestedMileage: {
       type: Number,
       min: 0,
-      // NOTE: KM informado pelo usuário ao solicitar devolução.
-      // NOTE: a consistência com a mileage do veículo continua sendo validada no service.
+      // NOTE: mileage reported by the user when requesting the return.
+      // NOTE: consistency with the vehicle's current mileage is validated in the service layer.
     },
 
     returnRequestedAt: {
       type: Date,
-      // NOTE: timestamp do momento em que o usuário envia a devolução para análise.
+      // NOTE: timestamp of the moment the user submits the return for administrative review.
     },
 
     returnNotes: {
@@ -78,18 +78,18 @@ const rentalRequestSchema = new mongoose.Schema(
       trim: true,
       maxlength: 500,
       default: '',
-      // NOTE: comentário opcional enviado pelo usuário no pedido de devolução.
+      // NOTE: optional comment submitted by the user alongside the return request.
     },
 
     actualMileage: {
       type: Number,
       min: 0,
-      // NOTE: quilometragem consolidada após aceite do admin e conclusão da reserva.
+      // NOTE: consolidated mileage recorded after admin acceptance and reservation completion.
     },
 
     completedAt: {
       type: Date,
-      // NOTE: timestamp final da conclusão administrativa da devolução.
+      // NOTE: timestamp of the final administrative closure of the return.
     },
 
     completionNotes: {
@@ -97,7 +97,7 @@ const rentalRequestSchema = new mongoose.Schema(
       trim: true,
       maxlength: 500,
       default: '',
-      // NOTE: observação final do admin ao concluir a devolução.
+      // NOTE: final admin observation recorded when confirming the return.
     },
   },
   {
@@ -106,7 +106,7 @@ const rentalRequestSchema = new mongoose.Schema(
   }
 );
 
-// NOTE: este índice favorece as consultas de conflito por veículo + período.
+// NOTE: this compound index optimises conflict queries by vehicle + date range.
 rentalRequestSchema.index({ vehicle: 1, startDate: 1, endDate: 1 });
 
 module.exports = {

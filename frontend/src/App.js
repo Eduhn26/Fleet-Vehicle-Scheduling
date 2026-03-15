@@ -11,6 +11,11 @@ import Rentals from './pages/rentals';
 import Layout from './components/Layout';
 import PrivateRoute from './components/PrivateRoute';
 
+/*
+ENGINEERING NOTE:
+HomeRedirect resolves the initial landing page from the authenticated role
+so users always enter the correct dashboard from the root URL.
+*/
 function HomeRedirect() {
   const { user } = useAuth();
 

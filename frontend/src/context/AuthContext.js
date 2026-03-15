@@ -3,6 +3,8 @@ import api from '../services/api';
 
 const AuthContext = createContext(null);
 
+// NOTE: gracefully handles malformed or missing localStorage values
+// without throwing — corrupted storage should not crash the app.
 function safeJsonParse(value) {
   try {
     return value ? JSON.parse(value) : null;
@@ -11,6 +13,12 @@ function safeJsonParse(value) {
   }
 }
 
+/*
+ENGINEERING NOTE:
+normalizeLoginResponse handles multiple possible token field names.
+This decouples the frontend from minor backend contract variations
+and makes the auth flow resilient to API response shape changes.
+*/
 function normalizeLoginResponse(data) {
   const token =
     data?.token ??
@@ -24,6 +32,8 @@ function normalizeLoginResponse(data) {
   return { token, user };
 }
 
+// NOTE: both token and user must be present for the session to be valid.
+// A partial session (token without user or vice versa) is cleared on boot.
 function normalizeBootSession() {
   const token = localStorage.getItem('token');
   const user = safeJsonParse(localStorage.getItem('user'));
@@ -37,6 +47,13 @@ function normalizeBootSession() {
   return user;
 }
 
+/*
+ENGINEERING NOTE:
+AuthProvider listens for the 'auth:logout' custom event so any module
+(including the Axios interceptor) can trigger a logout without importing
+the context directly. This avoids circular dependencies between api.js
+and AuthContext.js.
+*/
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => normalizeBootSession());
 

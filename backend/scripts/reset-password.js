@@ -14,6 +14,12 @@ function resolveMongoUri() {
   );
 }
 
+/*
+SEC:
+This script is intended only for local recovery and manual development use.
+It should never be executed against production data because it contains
+hardcoded credentials and bypasses the normal password reset flow.
+*/
 async function resetPassword() {
   const mongoUri = resolveMongoUri();
 

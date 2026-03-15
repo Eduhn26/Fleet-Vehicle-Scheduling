@@ -38,7 +38,7 @@ function getInitials(name) {
   return name.split(' ').slice(0, 2).map((n) => n[0].toUpperCase()).join('');
 }
 
-/* Gera uma cor de gradiente consistente por nome */
+/* Generates a consistent gradient color per user name */
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg,#6366f1,#8b5cf6)',
   'linear-gradient(135deg,#0ea5e9,#0284c7)',
@@ -156,7 +156,7 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
               key={rental.id}
               className={`sol-table-row${isReturnPending ? ' highlight' : ''}`}
             >
-              {/* Usuário com avatar */}
+              {/* User with avatar */}
               <div className="user-cell">
                 <div
                   className="user-initials"
@@ -171,7 +171,7 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
                 </div>
               </div>
 
-              {/* Veículo */}
+              {/* Vehicle */}
               <div>
                 <div className="cell-main">
                   {rental?.vehicle?.brand} {rental?.vehicle?.model}
@@ -181,13 +181,13 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
                 )}
               </div>
 
-              {/* Período */}
+              {/* Period */}
               <div>
                 <div className="cell-main" style={{ fontSize: '0.82rem' }}>{rental.startDate}</div>
                 <div className="cell-sub">até {rental.endDate}</div>
               </div>
 
-              {/* Motivo */}
+              {/* Purpose */}
               <div>
                 <div
                   style={{
@@ -219,7 +219,7 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
                 </span>
               </div>
 
-              {/* Ações */}
+              {/* Actions */}
               <div className="row-actions">
                 {isPending ? (
                   <>

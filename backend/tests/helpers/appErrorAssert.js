@@ -1,3 +1,8 @@
+/*
+ENGINEERING NOTE:
+Test helper that normalizes AppError assertions so service tests can focus
+on business rules instead of repeating try/catch boilerplate.
+*/
 const expectAppError = async (promise, expected) => {
   try {
     await promise;

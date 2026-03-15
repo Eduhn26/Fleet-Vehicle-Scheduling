@@ -18,6 +18,13 @@ const isProd = process.env.NODE_ENV === 'production';
 const serviceName = 'fleet-vehicle-scheduling-api';
 const serviceVersion = process.env.npm_package_version || '1.0.0';
 
+/*
+ENGINEERING NOTE:
+CORS origin policy is resolved dynamically from FRONTEND_URL.
+In production with no FRONTEND_URL set, all cross-origin requests are blocked.
+In development with no FRONTEND_URL set, all origins are allowed for convenience.
+This avoids shipping permissive CORS to production by accident.
+*/
 const buildCorsOptions = () => {
   const frontendUrl = String(process.env.FRONTEND_URL || '').trim();
 
@@ -38,6 +45,8 @@ const buildCorsOptions = () => {
   };
 };
 
+// NOTE: trust proxy is required so rate limiting and logging resolve
+// the real client IP from X-Forwarded-For when behind Render or similar.
 app.set('trust proxy', 1);
 
 app.use(helmet());
@@ -48,14 +57,17 @@ app.use(requestId);
 app.use(requestLogger);
 app.use(rateLimit);
 
-// 🔐 AUTH
+// Authentication stays isolated from domain routes so
+// access concerns remain separated from fleet workflows.
 app.use('/api/auth', authRoutes);
 
-// Domain Routes
+// Core domain routes expose the application workflows.
+// Business rules remain inside Services, not in route handlers.
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/rentals', rentalRoutes);
 
-// Health
+// Health is intentionally lightweight so operational checks
+// can validate API availability without touching domain flows.
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',

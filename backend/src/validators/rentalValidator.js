@@ -1,5 +1,7 @@
 const { z } = require('zod');
 
+// NOTE: The regex keeps transport validation strict and timezone-agnostic
+// by accepting only calendar dates in YYYY-MM-DD format.
 const yyyyMmDd = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'data deve estar no formato YYYY-MM-DD');
@@ -15,6 +17,11 @@ const adminDecisionSchema = z.object({
   adminNotes: z.string().trim().max(500).optional().default(''),
 });
 
+/*
+ENGINEERING NOTE:
+Cancellation notes stay optional because this phase does not require a
+mandatory business justification for every cancellation path.
+*/
 const cancelRequestSchema = z.object({
   // NOTE: mantemos opcional porque nem todo cancelamento exige justificativa nesta fase.
   cancelNotes: z.string().trim().max(500).optional().default(''),

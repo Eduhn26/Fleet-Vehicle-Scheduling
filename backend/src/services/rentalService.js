@@ -9,8 +9,18 @@ const fail = (message, statusCode) => {
 };
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+// Business rule: reservations are intentionally capped
+// to avoid long vehicle locks in the shared fleet.
 const MAX_RENTAL_DAYS = 5;
 
+/*
+ENGINEERING NOTE:
+Two date-to-string helpers exist for a reason.
+toYyyyMmDd uses UTC to serialize dates stored in MongoDB (always UTC).
+toLocalYyyyMmDd uses local time for "today" comparisons so a same-day
+reservation is not rejected because of timezone offset.
+*/
 const toYyyyMmDd = (date) => {
   const d = date instanceof Date ? date : new Date(date);
   if (Number.isNaN(d.getTime())) return null;
@@ -38,6 +48,8 @@ const listApprovedPeriodsByVehicle = async ({ licensePlate }) => {
   const vehicle = await Vehicle.findOne({ licensePlate: plate });
   assertExists(vehicle, 'Veículo não encontrado');
 
+  // Only approved reservations are treated as confirmed schedule blocks.
+  // Pending requests must not lock vehicle availability.
   const rentals = await RentalRequest.find({
     vehicle: vehicle._id,
     status: RENTAL_STATUS.APPROVED,
@@ -127,6 +139,8 @@ const normalizePeriod = ({ startDate, endDate }) => {
     fail(`Período máximo é de ${MAX_RENTAL_DAYS} dias`, 400);
   }
 
+  // Start date validation uses local calendar date instead of UTC.
+  // This avoids rejecting same-day reservations because of timezone shifts.
   const today = toLocalYyyyMmDd(new Date());
   const start = String(startDate || '').trim();
 
@@ -137,6 +151,12 @@ const normalizePeriod = ({ startDate, endDate }) => {
   return { startUtc, endUtc, days };
 };
 
+/*
+ENGINEERING NOTE:
+formatRental handles both populated and unpopulated Mongoose documents.
+Callers do not need to know whether populate() was used — the shape
+returned is always consistent.
+*/
 const formatRental = (doc) => ({
   id: doc._id.toString(),
 
@@ -194,6 +214,8 @@ const createRequest = async ({ userId, vehicleId, startDate, endDate, purpose })
   return formatRental(created);
 };
 
+// Reservation lifecycle is protected explicitly.
+// Invalid state jumps are rejected instead of being silently coerced.
 const approveRequest = async ({ requestId, adminNotes }) => {
   const rId = assertObjectIdLike(requestId, 'requestId');
   const notes = normalizeNotes(adminNotes);
@@ -242,8 +264,8 @@ const cancelRequest = async ({ requestId, cancelNotes }) => {
 
 /*
 NOTE:
-Usuário informa devolução do veículo.
-Pode corrigir enquanto estiver em RETURN_PENDING.
+The user can report the vehicle return before the admin closes the flow.
+RETURN_PENDING remains editable so the requested mileage can still be corrected.
 */
 const requestReturn = async ({ requestId, userId, mileage, returnNotes }) => {
   const rId = assertObjectIdLike(requestId, 'requestId');
@@ -286,8 +308,8 @@ const requestReturn = async ({ requestId, userId, mileage, returnNotes }) => {
 
 /*
 NOTE:
-Admin confirma devolução.
-Aqui sim o veículo é atualizado.
+The admin confirms the return in the final lifecycle step.
+Only here the vehicle mileage and maintenance state become official.
 */
 const completeRental = async ({ requestId, adminNotes }) => {
   const rId = assertObjectIdLike(requestId, 'requestId');
@@ -313,6 +335,8 @@ const completeRental = async ({ requestId, adminNotes }) => {
 
   vehicle.mileage = km;
 
+  // Maintenance is triggered automatically when the confirmed
+  // return mileage reaches the configured service threshold.
   if (vehicle.nextMaintenance && km >= vehicle.nextMaintenance) {
     vehicle.status = VEHICLE_STATUS.MAINTENANCE;
   }

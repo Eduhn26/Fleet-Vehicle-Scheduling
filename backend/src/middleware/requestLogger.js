@@ -1,30 +1,45 @@
-const getClientIp = require('../utils/requestClientIp');
+/*
+ENGINEERING NOTE:
 
-// NOTE:
-// Middleware de observabilidade inicial.
-// Registra método, rota, status e tempo de resposta.
-// O request id entra no log para permitir correlação entre eventos
-// da mesma requisição sem contaminar a camada de negócio.
+Request logging is intentionally implemented as middleware so
+every incoming HTTP request can be traced consistently.
 
-const requestLogger = (req, res, next) => {
+The log includes:
+- timestamp
+- requestId (correlation id)
+- client IP
+- HTTP method
+- request path
+- response status
+- request duration
+
+This information is essential for production debugging and
+performance investigation.
+*/
+
+module.exports = (req, res, next) => {
   const start = Date.now();
 
+  // NOTE: logging is deferred to the 'finish' event so the response
+  // status code is available at the time the entry is written.
   res.on('finish', () => {
     const duration = Date.now() - start;
 
     const timestamp = new Date().toISOString();
-    const requestId = req.id || 'unknown-request';
-    const clientIp = getClientIp(req);
     const method = req.method;
     const path = req.originalUrl;
     const status = res.statusCode;
 
+    const requestId = req.id || '-'; // fallback when requestId middleware is not mounted
+    const ip =
+      req.headers['x-forwarded-for'] ||
+      req.socket.remoteAddress ||
+      '-';
+
     console.log(
-      `[${timestamp}] [req:${requestId}] [ip:${clientIp}] ${method} ${path} ${status} ${duration}ms`
+      `[${timestamp}] [req:${requestId}] [ip:${ip}] ${method} ${path} ${status} ${duration}ms`
     );
   });
 
   next();
 };
-
-module.exports = requestLogger;

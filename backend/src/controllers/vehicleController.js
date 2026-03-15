@@ -1,6 +1,13 @@
 const vehicleService = require('../services/vehicleService');
 const rentalService = require('../services/rentalService');
 
+/*
+ENGINEERING NOTE:
+vehicleController bridges HTTP and two domain services.
+getAvailability is intentionally served from rentalService rather than
+vehicleService because availability is a rental concept, not a vehicle attribute.
+*/
+
 const listVehicles = async (_req, res, next) => {
   try {
     const vehicles = await vehicleService.listVehicles();
@@ -21,6 +28,7 @@ const getByLicensePlate = async (req, res, next) => {
   }
 };
 
+// NOTE: availability is derived from approved rental periods, not from vehicle.status.
 const getAvailability = async (req, res, next) => {
   try {
     const { licensePlate } = req.params;

@@ -1,5 +1,13 @@
 const rentalService = require('../services/rentalService');
 
+/*
+ENGINEERING NOTE:
+rentalController is the HTTP boundary for the rental lifecycle.
+Each handler extracts identity and input from the request, delegates
+to rentalService, and returns a normalized JSON response.
+No business rules live here — controllers are intentionally stateless.
+*/
+
 const listRequests = async (req, res, next) => {
   try {
     const { status } = req.query;
@@ -11,6 +19,7 @@ const listRequests = async (req, res, next) => {
   }
 };
 
+// NOTE: userId is sourced from the verified JWT payload, not from the request body.
 const listMyRequests = async (req, res, next) => {
   try {
     const requests = await rentalService.listRequests({

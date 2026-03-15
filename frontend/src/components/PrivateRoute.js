@@ -1,6 +1,11 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+/*
+ENGINEERING NOTE:
+PrivateRoute protects authenticated screens and optionally restricts
+access by role before nested routes are rendered.
+*/
 export default function PrivateRoute({ allowedRoles }) {
   const { user } = useAuth();
 

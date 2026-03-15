@@ -1,3 +1,8 @@
+/*
+ENGINEERING NOTE:
+Frontend entry point. It mounts the React tree once and wraps the entire
+application with AuthProvider before routing starts.
+*/
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './styles/global.css';

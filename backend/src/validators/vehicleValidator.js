@@ -1,5 +1,7 @@
 const { z } = require('zod');
 
+// NOTE: Enums are duplicated here so transport validation stays decoupled
+// from Mongoose models and can fail fast before hitting persistence.
 const VEHICLE_STATUS = ['available', 'maintenance'];
 const TRANSMISSION_TYPE = ['manual', 'automatic'];
 const FUEL_TYPE = ['gasoline', 'ethanol', 'flex', 'diesel', 'electric', 'hybrid'];
@@ -25,6 +27,8 @@ const createVehicleSchema = z.object({
   nextMaintenance: z.number().min(0),
   lastMaintenanceMileage: z.number().min(0).optional().default(0),
 
+  // NOTE: imageUrl accepts either a valid URL or an empty string so
+  // the frontend can keep optional image fields controlled without custom coercion.
   imageUrl: z
     .string()
     .trim()

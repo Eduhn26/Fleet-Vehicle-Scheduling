@@ -7,7 +7,7 @@ const run = async () => {
   try {
     await connectDatabase();
 
-    // NOTE: smoke test sem HTTP para validar a regra de manutenção antes da Fase 3.
+    // NOTE: direct service call (no HTTP) to validate the maintenance rule in isolation.
     const plate = 'ABC1D23';
 
     const before = await vehicleService.findByLicensePlate(plate);
@@ -18,7 +18,7 @@ const run = async () => {
       status: before.status,
     });
 
-    const targetMileage = before.nextMaintenance; // bater exatamente no threshold
+    const targetMileage = before.nextMaintenance; // hit exactly at the maintenance threshold
     const afterMileage = await vehicleService.updateMileage({
       licensePlate: plate,
       mileage: targetMileage,
