@@ -59,11 +59,27 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
   const [loadingId, setLoadingId] = useState('');
   const [feedback, setFeedback] = useState({ type: '', message: '' });
 
-  const sortedRentals = useMemo(() => {
-    return [...safeArray(rentals)].sort(
-      (a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0)
-    );
-  }, [rentals]);
+const STATUS_PRIORITY = {
+  pending: 1,
+  return_pending: 2,
+  approved: 3,
+  rejected: 4,
+  cancelled: 5,
+  completed: 6,
+};
+
+const sortedRentals = useMemo(() => {
+  return [...safeArray(rentals)].sort((a, b) => {
+    const statusA = STATUS_PRIORITY[a?.status] ?? 99;
+    const statusB = STATUS_PRIORITY[b?.status] ?? 99;
+
+    if (statusA !== statusB) {
+      return statusA - statusB;
+    }
+
+    return new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0);
+  });
+}, [rentals]);
 
   const pendingCount = useMemo(
     () => sortedRentals.filter((r) => r.status === 'pending').length,
