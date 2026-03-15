@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import '../styles/dashboard.css';
 
+// NOTE: Admin dashboard overview for fleet health, metrics and shortcut actions.
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }

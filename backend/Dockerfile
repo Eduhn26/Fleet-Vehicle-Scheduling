@@ -1,21 +1,21 @@
-# NOTE: Usamos uma imagem oficial do Node para garantir ambiente consistente
+# NOTE: Official Node image used to ensure a consistent and reproducible build environment
 FROM node:20-alpine
 
-# NOTE: Define o diretório de trabalho dentro do container
+# NOTE: Set the working directory inside the container
 WORKDIR /app
 
-# NOTE: Copiamos primeiro apenas os arquivos de dependência
-# para aproveitar cache de build do Docker
+# NOTE: Copy only the dependency manifests first
+# to take advantage of Docker layer caching on npm install
 COPY package*.json ./
 
-# NOTE: Instala apenas dependências de produção
+# NOTE: Install production dependencies only
 RUN npm install --production
 
-# NOTE: Copiamos o restante da aplicação
+# NOTE: Copy the rest of the application source
 COPY . .
 
-# NOTE: Porta usada pela API
+# NOTE: Port exposed by the API
 EXPOSE 5000
 
-# NOTE: Comando padrão que inicia a aplicação
+# NOTE: Default command to start the application
 CMD ["node", "server.js"]

@@ -1,3 +1,12 @@
+/*
+ENGINEERING NOTE:
+IP resolution uses a priority chain to handle reverse proxy setups correctly.
+X-Forwarded-For is checked first (set by load balancers and CDNs), followed by
+X-Real-IP, then Express's req.ip (which respects trust proxy), and finally the
+raw socket address as a last resort. IPv6 loopback and IPv4-mapped addresses
+are normalised so logs always contain a clean IPv4 string.
+*/
+
 const normalizeIp = (value) => {
   const ip = String(value || '').trim();
 
@@ -16,6 +25,7 @@ const extractForwardedIp = (headerValue) => {
   const forwarded = String(headerValue || '').trim();
   if (!forwarded) return '';
 
+  // NOTE: X-Forwarded-For may contain a comma-separated chain — the first entry is the original client.
   const firstIp = forwarded.split(',')[0]?.trim();
   return normalizeIp(firstIp);
 };

@@ -1,3 +1,8 @@
+/*
+ENGINEERING NOTE:
+Service-level suite for rental business rules. It validates lifecycle
+transitions directly without HTTP transport noise.
+*/
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 

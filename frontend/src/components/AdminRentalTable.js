@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import api from '../services/api';
 import '../styles/dashboard.css';
 
+// NOTE: Admin table that centralizes rental review, filtering and approval actions.
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }

@@ -25,7 +25,7 @@ const run = async () => {
       { email: payload.email },
       { $set: payload },
       {
-        returnDocument: 'after', // NOTE: substitui `new: true` (deprecated no Mongoose)
+        returnDocument: 'after', // NOTE: replaces the deprecated `new: true` option in Mongoose
         upsert: true,
         runValidators: true,
       }

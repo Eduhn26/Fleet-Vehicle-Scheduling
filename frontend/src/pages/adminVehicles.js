@@ -6,6 +6,7 @@ import RentalRequestModal from '../components/RentalRequestModal';
 import VehicleDetailsModal from '../components/VehicleDetailsModal';
 import '../styles/dashboard.css';
 
+// NOTE: Admin fleet management page for vehicle inventory, maintenance and creation flows.
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }

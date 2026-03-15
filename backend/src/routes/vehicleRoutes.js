@@ -12,9 +12,17 @@ const {
   recordMaintenanceSchema,
 } = require('../validators/vehicleValidator');
 
+/*
+ENGINEERING NOTE:
+This router exposes read-only fleet endpoints to authenticated users,
+while mutation endpoints remain restricted to admin roles.
+
+The assertFn guard ensures that controller handlers exist at module
+load time, preventing silent runtime failures caused by missing exports.
+*/
 const assertFn = (fn, name) => {
   if (typeof fn !== 'function') {
-    throw new Error(`Handler inválido: vehicleController.${name} não é função`);
+    throw new Error(`Invalid handler: vehicleController.${name} is not a function`);
   }
 };
 
@@ -28,12 +36,12 @@ assertFn(vehicleController.recordMaintenance, 'recordMaintenance');
 
 const router = express.Router();
 
-// Público
+// Public fleet visibility endpoints
 router.get('/', vehicleController.listVehicles);
 router.get('/:licensePlate', vehicleController.getByLicensePlate);
 router.get('/:licensePlate/availability', vehicleController.getAvailability);
 
-// 🔐 Admin only
+// Admin-only fleet mutation endpoints
 router.post(
   '/',
   auth,

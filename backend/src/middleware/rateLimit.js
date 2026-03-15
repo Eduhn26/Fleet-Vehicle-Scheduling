@@ -1,6 +1,13 @@
 const AppError = require('../utils/AppError');
 const getClientIp = require('../utils/requestClientIp');
 
+/*
+ENGINEERING NOTE:
+Rate limiting is implemented as a stateful in-process middleware using a Map.
+This is intentional for single-instance deployments — no external dependency
+(Redis, Memcached) is needed. For multi-instance environments, this strategy
+would need to be replaced with a shared store.
+*/
 const clients = new Map();
 
 const DEFAULT_WINDOW_MS = 60 * 1000;
@@ -17,6 +24,8 @@ const toPositiveInteger = (value, fallback) => {
   return parsed;
 };
 
+// NOTE: window and limit are read per-request so values can be
+// updated via environment without restarting the process.
 const getWindowMs = () =>
   toPositiveInteger(process.env.RATE_LIMIT_WINDOW_MS, DEFAULT_WINDOW_MS);
 
@@ -25,6 +34,8 @@ const getMaxRequests = () =>
 
 const getClientKey = (req) => getClientIp(req);
 
+// NOTE: standard rate limit headers allow clients to self-throttle
+// before hitting the limit.
 const setRateLimitHeaders = (res, { limit, remaining, resetAt }) => {
   res.setHeader('X-RateLimit-Limit', String(limit));
   res.setHeader('X-RateLimit-Remaining', String(Math.max(remaining, 0)));
@@ -32,6 +43,8 @@ const setRateLimitHeaders = (res, { limit, remaining, resetAt }) => {
 };
 
 const rateLimit = (req, res, next) => {
+  // NOTE: health endpoint bypasses rate limiting so uptime monitors
+  // are never blocked by request quotas.
   if (req.path === HEALTH_PATH) {
     return next();
   }
@@ -69,7 +82,7 @@ const rateLimit = (req, res, next) => {
   });
 
   if (existing.count > maxRequests) {
-    // NOTE: rate limit pertence à borda HTTP/infrastrutura, nunca ao service.
+    // NOTE: rate limiting belongs at the HTTP edge layer, never inside a service.
     return next(new AppError('Muitas requisições. Tente novamente em instantes.', 429));
   }
 

@@ -1,5 +1,13 @@
 const AppError = require('../utils/AppError');
 
+/*
+ENGINEERING NOTE:
+requireRole is a factory that returns a middleware bound to the allowed roles
+passed at mount time. This keeps route definitions declarative:
+  router.delete('/:id', auth, requireRole('admin'), handler)
+Role evaluation happens after auth, so req.user is always guaranteed to exist
+when this middleware runs in the normal middleware chain.
+*/
 const requireRole = (...allowedRoles) => {
   const roles = allowedRoles.flat().map((r) => String(r).trim()).filter(Boolean);
 

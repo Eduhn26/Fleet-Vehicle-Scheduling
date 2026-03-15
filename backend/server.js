@@ -4,6 +4,12 @@ const connectDatabase = require('./src/config/database');
 
 const PORT = process.env.PORT || 5000;
 
+/*
+ENGINEERING NOTE:
+startServer is async so the database connection is fully established
+before the HTTP server begins accepting requests.
+This prevents the API from serving traffic before persistence is ready.
+*/
 const startServer = async () => {
   await connectDatabase();
 

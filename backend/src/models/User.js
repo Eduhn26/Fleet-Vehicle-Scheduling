@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       minlength: 5,
       maxlength: 160,
-      // NOTE: validação “leve” aqui. Regras (ex: formato estrito) ficam em validator (Zod) na Fase 3.
+      // NOTE: lightweight validation only. Strict format rules are enforced by the Zod validator.
     },
 
     password: {
@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
       maxlength: 200,
-      // SEC: hash é responsabilidade do AuthService (Fase 2).
+      // SEC: hashing is the responsibility of AuthService — the model stores the hash only.
     },
 
     role: {
@@ -53,7 +53,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: 40,
       default: '',
-      // NOTE: matrícula/identificador interno do usuário (se sua frota usar isso).
+      // NOTE: internal employee ID — optional depending on fleet configuration.
     },
   },
   {
@@ -62,7 +62,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// NOTE: `unique: true` no campo email já cria o índice. Duplicar com schema.index gera warning.
+// NOTE: unique: true on the email field already creates the index — adding schema.index would cause a duplicate index warning.
 
 module.exports = {
   User: mongoose.model('User', userSchema),

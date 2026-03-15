@@ -7,7 +7,7 @@ const run = async () => {
   try {
     await connectDatabase();
 
-    // 🔥 Remove veículos antigos
+    // NOTE: wipes existing vehicles so the seed always starts from a clean state.
     await Vehicle.deleteMany({});
     console.log('🧹 Old vehicles removed');
 

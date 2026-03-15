@@ -38,7 +38,7 @@ const vehicleSchema = new mongoose.Schema(
       required: true,
       min: 1900,
       max: new Date().getFullYear() + 1,
-      // NOTE: permite modelos do “ano que vem” (padrão de mercado)
+      // NOTE: allows next-year models — standard practice in the automotive market.
     },
 
     licensePlate: {
@@ -49,7 +49,7 @@ const vehicleSchema = new mongoose.Schema(
       uppercase: true,
       minlength: 5,
       maxlength: 10,
-      // NOTE: validação “leve” aqui. Regras e normalização definitiva ficam no Service.
+      // NOTE: lightweight validation only. Definitive format rules and normalization live in the Service.
     },
 
     color: {
@@ -95,7 +95,7 @@ const vehicleSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
-      // NOTE: isso é “dado”, não regra. A regra de quando entrar em manutenção vive no Service.
+      // NOTE: this is data, not a rule. The logic for when to trigger maintenance lives in the Service.
     },
 
     lastMaintenanceMileage: {
@@ -110,7 +110,7 @@ const vehicleSchema = new mongoose.Schema(
       trim: true,
       maxlength: 500,
       default: '',
-      // NOTE: opcional. Frontend usa placeholder quando vazio.
+      // NOTE: optional — the frontend renders a placeholder image when this field is empty.
     },
   },
   {

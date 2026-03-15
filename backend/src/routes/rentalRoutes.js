@@ -20,7 +20,7 @@ router.get(
   auth,
   requireRole('admin'),
   validate(listRequestsQuerySchema, 'query'),
-  // SEC: listagem global expõe dados de todas as requests; precisa ficar restrita a admin.
+  // SEC: global listing exposes data for all requests and must remain restricted to admin.
   rentalController.listRequests
 );
 
@@ -60,7 +60,7 @@ router.patch(
   '/:id/request-return',
   auth,
   validate(requestReturnSchema),
-  // NOTE: o user só solicita devolução; a conclusão final continua dependendo do admin.
+  // NOTE: the user only requests the return; final closure still depends on admin confirmation.
   rentalController.requestReturn
 );
 
@@ -69,7 +69,7 @@ router.patch(
   auth,
   requireRole('admin'),
   validate(adminDecisionSchema),
-  // NOTE: a devolução só vira conclusão operacional após aceite do admin.
+  // NOTE: the return becomes an operational closure only after admin acceptance.
   rentalController.completeRental
 );
 

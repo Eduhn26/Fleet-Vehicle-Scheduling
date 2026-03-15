@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import '../styles/dashboard.css';
 
 import {
+// NOTE: Presentational card used to render a vehicle summary and quick context actions.
   FiMoreVertical,
   FiUsers,
   FiCalendar,

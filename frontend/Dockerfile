@@ -1,26 +1,26 @@
-# NOTE: Imagem leve e estável para desenvolvimento local do frontend
+# NOTE: Lightweight and stable base image for local frontend development
 FROM node:20-alpine
 
-# NOTE: Diretório de trabalho padrão dentro do container
+# NOTE: Default working directory inside the container
 WORKDIR /app
 
-# NOTE: Copiamos primeiro os manifests para aproveitar cache de dependências
+# NOTE: Copy manifests first to take advantage of Docker layer caching for dependencies
 COPY package*.json ./
 
-# NOTE: Instalamos dependências necessárias para rodar o React em modo dev
+# NOTE: Install all dependencies required to run React in dev mode
 RUN npm install
 
-# NOTE: Copiamos o restante da aplicação
+# NOTE: Copy the rest of the application
 COPY . .
 
-# NOTE: O dev server do React roda na porta 3000
+# NOTE: The React dev server runs on port 3000
 EXPOSE 3000
 
-# NOTE: Habilita polling para evitar problemas de watch em volumes Docker no Windows
+# NOTE: Enable polling to avoid watch issues with Docker volumes on Windows
 ENV CHOKIDAR_USEPOLLING=true
 
-# NOTE: Necessário para o dev server aceitar conexões fora do container
+# NOTE: Required for the dev server to accept connections from outside the container
 ENV HOST=0.0.0.0
 
-# NOTE: Comando padrão para iniciar o frontend em modo desenvolvimento
+# NOTE: Default command to start the frontend in development mode
 CMD ["npm", "start"]

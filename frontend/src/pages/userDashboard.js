@@ -4,6 +4,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import '../styles/dashboard.css';
 
+// NOTE: User dashboard focused on personal reservation context and quick actions.
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }

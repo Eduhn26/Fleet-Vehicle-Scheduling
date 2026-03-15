@@ -1,3 +1,4 @@
+// NOTE: Jest is configured for backend-only tests with coverage focused on runtime application code.
 module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/tests'],

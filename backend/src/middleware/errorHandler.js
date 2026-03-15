@@ -21,6 +21,12 @@ const resolveLogLevel = (statusCode) => {
   return 'info';
 };
 
+/*
+ENGINEERING NOTE:
+The log payload is structured for observability.
+It enables correlation between error, requestId, client IP, route, and status
+without relying on fragile free-text parsing.
+*/
 const buildErrorLogPayload = ({ err, req, statusCode, category }) => ({
   timestamp: new Date().toISOString(),
   level: resolveLogLevel(statusCode),
@@ -42,6 +48,7 @@ const logError = ({ err, req, statusCode, category }) => {
     category,
   });
 
+  // SEC: stack trace is only included outside production to support local debugging.
   if (!isProd && err?.stack) {
     payload.stack = err.stack;
   }
@@ -49,6 +56,11 @@ const logError = ({ err, req, statusCode, category }) => {
   console.error(JSON.stringify(payload));
 };
 
+/*
+ENGINEERING NOTE:
+The error response shape is normalized to maintain a consistent contract with the frontend.
+When additional details are present, they are included without breaking the main payload shape.
+*/
 const buildErrorResponse = ({ message, requestId, details }) => {
   const payload = {
     error: {
@@ -64,8 +76,15 @@ const buildErrorResponse = ({ message, requestId, details }) => {
   return payload;
 };
 
+/*
+ENGINEERING NOTE:
+Errors are classified before responding so each category gets
+the correct HTTP status and a safe, client-facing message.
+Mongoose internals (CastError, ValidationError, duplicate key) are
+translated into domain-neutral language — the client never sees ODM details.
+*/
 const errorHandler = (err, req, res, next) => {
-  // NOTE: Express exige a assinatura com `next` mesmo se não usamos.
+  // NOTE: Express requires the 4-argument signature even when next is unused.
   const requestId = req?.id || 'unknown-request';
 
   if (isLikelyJsonSyntaxError(err)) {
@@ -151,7 +170,7 @@ const errorHandler = (err, req, res, next) => {
     );
   }
 
-  // SEC: em produção, nunca devolvemos stack/erro bruto pro cliente.
+  // SEC: in production, raw errors and stack traces are never returned to the client.
   logError({
     err,
     req,

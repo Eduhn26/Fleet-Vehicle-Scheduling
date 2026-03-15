@@ -28,9 +28,9 @@ async function run() {
 
     /*
     NOTE:
-    Smoke test chama diretamente o service em vez de usar HTTP.
-    Isso permite validar regras de domínio sem interferência de
-    middleware, controllers ou validações de transporte.
+    Smoke test calls the service directly instead of going through HTTP.
+    This validates domain rules without interference from middleware,
+    controllers, or transport-layer validation.
     */
     const request = await rentalService.createRequest({
       userId: user._id.toString(),
@@ -55,9 +55,9 @@ async function run() {
 
     /*
     NOTE:
-    Apenas reservas APPROVED bloqueiam calendário.
-    Este teste garante que createRequest detecta conflito
-    quando já existe reserva aprovada no mesmo período.
+    Only APPROVED reservations block the calendar.
+    This test ensures createRequest detects a conflict
+    when an approved reservation already exists for the same period.
     */
     try {
       await rentalService.createRequest({
@@ -98,8 +98,8 @@ async function run() {
 
     /*
     NOTE:
-    Lifecycle da reserva não permite reabrir fluxo após cancelamento.
-    Este teste valida que approveRequest protege essa transição.
+    The reservation lifecycle does not allow reopening a flow after cancellation.
+    This test validates that approveRequest enforces that transition guard.
     */
     try {
       await rentalService.approveRequest({

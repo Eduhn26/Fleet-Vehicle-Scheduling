@@ -19,6 +19,11 @@ function getInitials(name) {
     .join('');
 }
 
+/*
+ENGINEERING NOTE:
+Shared shell for authenticated screens. It centralizes navigation, user
+identity display and logout flow so dashboards stay focused on page content.
+*/
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();

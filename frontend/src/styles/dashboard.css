@@ -81,7 +81,7 @@
   box-shadow: var(--shadow-md);
 }
 
-/* Accent top bar via borderTop inline style (já existente nos pages) */
+/* Accent top bar applied via inline borderTop style in page components */
 .card[style*="borderTop"] {
   padding-top: 1.35rem;
 }
@@ -250,14 +250,14 @@
   background: var(--color-card);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-xl);
-  /* overflow: hidden removido — dropdown do menu fica cortado */
+  /* overflow: hidden removed — dropdown menu would be clipped otherwise */
   overflow: visible;
   cursor: pointer;
   transition: box-shadow var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
   position: relative;
 }
 
-/* Garante que o card visualmente ainda tenha cantos arredondados */
+/* Ensures the card still visually preserves rounded corners on first and last children */
 .vehicle-card > *:first-child {
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
@@ -1014,7 +1014,7 @@
   .vehicle-mileageBadge { align-self: stretch; justify-content: center; }
 }
 
-/* ── Vehicle Card (classes legadas do VehicleCard.js) ─────── */
+/* ── Vehicle Card (legacy classes from VehicleCard.js) ─────── */
 
 .vehicle-card-header {
   display: flex;
@@ -1354,7 +1354,7 @@
 }
 
 /* ══════════════════════════════════════════════════════════════
-   METRIC CARDS (novo sistema com accent via ::before)
+   METRIC CARDS (new system with accent via ::before pseudo-element)
 ══════════════════════════════════════════════════════════════ */
 
 .metrics-grid {
