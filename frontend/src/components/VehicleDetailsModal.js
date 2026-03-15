@@ -1,5 +1,6 @@
 import '../styles/dashboard.css';
 
+// NOTE: Read-only vehicle detail modal used before starting a reservation action.
 function formatTransmission(type) {
   if (type === 'automatic') return 'Automático';
   if (type === 'manual') return 'Manual';

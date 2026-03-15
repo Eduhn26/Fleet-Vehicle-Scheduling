@@ -1,14 +1,20 @@
 import axios from 'axios';
 
+const API_BASE_URL =
+  String(process.env.REACT_APP_API_URL || '').trim() || 'http://localhost:5000/api';
+
 /*
 ENGINEERING NOTE:
 A single Axios instance is exported so all API calls share the same
 baseURL, interceptors, and configuration. This prevents per-call
 token injection and ensures 401 handling is applied consistently
 across the entire frontend.
+
+The localhost fallback keeps local Docker/dev environments working
+even when REACT_APP_API_URL was not injected into the React runtime.
 */
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL,
+  baseURL: API_BASE_URL,
 });
 
 // NOTE: token is read from localStorage on every request so it reflects
@@ -25,6 +31,7 @@ The response interceptor handles global 401 responses by dispatching
 an 'auth:logout' event instead of calling AuthContext directly.
 This avoids a circular dependency between api.js and AuthContext.js
 while still allowing the context to react to session expiry.
+
 Auth routes are excluded from auto-logout to prevent redirect loops
 on failed login attempts.
 */

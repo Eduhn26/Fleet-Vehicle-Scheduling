@@ -7,6 +7,24 @@ const connectDatabase = require('../src/config/database');
 const BCRYPT_SALT_ROUNDS = 10;
 const DEMO_PASSWORD = '123456';
 
+/*
+ENGINEERING NOTE:
+This is the full presentation dataset seed used to demonstrate the
+complete rental lifecycle inside the Fleet Vehicle Scheduling system.
+
+The generated dataset includes multiple rental states:
+- pending
+- approved
+- return_pending
+- completed
+- rejected
+- cancelled
+
+The goal is to produce realistic operational scenarios that allow
+dashboards, admin panels and analytics to be demonstrated with
+representative data.
+*/
+
 function loadModel(modulePath, directName) {
   const exported = require(modulePath);
 
@@ -69,6 +87,12 @@ function subtractDays(date, days) {
   return addDays(date, -days);
 }
 
+/*
+NOTE:
+Date window helpers generate realistic reservation periods
+relative to the current date, enabling demo datasets to
+remain relevant over time.
+*/
 function createWindow(daysAgoStart, durationDays) {
   const start = startOfDay(subtractDays(new Date(), daysAgoStart));
   const end = addDays(start, Math.max(0, durationDays - 1));
@@ -87,6 +111,11 @@ function createRecentWindow(daysAgoStart, durationDays) {
   return { start, end };
 }
 
+/*
+ENGINEERING NOTE:
+Status distribution intentionally overrepresents completed rentals
+so dashboards and historical views contain meaningful data.
+*/
 function buildStatuses(RENTAL_STATUS) {
   return [
     RENTAL_STATUS.PENDING,

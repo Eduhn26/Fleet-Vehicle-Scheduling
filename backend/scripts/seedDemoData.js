@@ -8,6 +8,18 @@ const BCRYPT_SALT_ROUNDS = 10;
 const DEMO_PASSWORD = '123456';
 const DEMO_TAG = '[DEMO-SEED]';
 
+/*
+ENGINEERING NOTE:
+This script generates a lightweight demo dataset used for local testing
+and UI exploration. It performs idempotent user upserts and generates
+synthetic rental requests using randomized time windows and status
+distribution.
+
+The implementation uses schema introspection to remain resilient to
+model evolution. Fields are only populated if they exist in the
+current schema definition.
+*/
+
 function pickRandom(items) {
   return items[Math.floor(Math.random() * items.length)];
 }
@@ -26,6 +38,11 @@ function addHours(date, hours) {
   return new Date(date.getTime() + hours * 60 * 60 * 1000);
 }
 
+/*
+NOTE:
+Some model modules export the model directly while others export
+an object containing the model. This helper resolves both patterns.
+*/
 function loadModel(modulePath, directName) {
   const exported = require(modulePath);
 
@@ -41,12 +58,17 @@ function loadModel(modulePath, directName) {
   const model = values.find((value) => value && value.schema && value.modelName);
 
   if (!model) {
-    throw new Error(`Não foi possível resolver o model em ${modulePath}`);
+    throw new Error(`Unable to resolve model in ${modulePath}`);
   }
 
   return model;
 }
 
+/*
+NOTE:
+Helpers below inspect schema paths dynamically so this seed does not
+break if field names evolve across versions of the model.
+*/
 function hasPath(model, pathName) {
   return Boolean(model.schema.path(pathName));
 }
@@ -73,6 +95,12 @@ function getEnumValues(model, pathName) {
   return path.enumValues.filter(Boolean);
 }
 
+/*
+ENGINEERING NOTE:
+Builds a deterministic distribution of rental statuses so the UI
+can showcase multiple lifecycle states (pending, approved, in-use,
+return-requested, completed, cancelled).
+*/
 function resolveStatusPlan(availableStatuses) {
   const normalized = new Map(
     availableStatuses.map((status) => [String(status).toLowerCase(), status])
@@ -102,6 +130,11 @@ function resolveStatusPlan(availableStatuses) {
   return plan;
 }
 
+/*
+NOTE:
+Creates a normalized payload for users while ensuring optional
+fields remain compatible with different schema versions.
+*/
 function buildUserPayload(base, passwordHash, USER_ROLE) {
   const payload = {
     name: base.name,
@@ -129,6 +162,11 @@ function buildUserPayload(base, passwordHash, USER_ROLE) {
   return payload;
 }
 
+/*
+ENGINEERING NOTE:
+Constructs a rental payload while adapting to schema differences
+across project versions (field name variations, optional metadata).
+*/
 function buildRequestPayload({
   RentalRequest,
   userId,
@@ -197,6 +235,12 @@ async function closeConnectionSafely() {
   } catch (_) {}
 }
 
+/*
+ENGINEERING NOTE:
+Main execution entrypoint.
+Creates demo users (idempotent upsert) and generates synthetic
+rental requests covering multiple lifecycle states.
+*/
 async function run() {
   let User;
   let Vehicle;
@@ -205,7 +249,7 @@ async function run() {
 
   try {
     if (!process.env.MONGODB_URI) {
-      throw new Error('MONGODB_URI não encontrada no arquivo .env');
+      throw new Error('MONGODB_URI not found in environment variables');
     }
 
     await connectDatabase();
@@ -227,6 +271,7 @@ async function run() {
         department: 'Gestão',
         registrationId: 'ADM001',
       },
+    
       {
         name: 'Mariana Lopes',
         email: 'mariana@fleet.com',

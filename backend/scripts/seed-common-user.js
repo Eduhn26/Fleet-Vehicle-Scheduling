@@ -6,6 +6,13 @@ const { User, USER_ROLE } = require('../src/models/User');
 
 const BCRYPT_SALT_ROUNDS = 10;
 
+/*
+ENGINEERING NOTE:
+Development seed used to ensure a default non-admin user exists.
+The script performs an idempotent upsert so it can be executed
+multiple times without creating duplicate users.
+*/
+
 const run = async () => {
   try {
     await connectDatabase();
