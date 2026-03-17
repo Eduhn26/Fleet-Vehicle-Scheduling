@@ -15,16 +15,19 @@ const rentalRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      // NOTE: stores a reference to avoid a duplicated user snapshot on every rental.
     },
 
     vehicle: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Vehicle',
       required: true,
-      // NOTE: the Vehicle document remains the single source of truth for vehicle data.
     },
 
+    // NOTE: startDate and endDate now store full datetime (date + time).
+    // Stored in UTC. The "date only" granularity of the previous version
+    // is replaced by datetime granularity so two reservations can share
+    // the same calendar day without conflicting — e.g. 08:00–12:00 and
+    // 13:00–17:00 on the same vehicle are both valid.
     startDate: {
       type: Date,
       required: true,
@@ -48,9 +51,6 @@ const rentalRequestSchema = new mongoose.Schema(
       enum: Object.values(RENTAL_STATUS),
       default: RENTAL_STATUS.PENDING,
       required: true,
-      // NOTE: cancelled was added to close the reservation lifecycle on user or admin abort.
-      // NOTE: return_pending separates the user's return request from the admin's final confirmation.
-      // NOTE: completed represents the real operational closure of a reservation.
     },
 
     adminNotes: {
@@ -58,19 +58,15 @@ const rentalRequestSchema = new mongoose.Schema(
       trim: true,
       maxlength: 500,
       default: '',
-      // TODO: if audit grows, split into distinct fields: approvalNotes, rejectionNotes, cancelNotes, completionNotes.
     },
 
     returnRequestedMileage: {
       type: Number,
       min: 0,
-      // NOTE: mileage reported by the user when requesting the return.
-      // NOTE: consistency with the vehicle's current mileage is validated in the service layer.
     },
 
     returnRequestedAt: {
       type: Date,
-      // NOTE: timestamp of the moment the user submits the return for administrative review.
     },
 
     returnNotes: {
@@ -78,18 +74,15 @@ const rentalRequestSchema = new mongoose.Schema(
       trim: true,
       maxlength: 500,
       default: '',
-      // NOTE: optional comment submitted by the user alongside the return request.
     },
 
     actualMileage: {
       type: Number,
       min: 0,
-      // NOTE: consolidated mileage recorded after admin acceptance and reservation completion.
     },
 
     completedAt: {
       type: Date,
-      // NOTE: timestamp of the final administrative closure of the return.
     },
 
     completionNotes: {
@@ -97,7 +90,6 @@ const rentalRequestSchema = new mongoose.Schema(
       trim: true,
       maxlength: 500,
       default: '',
-      // NOTE: final admin observation recorded when confirming the return.
     },
   },
   {
@@ -106,7 +98,7 @@ const rentalRequestSchema = new mongoose.Schema(
   }
 );
 
-// NOTE: this compound index optimises conflict queries by vehicle + date range.
+// NOTE: compound index on vehicle + datetime range optimises conflict queries.
 rentalRequestSchema.index({ vehicle: 1, startDate: 1, endDate: 1 });
 
 module.exports = {
