@@ -12,28 +12,30 @@ function linkClassName({ isActive }) {
 
 function getInitials(name) {
   if (!name) return '?';
+
   return name
     .split(' ')
     .slice(0, 2)
-    .map((n) => n[0].toUpperCase())
+    .map((chunk) => chunk[0].toUpperCase())
     .join('');
 }
 
 /*
 ENGINEERING NOTE:
-Shared shell for authenticated screens. It centralizes navigation, user
-identity display and logout flow so dashboards stay focused on page content.
+This shared shell is the fastest way to lift the product perception.
+By improving navigation, spacing and identity here, every authenticated
+screen inherits a more premium structure without duplicating UI work.
 */
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const admin = isAdmin(user);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
-
-  const admin = isAdmin(user);
 
   return (
     <div className="layout-shell">
@@ -42,23 +44,36 @@ export default function Layout() {
           <div className="layout-brandBlock">
             <NavLink to={admin ? '/admin' : '/user'} className="layout-brand">
               <span className="layout-brandBadge">FM</span>
+
               <div className="layout-brandText">
                 <span className="layout-title">Fleet Manager</span>
-                <span className="layout-subtitle">Vehicle Scheduling System</span>
+                <span className="layout-subtitle">
+                  Enterprise Vehicle Scheduling
+                </span>
               </div>
             </NavLink>
 
-            <nav className="layout-nav" aria-label="Navegação principal">
+            <nav className="layout-nav" aria-label="Main navigation">
               {admin ? (
                 <>
-                  <NavLink to="/admin" end className={linkClassName}>Dashboard</NavLink>
-                  <NavLink to="/admin/vehicles" className={linkClassName}>Veículos</NavLink>
-                  <NavLink to="/admin/rentals" className={linkClassName}>Solicitações</NavLink>
+                  <NavLink to="/admin" end className={linkClassName}>
+                    Dashboard
+                  </NavLink>
+                  <NavLink to="/admin/vehicles" className={linkClassName}>
+                    Veículos
+                  </NavLink>
+                  <NavLink to="/admin/rentals" className={linkClassName}>
+                    Solicitações
+                  </NavLink>
                 </>
               ) : (
                 <>
-                  <NavLink to="/user" end className={linkClassName}>Dashboard</NavLink>
-                  <NavLink to="/rentals" className={linkClassName}>Minhas solicitações</NavLink>
+                  <NavLink to="/user" end className={linkClassName}>
+                    Dashboard
+                  </NavLink>
+                  <NavLink to="/rentals" className={linkClassName}>
+                    Minhas solicitações
+                  </NavLink>
                 </>
               )}
             </nav>
@@ -67,7 +82,7 @@ export default function Layout() {
           <div className="layout-user">
             <div className="layout-userMeta">
               <span className="layout-userLabel">
-                {admin ? 'Administrador' : 'Usuário'}
+                {admin ? 'Administrator' : 'User workspace'}
               </span>
               <span className="layout-username">{user?.name || 'Usuário'}</span>
             </div>

@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
-import VehicleCard from '../components/VehicleCard';
 import AddVehicleModal from '../components/AddVehicleModal';
 import RentalRequestModal from '../components/RentalRequestModal';
+import VehicleCard from '../components/VehicleCard';
 import VehicleDetailsModal from '../components/VehicleDetailsModal';
 import '../styles/dashboard.css';
 
-// NOTE: Admin fleet management page for vehicle inventory, maintenance and creation flows.
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -18,45 +17,44 @@ function getApiErrorMessage(err, fallbackMessage) {
 }
 
 function countByVehicleStatus(vehicles, status) {
-  return safeArray(vehicles).filter((v) => v?.status === status).length;
+  return safeArray(vehicles).filter((vehicle) => vehicle?.status === status).length;
 }
 
 function MaintBar({ mileage, nextMaintenance }) {
-  const pct = Math.min(
-    Math.round(((mileage || 0) / (nextMaintenance || 30000)) * 100),
+  const currentMileage = mileage || 0;
+  const maintenanceTarget = nextMaintenance || 30000;
+  const percentage = Math.min(
+    Math.round((currentMileage / maintenanceTarget) * 100),
     100
   );
 
-  let color = '#059669';
-  if (pct > 75) color = '#d97706';
-  if (pct >= 95) color = '#dc2626';
+  let tone = '#059669';
+
+  if (percentage > 75) tone = '#d97706';
+  if (percentage >= 95) tone = '#dc2626';
 
   return (
-    <div style={{ minWidth: 90 }}>
-      <div
-        style={{
-          fontSize: '0.72rem',
-          color: '#94a3b8',
-          marginBottom: 4,
-          display: 'flex',
-          justifyContent: 'space-between',
-          fontWeight: 600,
-        }}
-      >
-        <span>{(mileage || 0).toLocaleString()} km</span>
-        <span>{pct}%</span>
+    <div className="maint-bar-wrapper">
+      <div className="maint-bar-label">
+        <span>{currentMileage.toLocaleString()} km</span>
+        <span>{percentage}%</span>
       </div>
 
       <div className="maint-bar-track">
         <div
           className="maint-bar-fill"
-          style={{ width: `${pct}%`, backgroundColor: color }}
+          style={{ width: `${percentage}%`, backgroundColor: tone }}
         />
       </div>
     </div>
   );
 }
 
+/*
+ENGINEERING NOTE:
+The page now separates fleet overview, card discovery and structured table
+review. This gives the admin a clearer decision path instead of one flat screen.
+*/
 export default function AdminVehicles() {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,36 +83,7 @@ export default function AdminVehicles() {
   };
 
   useEffect(() => {
-    let alive = true;
-
-    async function loadInitial() {
-      setLoading(true);
-      setErrorMsg('');
-
-      try {
-        const res = await api.get('/vehicles');
-
-        if (!alive) return;
-
-        const data = safeArray(res?.data?.data ?? res?.data);
-        setVehicles(data);
-      } catch (err) {
-        if (!alive) return;
-
-        setErrorMsg(
-          getApiErrorMessage(err, 'Não foi possível carregar os veículos.')
-        );
-      } finally {
-        if (!alive) return;
-        setLoading(false);
-      }
-    }
-
-    loadInitial();
-
-    return () => {
-      alive = false;
-    };
+    loadVehicles();
   }, []);
 
   const handleVehicleCreated = async () => {
@@ -165,6 +134,7 @@ export default function AdminVehicles() {
       setActionMsg(
         `${vehicle.brand} ${vehicle.model} enviado para manutenção com sucesso.`
       );
+
       await loadVehicles();
     } catch (err) {
       setErrorMsg(
@@ -193,10 +163,14 @@ export default function AdminVehicles() {
       setActionMsg(
         `${vehicle.brand} ${vehicle.model} teve a manutenção registrada com sucesso.`
       );
+
       await loadVehicles();
     } catch (err) {
       setErrorMsg(
-        getApiErrorMessage(err, 'Não foi possível finalizar a manutenção do veículo.')
+        getApiErrorMessage(
+          err,
+          'Não foi possível finalizar a manutenção do veículo.'
+        )
       );
     } finally {
       setActionLoadingPlate('');
@@ -219,9 +193,7 @@ export default function AdminVehicles() {
       setActionMsg(`${vehicle.brand} ${vehicle.model} excluído com sucesso.`);
       await loadVehicles();
     } catch (err) {
-      setErrorMsg(
-        getApiErrorMessage(err, 'Não foi possível excluir o veículo.')
-      );
+      setErrorMsg(getApiErrorMessage(err, 'Não foi possível excluir o veículo.'));
     } finally {
       setActionLoadingPlate('');
     }
@@ -260,107 +232,132 @@ export default function AdminVehicles() {
 
   return (
     <div className="dashboard">
-      <div className="dashboard-header">
-        <div>
-          <div className="dashboard-title">Veículos</div>
-          <div className="dashboard-subtitle">
-            Visão operacional da frota cadastrada.
-          </div>
+      <section className="dashboard-hero dashboard-hero-compact">
+        <div className="dashboard-hero-text">
+          <span className="section-kicker">Fleet workspace</span>
+          <h1 className="dashboard-hero-title">Veículos</h1>
+          <p className="dashboard-hero-sub">
+            Organize a frota, acompanhe disponibilidade e visualize risco de manutenção
+            em um layout mais claro para operação.
+          </p>
         </div>
 
-        <div className="dashboard-actions">
+        <div className="dashboard-hero-actions">
           <button
             type="button"
-            className="dashboard-linkBtn"
+            className="btn btn-primary"
             onClick={() => {
               setActionMsg('');
               setErrorMsg('');
               setIsAddModalOpen(true);
             }}
           >
-            Novo veículo
+            + Novo veículo
           </button>
         </div>
-      </div>
+      </section>
 
-      {actionMsg && <div className="alert alert-info">{actionMsg}</div>}
-      {loading && <div className="alert alert-info">Carregando veículos...</div>}
-      {!loading && errorMsg && <div className="alert alert-error">{errorMsg}</div>}
+      {actionMsg ? <div className="alert alert-info">{actionMsg}</div> : null}
+      {loading ? <div className="alert alert-info">Carregando veículos...</div> : null}
+      {!loading && errorMsg ? <div className="alert alert-error">{errorMsg}</div> : null}
 
-      {!loading && !errorMsg && (
-        <div className="dashboard-grid">
-          <div className="card">
-            <div className="card-titleRow">
-              <div className="card-title">Total</div>
-            </div>
-            <div className="card-kpi">{vehicles.length}</div>
-            <div className="card-meta">Veículos cadastrados</div>
-          </div>
-
-          <div className="card" style={{ borderTop: '3px solid #059669' }}>
-            <div className="card-titleRow">
-              <div className="card-title">Disponíveis</div>
-              <span className="badge badge-approved">Disponível</span>
-            </div>
-            <div className="card-kpi">{availableCount}</div>
-            <div className="card-meta">Prontos para reserva</div>
-          </div>
-
-          <div className="card" style={{ borderTop: '3px solid #dc2626' }}>
-            <div className="card-titleRow">
-              <div className="card-title">Manutenção</div>
-              <span className="badge badge-rejected">Manutenção</span>
-            </div>
-            <div className="card-kpi">{maintenanceCount}</div>
-            <div className="card-meta">Indisponíveis temporariamente</div>
-          </div>
-
-          <div className="card" style={{ borderTop: '3px solid #f59e0b' }}>
-            <div className="card-titleRow">
-              <div className="card-title">Alugados</div>
-              <span className="badge badge-pending">Alugado</span>
-            </div>
-            <div className="card-kpi">{rentedCount}</div>
-            <div className="card-meta">Em uso no momento</div>
-          </div>
-
-          <div className="card card-wide">
-            <div className="card-titleRow">
-              <div className="card-title">Grid da frota</div>
-              <span className="badge badge-cancelled">
-                {vehicles.length} {vehicles.length === 1 ? 'veículo' : 'veículos'}
-              </span>
+      {!loading && !errorMsg ? (
+        <>
+          <section className="metrics-grid metrics-grid-tight">
+            <div className="metric-card blue">
+              <div className="metric-header">
+                <span className="metric-label">Total</span>
+              </div>
+              <div className="metric-value">{vehicles.length}</div>
+              <div className="metric-desc">Veículos cadastrados na frota.</div>
             </div>
 
-            {vehicles.length === 0 ? (
-              <div className="card-meta">Nenhum veículo cadastrado.</div>
-            ) : (
-              <div className="vehicle-picker">
+            <div className="metric-card green">
+              <div className="metric-header">
+                <span className="metric-label">Disponíveis</span>
+                <span className="badge badge-approved">Pronto</span>
+              </div>
+              <div className="metric-value">{availableCount}</div>
+              <div className="metric-desc">Prontos para novas reservas.</div>
+            </div>
+
+            <div className="metric-card amber">
+              <div className="metric-header">
+                <span className="metric-label">Em uso</span>
+                <span className="badge badge-pending">Ativo</span>
+              </div>
+              <div className="metric-value">{rentedCount}</div>
+              <div className="metric-desc">Atualmente vinculados a reservas.</div>
+            </div>
+
+            <div className="metric-card red">
+              <div className="metric-header">
+                <span className="metric-label">Manutenção</span>
+                <span className="badge badge-rejected">Indisponível</span>
+              </div>
+              <div className="metric-value">{maintenanceCount}</div>
+              <div className="metric-desc">Exigem atenção técnica antes do uso.</div>
+            </div>
+          </section>
+
+          <section className="table-card">
+            <div className="table-header">
+              <div>
+                <span className="table-title">Grid da frota</span>
+                <span className="table-count">
+                  {vehicles.length} {vehicles.length === 1 ? 'veículo' : 'veículos'}
+                </span>
+              </div>
+            </div>
+
+            <div className="table-sectionBody">
+              {vehicles.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon">🚗</div>
+                  <div className="empty-state-title">Nenhum veículo cadastrado</div>
+                  <div className="empty-state-desc">
+                    Adicione o primeiro veículo da frota para começar a operar.
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={() => setIsAddModalOpen(true)}
+                  >
+                    + Novo veículo
+                  </button>
+                </div>
+              ) : (
                 <div className="vehicle-grid">
                   {vehicles.map((vehicle) => (
                     <VehicleCard
                       key={vehicle.id}
                       vehicle={vehicle}
-                      selected={detailsVehicle?.id === vehicle.id || selectedVehicle?.id === vehicle.id}
+                      selected={
+                        detailsVehicle?.id === vehicle.id ||
+                        selectedVehicle?.id === vehicle.id
+                      }
                       onSelect={handleOpenVehicle}
                       onSendMaintenance={handleSendToMaintenance}
                       onCompleteMaintenance={handleCompleteMaintenance}
                       onDeleteVehicle={handleDeleteVehicle}
+                      actionLoadingPlate={actionLoadingPlate}
                     />
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
-
-          <div className="card card-wide">
-            <div className="card-titleRow">
-              <div className="card-title">Lista da frota</div>
+              )}
             </div>
+          </section>
 
-            {vehicles.length === 0 ? (
-              <div className="card-meta">Nenhum veículo cadastrado.</div>
-            ) : (
+          {vehicles.length > 0 ? (
+            <section className="table-card">
+              <div className="table-header">
+                <div>
+                  <span className="table-title">Lista estruturada da frota</span>
+                  <span className="table-count">Leitura operacional detalhada</span>
+                </div>
+              </div>
+
               <div className="table-wrapper">
                 <table className="dashboard-table">
                   <thead>
@@ -370,10 +367,11 @@ export default function AdminVehicles() {
                       <th>Ano / Cor</th>
                       <th>Passageiros</th>
                       <th>Quilometragem</th>
-                      <th>Próx. Manutenção</th>
+                      <th>Próx. manutenção</th>
                       <th>Status</th>
                     </tr>
                   </thead>
+
                   <tbody>
                     {vehicles.map((vehicle) => (
                       <tr key={vehicle.id}>
@@ -382,14 +380,12 @@ export default function AdminVehicles() {
                             {vehicle.brand} {vehicle.model}
                           </span>
                           <span className="cell-sub">
-                            {vehicle.fuelType} • {vehicle.transmissionType}
+                            {vehicle.fuelType} · {vehicle.transmissionType}
                           </span>
                         </td>
 
                         <td>
-                          <span className="license-plate">
-                            {vehicle.licensePlate}
-                          </span>
+                          <span className="license-plate">{vehicle.licensePlate}</span>
                         </td>
 
                         <td>
@@ -409,7 +405,7 @@ export default function AdminVehicles() {
                         </td>
 
                         <td>
-                          <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                          <span className="cell-main">
                             {(vehicle.nextMaintenance || 0).toLocaleString()} km
                           </span>
                         </td>
@@ -420,10 +416,10 @@ export default function AdminVehicles() {
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
-        </div>
-      )}
+            </section>
+          ) : null}
+        </>
+      ) : null}
 
       <AddVehicleModal
         isOpen={isAddModalOpen}

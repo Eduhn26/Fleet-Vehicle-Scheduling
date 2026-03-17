@@ -1,6 +1,5 @@
 import '../styles/dashboard.css';
 
-// NOTE: Read-only vehicle detail modal used before starting a reservation action.
 function formatTransmission(type) {
   if (type === 'automatic') return 'Automático';
   if (type === 'manual') return 'Manual';
@@ -21,6 +20,8 @@ function formatStatus(status) {
 
 export default function VehicleDetailsModal({ vehicle, onClose, onReserve }) {
   if (!vehicle) return null;
+
+  const isAvailable = vehicle.status === 'available';
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -62,7 +63,9 @@ export default function VehicleDetailsModal({ vehicle, onClose, onReserve }) {
 
               <div className="vehicle-details-item">
                 <span>Próxima manutenção</span>
-                <strong>{(vehicle.nextMaintenance || 0).toLocaleString()} km</strong>
+                <strong>
+                  {(vehicle.nextMaintenance || 0).toLocaleString()} km
+                </strong>
               </div>
 
               <div className="vehicle-details-item">
@@ -93,13 +96,19 @@ export default function VehicleDetailsModal({ vehicle, onClose, onReserve }) {
           </div>
 
           <div className="vehicle-details-actions">
-            <button
-              type="button"
-              className="dashboard-linkBtn"
-              onClick={() => onReserve(vehicle)}
-            >
-              Reservar veículo
-            </button>
+            {isAvailable ? (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => onReserve(vehicle)}
+              >
+                Reservar veículo
+              </button>
+            ) : (
+              <button type="button" className="btn btn-secondary" disabled>
+                Indisponível para reserva
+              </button>
+            )}
 
             <button
               type="button"
