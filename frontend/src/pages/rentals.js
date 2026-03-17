@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import VehicleGrid from '../components/VehicleGrid';
 import RentalRequestModal from '../components/RentalRequestModal';
 import '../styles/dashboard.css';
 
-// NOTE: User-facing reservation workspace for requesting and tracking rentals.
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -33,7 +32,21 @@ function statusLabel(status) {
     cancelled: 'Cancelado',
     completed: 'Concluído',
   };
+
   return map[status] ?? String(status).toUpperCase();
+}
+
+function formatDisplayDatetime(str) {
+  if (!str) return '';
+
+  if (str.includes('T')) {
+    const [datePart, timePart] = str.split('T');
+    const [yyyy, mm, dd] = datePart.split('-');
+    return `${dd}/${mm}/${yyyy} ${timePart}`;
+  }
+
+  const [yyyy, mm, dd] = str.split('-');
+  return `${dd}/${mm}/${yyyy}`;
 }
 
 const initialReturnForm = {
@@ -41,6 +54,12 @@ const initialReturnForm = {
   returnNotes: '',
 };
 
+/*
+ENGINEERING NOTE:
+This page now behaves more like a guided reservation workspace.
+The top area emphasizes vehicle selection, while history keeps the lifecycle
+readable and action-oriented.
+*/
 export default function Rentals() {
   const [rentals, setRentals] = useState([]);
   const [vehicles, setVehicles] = useState([]);
@@ -62,8 +81,7 @@ export default function Rentals() {
 
     try {
       const res = await api.get('/rentals/my');
-      const data = safeArray(res?.data?.data);
-      setRentals(data);
+      setRentals(safeArray(res?.data?.data));
     } catch (err) {
       setErrorMsg(
         getApiErrorMessage(err, 'Não foi possível carregar suas solicitações.')
@@ -78,8 +96,7 @@ export default function Rentals() {
 
     try {
       const res = await api.get('/vehicles');
-      const data = safeArray(res?.data?.data ?? res?.data);
-      setVehicles(data);
+      setVehicles(safeArray(res?.data?.data ?? res?.data));
     } catch (err) {
       setErrorMsg(
         getApiErrorMessage(err, 'Não foi possível carregar os veículos.')
@@ -113,7 +130,7 @@ export default function Rentals() {
 
     try {
       await api.patch(`/rentals/${rentalId}/cancel`, {
-        cancelNotes: 'Cancelado pelo usuário via interface.',
+        cancelNotes: 'Cancelled by user via interface.',
       });
 
       setActionMsg('Reserva cancelada com sucesso.');
@@ -129,7 +146,7 @@ export default function Rentals() {
     setSelectedReturnRental(rental);
     setReturnForm({
       mileage: rental?.vehicle?.mileage ? String(rental.vehicle.mileage) : '',
-      returnNotes: 'Devolução solicitada pelo usuário via interface.',
+      returnNotes: 'Return requested by user via interface.',
     });
     setActionMsg('');
     setErrorMsg('');
@@ -170,202 +187,220 @@ export default function Rentals() {
         returnNotes: returnForm.returnNotes.trim(),
       });
 
-      setActionMsg('Devolução solicitada com sucesso. Aguarde a confirmação do admin.');
+      setActionMsg(
+        'Devolução solicitada com sucesso. Aguarde a confirmação do admin.'
+      );
+
       closeReturnModal();
       await loadMyRentals();
     } catch (err) {
-      const message = getApiErrorMessage(
-        err,
-        'Não foi possível solicitar a devolução.'
+      setErrorMsg(
+        getApiErrorMessage(err, 'Não foi possível solicitar a devolução.')
       );
-
-      setErrorMsg(message);
-      setActionMsg('');
     } finally {
       setReturnLoadingId('');
     }
   };
 
-  const availableVehicles = vehicles.filter(
-    (vehicle) => vehicle?.status === 'available'
+  const availableVehicles = useMemo(
+    () => vehicles.filter((vehicle) => vehicle?.status === 'available'),
+    [vehicles]
   );
 
   return (
     <div className="dashboard">
-      <div className="dashboard-header">
-        <div>
-          <div className="dashboard-title">Minhas Solicitações</div>
-          <div className="dashboard-subtitle">
-            Crie novas reservas e acompanhe o lifecycle das já existentes.
-          </div>
-        </div>
-      </div>
-
-      {actionMsg && <div className="alert alert-info">{actionMsg}</div>}
-      {errorMsg && <div className="alert alert-error">{errorMsg}</div>}
-
-      <div className="dashboard-grid">
-        <div className="card card-wide">
-          <div className="card-titleRow">
-            <div className="card-title">Nova solicitação</div>
-          </div>
-
-          <div className="vehicle-picker">
-            {loadingVehicles ? (
-              <div className="card-meta">Carregando veículos...</div>
-            ) : (
-              <VehicleGrid
-                vehicles={availableVehicles}
-                selectedId={selectedVehicle?.id ?? ''}
-                onSelect={handleSelectVehicle}
-              />
-            )}
-          </div>
+      <section className="dashboard-hero dashboard-hero-compact">
+        <div className="dashboard-hero-text">
+          <span className="section-kicker">Reservation workspace</span>
+          <h1 className="dashboard-hero-title">Minhas Solicitações</h1>
+          <p className="dashboard-hero-sub">
+            Crie reservas, acompanhe o status e solicite devoluções em um fluxo
+            mais claro para o usuário final.
+          </p>
         </div>
 
-        <div className="card card-wide">
-          <div className="card-titleRow">
-            <div className="card-title">Histórico</div>
-            {!loadingRentals && (
-              <span className="badge badge-cancelled">{rentals.length} total</span>
-            )}
+        <div className="dashboard-hero-stats">
+          <div className="hero-stat">
+            <span className="hero-stat-value">{availableVehicles.length}</span>
+            <span className="hero-stat-label">Veículos disponíveis</span>
           </div>
 
-          {loadingRentals ? (
-            <div className="card-meta">Carregando solicitações...</div>
-          ) : rentals.length === 0 ? (
-            <div className="card-meta">Nenhuma solicitação encontrada.</div>
-          ) : (
-            <div className="table-wrapper">
-              <table className="dashboard-table">
-                <thead>
-                  <tr>
-                    <th>Veículo</th>
-                    <th>Período</th>
-                    <th>Motivo</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rentals.map((rental) => {
-                    const canCancel = rental.status === 'approved';
-                    const canRequestReturn = rental.status === 'approved';
-                    const isCancelling = cancelLoadingId === rental.id;
-                    const isRequestingReturn = returnLoadingId === rental.id;
+          <div className="hero-stat">
+            <span className="hero-stat-value">{rentals.length}</span>
+            <span className="hero-stat-label">Solicitações totais</span>
+          </div>
+        </div>
+      </section>
 
-                    return (
-                      <tr key={rental.id}>
-                        <td>
-                          <span className="cell-main">
-                            {rental?.vehicle?.brand} {rental?.vehicle?.model}
-                          </span>
-                          {rental?.vehicle?.licensePlate && (
-                            <span className="license-plate">
-                              {rental.vehicle.licensePlate}
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          <span className="cell-main">{rental.startDate}</span>
-                          <span className="cell-sub">até {rental.endDate}</span>
-                        </td>
-                        <td>
-                          <span
-                            className="cell-sub"
-                            style={{
-                              maxWidth: 180,
-                              display: 'block',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {rental.purpose}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={getStatusBadgeClass(rental.status)}>
-                            {statusLabel(rental.status)}
-                          </span>
+      {actionMsg ? <div className="alert alert-info">{actionMsg}</div> : null}
+      {errorMsg ? <div className="alert alert-error">{errorMsg}</div> : null}
 
-                          {rental.adminNotes && (
-                            <span className="cell-sub" style={{ marginTop: 4 }}>
-                              {rental.adminNotes}
-                            </span>
-                          )}
+      <section className="table-card">
+        <div className="table-header">
+          <div>
+            <span className="table-title">Nova solicitação</span>
+            <span className="table-count">{availableVehicles.length} disponíveis</span>
+          </div>
+        </div>
 
-                          {rental.returnNotes && rental.status === 'return_pending' && (
-                            <span className="cell-sub" style={{ marginTop: 4 }}>
-                              {rental.returnNotes}
-                            </span>
-                          )}
-
-                          {typeof rental.returnRequestedMileage === 'number' &&
-                            rental.status === 'return_pending' && (
-                              <span className="cell-sub" style={{ marginTop: 4 }}>
-                                KM informado: {rental.returnRequestedMileage.toLocaleString()} km
-                              </span>
-                            )}
-
-                          {typeof rental.actualMileage === 'number' &&
-                            rental.status === 'completed' && (
-                              <span className="cell-sub" style={{ marginTop: 4 }}>
-                                KM final: {rental.actualMileage.toLocaleString()} km
-                              </span>
-                            )}
-                        </td>
-                        <td>
-                          {canCancel || canRequestReturn ? (
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                              {canRequestReturn && (
-                                <button
-                                  type="button"
-                                  className="dashboard-linkBtn"
-                                  onClick={() => openReturnModal(rental)}
-                                  disabled={isRequestingReturn || isCancelling}
-                                  style={{
-                                    minHeight: 36,
-                                    padding: '0 12px',
-                                    fontSize: '0.85rem',
-                                  }}
-                                >
-                                  {isRequestingReturn ? 'Enviando...' : 'Devolver'}
-                                </button>
-                              )}
-
-                              {canCancel && (
-                                <button
-                                  type="button"
-                                  className="dashboard-linkBtn"
-                                  onClick={() => handleCancel(rental.id)}
-                                  disabled={isCancelling || isRequestingReturn}
-                                  style={{
-                                    minHeight: 36,
-                                    padding: '0 12px',
-                                    fontSize: '0.85rem',
-                                    background:
-                                      'linear-gradient(135deg, #64748b 0%, #475569 100%)',
-                                    boxShadow: '0 4px 12px rgba(100, 116, 139, 0.2)',
-                                  }}
-                                >
-                                  {isCancelling ? 'Cancelando...' : 'Cancelar'}
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="cell-sub">Sem ação</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+        <div className="table-sectionBody">
+          {loadingVehicles ? (
+            <div className="card-meta">Carregando veículos...</div>
+          ) : availableVehicles.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon">🚗</div>
+              <div className="empty-state-title">Nenhum veículo disponível</div>
+              <div className="empty-state-desc">
+                Todos os veículos estão em uso ou manutenção no momento.
+              </div>
             </div>
+          ) : (
+            <VehicleGrid
+              vehicles={availableVehicles}
+              selectedId={selectedVehicle?.id ?? ''}
+              onSelect={handleSelectVehicle}
+            />
           )}
         </div>
-      </div>
+      </section>
+
+      <section className="table-card">
+        <div className="table-header">
+          <div>
+            <span className="table-title">Histórico</span>
+            {!loadingRentals ? (
+              <span className="table-count">{rentals.length} total</span>
+            ) : null}
+          </div>
+        </div>
+
+        {loadingRentals ? (
+          <div className="table-sectionBody card-meta">Carregando solicitações...</div>
+        ) : rentals.length === 0 ? (
+          <div className="empty-state empty-state-large">
+            <div className="empty-state-icon">📋</div>
+            <div className="empty-state-title">Nenhuma solicitação encontrada</div>
+            <div className="empty-state-desc">
+              Selecione um veículo acima para criar sua primeira reserva.
+            </div>
+          </div>
+        ) : (
+          <div className="table-wrapper">
+            <table className="dashboard-table">
+              <thead>
+                <tr>
+                  <th>Veículo</th>
+                  <th>Período</th>
+                  <th>Motivo</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {rentals.map((rental) => {
+                  const canCancel = rental.status === 'approved';
+                  const canRequestReturn = rental.status === 'approved';
+                  const isCancelling = cancelLoadingId === rental.id;
+                  const isRequestingReturn = returnLoadingId === rental.id;
+                  const hasActions = canCancel || canRequestReturn;
+
+                  return (
+                    <tr key={rental.id}>
+                      <td>
+                        <span className="cell-main">
+                          {rental?.vehicle?.brand} {rental?.vehicle?.model}
+                        </span>
+
+                        {rental?.vehicle?.licensePlate ? (
+                          <span className="license-plate">
+                            {rental.vehicle.licensePlate}
+                          </span>
+                        ) : null}
+                      </td>
+
+                      <td>
+                        <span className="cell-main">
+                          {formatDisplayDatetime(rental.startDate)}
+                        </span>
+                        <span className="cell-sub">
+                          até {formatDisplayDatetime(rental.endDate)}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span className="table-ellipsisCell">{rental.purpose}</span>
+                      </td>
+
+                      <td>
+                        <span className={getStatusBadgeClass(rental.status)}>
+                          {statusLabel(rental.status)}
+                        </span>
+
+                        {rental.adminNotes ? (
+                          <span className="cell-sub cell-sub-block">
+                            {rental.adminNotes}
+                          </span>
+                        ) : null}
+
+                        {rental.returnNotes && rental.status === 'return_pending' ? (
+                          <span className="cell-sub cell-sub-block">
+                            {rental.returnNotes}
+                          </span>
+                        ) : null}
+
+                        {typeof rental.returnRequestedMileage === 'number' &&
+                        rental.status === 'return_pending' ? (
+                          <span className="cell-sub cell-sub-block">
+                            KM informado: {rental.returnRequestedMileage.toLocaleString()} km
+                          </span>
+                        ) : null}
+
+                        {typeof rental.actualMileage === 'number' &&
+                        rental.status === 'completed' ? (
+                          <span className="cell-sub cell-sub-block">
+                            KM final: {rental.actualMileage.toLocaleString()} km
+                          </span>
+                        ) : null}
+                      </td>
+
+                      <td>
+                        {hasActions ? (
+                          <div className="table-actionGroup">
+                            {canRequestReturn ? (
+                              <button
+                                type="button"
+                                className="btn btn-primary btn-sm"
+                                onClick={() => openReturnModal(rental)}
+                                disabled={isRequestingReturn || isCancelling}
+                              >
+                                {isRequestingReturn ? 'Enviando...' : 'Devolver'}
+                              </button>
+                            ) : null}
+
+                            {canCancel ? (
+                              <button
+                                type="button"
+                                className="btn btn-danger btn-sm"
+                                onClick={() => handleCancel(rental.id)}
+                                disabled={isCancelling || isRequestingReturn}
+                              >
+                                {isCancelling ? 'Cancelando...' : 'Cancelar'}
+                              </button>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <span className="cell-sub">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <RentalRequestModal
         vehicle={selectedVehicle}
@@ -373,7 +408,7 @@ export default function Rentals() {
         onCreated={handleCreated}
       />
 
-      {returnModalOpen && selectedReturnRental && (
+      {returnModalOpen && selectedReturnRental ? (
         <div className="modal-overlay" onClick={closeReturnModal}>
           <div
             className="modal-content-card rental-modal return-modal"
@@ -383,7 +418,8 @@ export default function Rentals() {
               <div>
                 <h2 className="rental-modalTitle">Solicitar devolução</h2>
                 <p className="rental-modalSubtitle">
-                  {selectedReturnRental?.vehicle?.brand} {selectedReturnRental?.vehicle?.model} •{' '}
+                  {selectedReturnRental?.vehicle?.brand}{' '}
+                  {selectedReturnRental?.vehicle?.model} ·{' '}
                   {selectedReturnRental?.vehicle?.licensePlate}
                 </p>
               </div>
@@ -407,7 +443,8 @@ export default function Rentals() {
                     <div>
                       <span className="rental-summaryLabel">Período</span>
                       <p className="rental-summaryValue">
-                        {selectedReturnRental.startDate} até {selectedReturnRental.endDate}
+                        {formatDisplayDatetime(selectedReturnRental.startDate)} até{' '}
+                        {formatDisplayDatetime(selectedReturnRental.endDate)}
                       </p>
                     </div>
 
@@ -454,7 +491,7 @@ export default function Rentals() {
                 <div className="return-modalActions">
                   <button
                     type="submit"
-                    className="dashboard-linkBtn"
+                    className="btn btn-primary"
                     disabled={Boolean(returnLoadingId) || !returnForm.mileage}
                   >
                     {returnLoadingId ? 'Enviando...' : 'Confirmar devolução'}
@@ -462,7 +499,7 @@ export default function Rentals() {
 
                   <button
                     type="button"
-                    className="rental-cancelBtn"
+                    className="btn btn-secondary"
                     onClick={closeReturnModal}
                     disabled={Boolean(returnLoadingId)}
                   >
@@ -473,7 +510,7 @@ export default function Rentals() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

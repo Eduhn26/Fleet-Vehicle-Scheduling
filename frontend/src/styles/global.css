@@ -148,7 +148,6 @@ textarea::placeholder {
 
 /* ══════════════════════════════════════════════════════════════
    STATUS BADGES
-   Replace the legacy .status-* classes with pill-shaped badges
 ══════════════════════════════════════════════════════════════ */
 
 .badge {
@@ -165,7 +164,6 @@ textarea::placeholder {
   line-height: 1.4;
 }
 
-/* Status dot before the label text */
 .badge::before {
   content: '';
   width: 5px;
@@ -175,7 +173,6 @@ textarea::placeholder {
   flex-shrink: 0;
 }
 
-/* Variantes */
 .badge-disponivel,
 .badge-available {
   background: #ecfdf5;
@@ -240,19 +237,8 @@ textarea::placeholder {
   border: 1px solid #fef3c7;
 }
 
-/* ── Legacy aliases (backwards compatibility with existing code) ── */
-.status-available   { @apply .badge .badge-disponivel; }
-.status-pending     { background: #fffbeb; color: #92400e; border: 1px solid #fef3c7; display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-.status-approved    { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-.status-rented      { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe;  display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-.status-rejected    { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2;  display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-.status-cancelled   { background: #f9fafb; color: #6b7280; border: 1px solid #e5e7eb;  display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-.status-maintenance { background: #fffbeb; color: #b45309; border: 1px solid #fef3c7; display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-.status-completed   { background: #f9fafb; color: #4b5563; border: 1px solid #e5e7eb;  display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-
 /* ══════════════════════════════════════════════════════════════
    GLOBAL BUTTONS
-   Unified system: btn + modifier class
 ══════════════════════════════════════════════════════════════ */
 
 .btn {
@@ -287,11 +273,9 @@ textarea::placeholder {
   flex-shrink: 0;
 }
 
-/* Sizes */
 .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
 .btn-lg { padding: 12px 24px; font-size: 0.95rem; }
 
-/* Variantes */
 .btn-primary {
   background: var(--color-primary);
   color: #fff;
@@ -314,8 +298,9 @@ textarea::placeholder {
   box-shadow: var(--shadow-xs);
 }
 .btn-secondary:hover:not(:disabled) {
-  background: var(--color-surface-2);
-  border-color: var(--color-border-strong);
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.28);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
@@ -341,7 +326,7 @@ textarea::placeholder {
   transform: translateY(-1px);
 }
 
-/* ── Compat with legacy button classes ──────────────────────── */
+/* ── Legacy compat ─────────────────────────────────────────── */
 .dashboard-linkBtn {
   display: inline-flex;
   align-items: center;
@@ -365,21 +350,10 @@ textarea::placeholder {
   box-shadow: 0 4px 12px rgba(37,99,235,0.3);
   transform: translateY(-1px);
 }
-.dashboard-linkBtn-outline {
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-xs);
-}
-.dashboard-linkBtn-outline:hover {
-  background: var(--color-surface-2);
-  border-color: var(--color-border-strong);
-  transform: translateY(-1px);
-}
 
 /* ══════════════════════════════════════════════════════════════
    PLACA / LICENSE PLATE TAG
-══════════════════════════════════════════════════════════════ */
+════════════════��═════════════════════════════════════════════ */
 
 .license-plate {
   display: inline-flex;
@@ -393,6 +367,41 @@ textarea::placeholder {
   font-weight: 500;
   letter-spacing: 0.06em;
   border: 1px solid #bfdbfe;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   EMPTY STATES
+══════════════════════════════════════════════════════════════ */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  gap: 8px;
+}
+
+.empty-state-icon {
+  font-size: 2.5rem;
+  margin-bottom: 4px;
+  opacity: 0.8;
+}
+
+.empty-state-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+
+.empty-state-desc {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  max-width: 320px;
+  line-height: 1.5;
+  margin-bottom: 8px;
 }
 
 /* ══════════════════════════════════════════════════════════════

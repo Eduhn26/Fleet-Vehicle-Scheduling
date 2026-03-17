@@ -65,6 +65,24 @@ function shuffle(items) {
   return cloned;
 }
 
+// ---------------------------------------------------------------------------
+// DATETIME CONSTANTS
+// ---------------------------------------------------------------------------
+
+// Business hours for realistic slot generation (06:00 – 22:00).
+const BUSINESS_START_HOUR = 6;
+const BUSINESS_END_HOUR = 22;
+
+// Slot granularity in minutes — must match the validator.
+const SLOT_MINUTES = 30;
+
+// Maximum reservation duration in hours (mirrors the service layer rule).
+const MAX_RENTAL_HOURS = 12;
+
+// ---------------------------------------------------------------------------
+// DATE / TIME HELPERS
+// ---------------------------------------------------------------------------
+
 function startOfDay(date) {
   const value = new Date(date);
   value.setHours(0, 0, 0, 0);
@@ -83,32 +101,93 @@ function addHours(date, hours) {
   return value;
 }
 
+function addMinutes(date, minutes) {
+  return new Date(date.getTime() + minutes * 60 * 1000);
+}
+
 function subtractDays(date, days) {
   return addDays(date, -days);
 }
 
 /*
 NOTE:
-Date window helpers generate realistic reservation periods
-relative to the current date, enabling demo datasets to
-remain relevant over time.
+snapToSlot rounds a Date down to the nearest SLOT_MINUTES boundary
+so every generated startDate/endDate is aligned to 30-min slots,
+matching the validation rule in rentalValidator.js.
 */
-function createWindow(daysAgoStart, durationDays) {
-  const start = startOfDay(subtractDays(new Date(), daysAgoStart));
-  const end = addDays(start, Math.max(0, durationDays - 1));
-  return { start, end };
+function snapToSlot(date) {
+  const value = new Date(date);
+  const minutes = value.getMinutes();
+  const snapped = Math.floor(minutes / SLOT_MINUTES) * SLOT_MINUTES;
+  value.setMinutes(snapped, 0, 0);
+  return value;
 }
 
-function createFutureWindow(daysAheadStart, durationDays) {
-  const start = startOfDay(addDays(new Date(), daysAheadStart));
-  const end = addDays(start, Math.max(0, durationDays - 1));
-  return { start, end };
+/*
+NOTE:
+pickSlotHour selects a random start hour within business hours,
+leaving enough room for at least one SLOT_MINUTES block before
+BUSINESS_END_HOUR.
+*/
+function pickSlotHour() {
+  // Last valid start hour = BUSINESS_END_HOUR - 1 (needs at least 30 min)
+  return randomInt(BUSINESS_START_HOUR, BUSINESS_END_HOUR - 1);
 }
 
-function createRecentWindow(daysAgoStart, durationDays) {
-  const start = startOfDay(subtractDays(new Date(), daysAgoStart));
-  const end = addDays(start, Math.max(0, durationDays - 1));
-  return { start, end };
+/*
+NOTE:
+pickDurationMinutes generates a duration that is:
+  - A multiple of SLOT_MINUTES
+  - Between SLOT_MINUTES and MAX_RENTAL_HOURS * 60
+  - Does not push endDate past BUSINESS_END_HOUR on the same day
+*/
+function pickDurationMinutes(startHour) {
+  const maxMinutesUntilClose = (BUSINESS_END_HOUR - startHour) * 60;
+  const cap = Math.min(MAX_RENTAL_HOURS * 60, maxMinutesUntilClose - SLOT_MINUTES);
+  const slots = Math.floor(cap / SLOT_MINUTES);
+  const picked = randomInt(1, Math.max(1, slots));
+  return picked * SLOT_MINUTES;
+}
+
+/*
+NOTE:
+createDatetimeWindow builds a startDate + endDate pair with realistic
+hour-level granularity.  The base date is derived the same way as
+before (relative to today); the hour/duration are randomised within
+business hours and capped by MAX_RENTAL_HOURS.
+*/
+function createDatetimeWindow(baseDate) {
+  const hour = pickSlotHour();
+  const durationMin = pickDurationMinutes(hour);
+
+  const start = new Date(baseDate);
+  start.setHours(hour, 0, 0, 0);
+  const snappedStart = snapToSlot(start);
+
+  const end = addMinutes(snappedStart, durationMin);
+
+  return { start: snappedStart, end };
+}
+
+/*
+NOTE:
+Window helpers now return datetime-level start/end (not just dates).
+The original day-offset logic is preserved; only the intra-day
+hour/slot layer is added on top.
+*/
+function createWindow(daysAgoStart) {
+  const base = startOfDay(subtractDays(new Date(), daysAgoStart));
+  return createDatetimeWindow(base);
+}
+
+function createFutureWindow(daysAheadStart) {
+  const base = startOfDay(addDays(new Date(), daysAheadStart));
+  return createDatetimeWindow(base);
+}
+
+function createRecentWindow(daysAgoStart) {
+  const base = startOfDay(subtractDays(new Date(), daysAgoStart));
+  return createDatetimeWindow(base);
 }
 
 /*
@@ -467,19 +546,19 @@ async function run() {
       let completionNotes;
 
       if (status === RENTAL_STATUS.PENDING) {
-        const window = createFutureWindow(randomInt(1, 12), randomInt(1, 3));
+        const window = createFutureWindow(randomInt(1, 12));
         startDate = window.start;
         endDate = window.end;
         createdAt = addHours(subtractDays(startDate, randomInt(1, 4)), randomInt(8, 17));
         updatedAt = addHours(createdAt, randomInt(1, 8));
       } else if (status === RENTAL_STATUS.APPROVED) {
-        const window = createFutureWindow(randomInt(0, 8), randomInt(1, 4));
+        const window = createFutureWindow(randomInt(0, 8));
         startDate = window.start;
         endDate = window.end;
         createdAt = addHours(subtractDays(startDate, randomInt(1, 5)), randomInt(8, 17));
         updatedAt = addHours(createdAt, randomInt(2, 24));
       } else if (status === RENTAL_STATUS.RETURN_PENDING) {
-        const window = createRecentWindow(randomInt(0, 6), randomInt(1, 3));
+        const window = createRecentWindow(randomInt(0, 6));
         startDate = window.start;
         endDate = window.end;
         createdAt = addHours(subtractDays(startDate, randomInt(1, 4)), randomInt(8, 17));
@@ -488,7 +567,7 @@ async function run() {
         returnRequestedMileage = vehicle.mileage + randomInt(80, 650);
         returnNotes = buildReturnNotes();
       } else if (status === RENTAL_STATUS.COMPLETED) {
-        const window = createWindow(randomInt(7, 120), randomInt(1, 4));
+        const window = createWindow(randomInt(7, 120));
         startDate = window.start;
         endDate = window.end;
         createdAt = addHours(subtractDays(startDate, randomInt(1, 5)), randomInt(8, 17));
@@ -497,13 +576,13 @@ async function run() {
         actualMileage = vehicle.mileage + randomInt(120, 1100);
         completionNotes = buildCompletionNotes();
       } else if (status === RENTAL_STATUS.REJECTED) {
-        const window = createWindow(randomInt(10, 90), randomInt(1, 3));
+        const window = createWindow(randomInt(10, 90));
         startDate = window.start;
         endDate = window.end;
         createdAt = addHours(subtractDays(startDate, randomInt(1, 4)), randomInt(8, 17));
         updatedAt = addHours(createdAt, randomInt(1, 8));
       } else if (status === RENTAL_STATUS.CANCELLED) {
-        const window = createWindow(randomInt(5, 75), randomInt(1, 3));
+        const window = createWindow(randomInt(5, 75));
         startDate = window.start;
         endDate = window.end;
         createdAt = addHours(subtractDays(startDate, randomInt(1, 4)), randomInt(8, 17));

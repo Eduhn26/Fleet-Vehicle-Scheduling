@@ -30,6 +30,9 @@ const buildFutureDate = (daysFromNow) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+const buildFutureDatetime = (daysFromNow, time = '10:00') =>
+  `${buildFutureDate(daysFromNow)}T${time}`;
+
 const buildUserPayload = (overrides = {}) => ({
   name: 'Eduardo Henrique',
   email: 'eduardo.dev@example.com',
@@ -88,8 +91,8 @@ describe('rentalService', () => {
       const created = await rentalService.createRequest({
         userId: user._id.toString(),
         vehicleId: vehicle._id.toString(),
-        startDate: buildFutureDate(10),
-        endDate: buildFutureDate(12),
+        startDate: buildFutureDatetime(10, '10:00'),
+        endDate: buildFutureDatetime(10, '12:00'),
         purpose: 'Viagem corporativa',
       });
 
@@ -103,7 +106,7 @@ describe('rentalService', () => {
       expect(persisted.status).toBe(RENTAL_STATUS.PENDING);
     });
 
-    it('rejects a period longer than 5 days', async () => {
+    it('rejects a rental duration longer than 12 hours', async () => {
       const user = await User.create(buildUserPayload());
       const vehicle = await Vehicle.create(buildVehiclePayload());
 
@@ -111,13 +114,13 @@ describe('rentalService', () => {
         rentalService.createRequest({
           userId: user._id.toString(),
           vehicleId: vehicle._id.toString(),
-          startDate: buildFutureDate(10),
-          endDate: buildFutureDate(15),
+          startDate: buildFutureDatetime(10, '08:00'),
+          endDate: buildFutureDatetime(10, '21:00'),
           purpose: 'Período inválido',
         }),
         {
           statusCode: 400,
-          messageIncludes: 'Período máximo',
+          messageIncludes: 'Duração máxima por reserva é de 12 horas',
         }
       );
     });
@@ -131,8 +134,8 @@ describe('rentalService', () => {
       const created = await rentalService.createRequest({
         userId: user._id.toString(),
         vehicleId: vehicle._id.toString(),
-        startDate: buildFutureDate(10),
-        endDate: buildFutureDate(12),
+        startDate: buildFutureDatetime(10, '10:00'),
+        endDate: buildFutureDatetime(10, '12:00'),
         purpose: 'Teste approve',
       });
 
@@ -154,8 +157,8 @@ describe('rentalService', () => {
       const firstRequest = await rentalService.createRequest({
         userId: user._id.toString(),
         vehicleId: vehicle._id.toString(),
-        startDate: buildFutureDate(10),
-        endDate: buildFutureDate(12),
+        startDate: buildFutureDatetime(10, '10:00'),
+        endDate: buildFutureDatetime(10, '12:00'),
         purpose: 'Reserva principal',
       });
 
@@ -168,8 +171,8 @@ describe('rentalService', () => {
         rentalService.createRequest({
           userId: user._id.toString(),
           vehicleId: vehicle._id.toString(),
-          startDate: buildFutureDate(10),
-          endDate: buildFutureDate(12),
+          startDate: buildFutureDatetime(10, '10:30'),
+          endDate: buildFutureDatetime(10, '11:30'),
           purpose: 'Conflito esperado',
         }),
         {
@@ -187,8 +190,8 @@ describe('rentalService', () => {
       const created = await rentalService.createRequest({
         userId: user._id.toString(),
         vehicleId: vehicle._id.toString(),
-        startDate: buildFutureDate(10),
-        endDate: buildFutureDate(12),
+        startDate: buildFutureDatetime(10, '10:00'),
+        endDate: buildFutureDatetime(10, '12:00'),
         purpose: 'Teste cancel',
       });
 
@@ -217,8 +220,8 @@ describe('rentalService', () => {
       const created = await rentalService.createRequest({
         userId: user._id.toString(),
         vehicleId: vehicle._id.toString(),
-        startDate: buildFutureDate(10),
-        endDate: buildFutureDate(12),
+        startDate: buildFutureDatetime(10, '10:00'),
+        endDate: buildFutureDatetime(10, '12:00'),
         purpose: 'Teste duplicate cancel',
       });
 
@@ -251,8 +254,8 @@ describe('rentalService', () => {
       const created = await rentalService.createRequest({
         userId: user._id.toString(),
         vehicleId: vehicle._id.toString(),
-        startDate: buildFutureDate(10),
-        endDate: buildFutureDate(12),
+        startDate: buildFutureDatetime(10, '10:00'),
+        endDate: buildFutureDatetime(10, '12:00'),
         purpose: 'Lifecycle protection',
       });
 
@@ -283,8 +286,8 @@ describe('rentalService', () => {
       const created = await rentalService.createRequest({
         userId: user._id.toString(),
         vehicleId: vehicle._id.toString(),
-        startDate: buildFutureDate(10),
-        endDate: buildFutureDate(12),
+        startDate: buildFutureDatetime(10, '10:00'),
+        endDate: buildFutureDatetime(10, '12:00'),
         purpose: 'Teste request return',
       });
 
@@ -317,8 +320,8 @@ describe('rentalService', () => {
       const created = await rentalService.createRequest({
         userId: user._id.toString(),
         vehicleId: vehicle._id.toString(),
-        startDate: buildFutureDate(10),
-        endDate: buildFutureDate(12),
+        startDate: buildFutureDatetime(10, '10:00'),
+        endDate: buildFutureDatetime(10, '12:00'),
         purpose: 'Teste km inválido',
       });
 
@@ -355,8 +358,8 @@ describe('rentalService', () => {
       const created = await rentalService.createRequest({
         userId: user._id.toString(),
         vehicleId: vehicle._id.toString(),
-        startDate: buildFutureDate(10),
-        endDate: buildFutureDate(12),
+        startDate: buildFutureDatetime(10, '10:00'),
+        endDate: buildFutureDatetime(10, '12:00'),
         purpose: 'Teste complete rental',
       });
 
@@ -412,8 +415,8 @@ describe('rentalService', () => {
       const created = await rentalService.createRequest({
         userId: user._id.toString(),
         vehicleId: vehicle._id.toString(),
-        startDate: buildFutureDate(10),
-        endDate: buildFutureDate(12),
+        startDate: buildFutureDatetime(10, '10:00'),
+        endDate: buildFutureDatetime(10, '12:00'),
         purpose: 'Teste manutenção automática',
       });
 
@@ -448,8 +451,8 @@ describe('rentalService', () => {
       const created = await rentalService.createRequest({
         userId: user._id.toString(),
         vehicleId: vehicle._id.toString(),
-        startDate: buildFutureDate(10),
-        endDate: buildFutureDate(12),
+        startDate: buildFutureDatetime(10, '10:00'),
+        endDate: buildFutureDatetime(10, '12:00'),
         purpose: 'Teste conclusão inválida',
       });
 

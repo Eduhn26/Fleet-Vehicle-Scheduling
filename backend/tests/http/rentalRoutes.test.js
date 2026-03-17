@@ -33,6 +33,9 @@ const buildFutureDate = (daysFromNow) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+const buildFutureDatetime = (daysFromNow, time = '10:00') =>
+  `${buildFutureDate(daysFromNow)}T${time}`;
+
 const buildUserPayload = (overrides = {}) => ({
   name: 'Eduardo Henrique',
   email: 'eduardo.dev@example.com',
@@ -100,8 +103,8 @@ describe('rentalRoutes HTTP', () => {
 
       const response = await request(app).post('/api/rentals').send({
         vehicleId: vehicle._id.toString(),
-        startDate: buildFutureDate(10),
-        endDate: buildFutureDate(12),
+        startDate: buildFutureDatetime(10, '10:00'),
+        endDate: buildFutureDatetime(10, '12:00'),
         purpose: 'Reserva sem token',
       });
 
@@ -119,8 +122,8 @@ describe('rentalRoutes HTTP', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({
           vehicleId: vehicle._id.toString(),
-          startDate: buildFutureDate(10),
-          endDate: buildFutureDate(12),
+          startDate: buildFutureDatetime(10, '10:00'),
+          endDate: buildFutureDatetime(10, '12:00'),
           purpose: 'Viagem corporativa',
         });
 
@@ -145,8 +148,8 @@ describe('rentalRoutes HTTP', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({
           vehicleId: vehicle._id.toString(),
-          startDate: buildFutureDate(10),
-          endDate: buildFutureDate(12),
+          startDate: buildFutureDatetime(10, '10:00'),
+          endDate: buildFutureDatetime(10, '12:00'),
           purpose: 'ok',
         });
 
@@ -183,8 +186,8 @@ describe('rentalRoutes HTTP', () => {
       const created = await RentalRequest.create({
         user: user._id,
         vehicle: vehicle._id,
-        startDate: new Date(`${buildFutureDate(10)}T00:00:00.000Z`),
-        endDate: new Date(`${buildFutureDate(12)}T00:00:00.000Z`),
+        startDate: new Date(`${buildFutureDate(10)}T10:00:00.000Z`),
+        endDate: new Date(`${buildFutureDate(10)}T12:00:00.000Z`),
         purpose: 'Reserva pendente',
         status: RENTAL_STATUS.PENDING,
       });
@@ -219,8 +222,8 @@ describe('rentalRoutes HTTP', () => {
       const created = await RentalRequest.create({
         user: otherUser._id,
         vehicle: vehicle._id,
-        startDate: new Date(`${buildFutureDate(10)}T00:00:00.000Z`),
-        endDate: new Date(`${buildFutureDate(12)}T00:00:00.000Z`),
+        startDate: new Date(`${buildFutureDate(10)}T10:00:00.000Z`),
+        endDate: new Date(`${buildFutureDate(10)}T12:00:00.000Z`),
         purpose: 'Reserva pendente',
         status: RENTAL_STATUS.PENDING,
       });
@@ -249,8 +252,8 @@ describe('rentalRoutes HTTP', () => {
       const created = await RentalRequest.create({
         user: user._id,
         vehicle: vehicle._id,
-        startDate: new Date(`${buildFutureDate(10)}T00:00:00.000Z`),
-        endDate: new Date(`${buildFutureDate(12)}T00:00:00.000Z`),
+        startDate: new Date(`${buildFutureDate(10)}T10:00:00.000Z`),
+        endDate: new Date(`${buildFutureDate(10)}T12:00:00.000Z`),
         purpose: 'Reserva para cancelar',
         status: RENTAL_STATUS.APPROVED,
       });

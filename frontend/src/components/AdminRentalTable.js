@@ -36,10 +36,14 @@ function statusLabel(status) {
 
 function getInitials(name) {
   if (!name) return '?';
-  return name.split(' ').slice(0, 2).map((n) => n[0].toUpperCase()).join('');
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((n) => n[0].toUpperCase())
+    .join('');
 }
 
-/* Gera uma cor de gradiente consistente por nome */
+// NOTE: Consistent avatar gradients help rows feel more deliberate and polished.
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg,#6366f1,#8b5cf6)',
   'linear-gradient(135deg,#0ea5e9,#0284c7)',
@@ -55,10 +59,6 @@ function avatarGradient(name) {
   return AVATAR_GRADIENTS[sum % AVATAR_GRADIENTS.length];
 }
 
-export default function AdminRentalTable({ rentals, onActionComplete }) {
-  const [loadingId, setLoadingId] = useState('');
-  const [feedback, setFeedback] = useState({ type: '', message: '' });
-
 const STATUS_PRIORITY = {
   pending: 1,
   return_pending: 2,
@@ -68,18 +68,22 @@ const STATUS_PRIORITY = {
   completed: 6,
 };
 
-const sortedRentals = useMemo(() => {
-  return [...safeArray(rentals)].sort((a, b) => {
-    const statusA = STATUS_PRIORITY[a?.status] ?? 99;
-    const statusB = STATUS_PRIORITY[b?.status] ?? 99;
+export default function AdminRentalTable({ rentals, onActionComplete }) {
+  const [loadingId, setLoadingId] = useState('');
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
 
-    if (statusA !== statusB) {
-      return statusA - statusB;
-    }
+  const sortedRentals = useMemo(() => {
+    return [...safeArray(rentals)].sort((a, b) => {
+      const statusA = STATUS_PRIORITY[a?.status] ?? 99;
+      const statusB = STATUS_PRIORITY[b?.status] ?? 99;
 
-    return new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0);
-  });
-}, [rentals]);
+      if (statusA !== statusB) {
+        return statusA - statusB;
+      }
+
+      return new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0);
+    });
+  }, [rentals]);
 
   const pendingCount = useMemo(
     () => sortedRentals.filter((r) => r.status === 'pending').length,
@@ -100,12 +104,18 @@ const sortedRentals = useMemo(() => {
 
       setFeedback({
         type: 'info',
-        message: action === 'approve' ? 'Solicitação aprovada.' : 'Solicitação rejeitada.',
+        message:
+          action === 'approve'
+            ? 'Solicitação aprovada.'
+            : 'Solicitação rejeitada.',
       });
 
       await onActionComplete();
     } catch (err) {
-      setFeedback({ type: 'error', message: getApiErrorMessage(err, 'Não foi possível concluir.') });
+      setFeedback({
+        type: 'error',
+        message: getApiErrorMessage(err, 'Não foi possível concluir.'),
+      });
     } finally {
       setLoadingId('');
     }
@@ -120,10 +130,20 @@ const sortedRentals = useMemo(() => {
         adminNotes: 'Devolução confirmada pelo admin via interface.',
       });
 
-      setFeedback({ type: 'info', message: 'Devolução concluída com sucesso.' });
+      setFeedback({
+        type: 'info',
+        message: 'Devolução concluída com sucesso.',
+      });
+
       await onActionComplete();
     } catch (err) {
-      setFeedback({ type: 'error', message: getApiErrorMessage(err, 'Não foi possível concluir a devolução.') });
+      setFeedback({
+        type: 'error',
+        message: getApiErrorMessage(
+          err,
+          'Não foi possível concluir a devolução.'
+        ),
+      });
     } finally {
       setLoadingId('');
     }
@@ -147,7 +167,6 @@ const sortedRentals = useMemo(() => {
         </div>
       )}
 
-      {/* Table header */}
       <div className="sol-table-head">
         <span>Usuário</span>
         <span>Veículo</span>
@@ -158,7 +177,13 @@ const sortedRentals = useMemo(() => {
       </div>
 
       {sortedRentals.length === 0 ? (
-        <div style={{ padding: '1.5rem', color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+        <div
+          style={{
+            padding: '1.5rem',
+            color: 'var(--color-text-muted)',
+            fontSize: '0.875rem',
+          }}
+        >
           Nenhuma solicitação encontrada.
         </div>
       ) : (
@@ -173,7 +198,6 @@ const sortedRentals = useMemo(() => {
               key={rental.id}
               className={`sol-table-row${isReturnPending ? ' highlight' : ''}`}
             >
-              {/* Usuário com avatar */}
               <div className="user-cell">
                 <div
                   className="user-initials"
@@ -182,46 +206,54 @@ const sortedRentals = useMemo(() => {
                 >
                   {getInitials(userName)}
                 </div>
+
                 <div>
                   <div className="cell-main">{userName}</div>
                   <div className="cell-sub">{rental?.user?.email || '-'}</div>
                 </div>
               </div>
 
-              {/* Veículo */}
               <div>
                 <div className="cell-main">
                   {rental?.vehicle?.brand} {rental?.vehicle?.model}
                 </div>
+
                 {rental?.vehicle?.licensePlate && (
-                  <span className="license-plate">{rental.vehicle.licensePlate}</span>
+                  <span className="license-plate">
+                    {rental.vehicle.licensePlate}
+                  </span>
                 )}
               </div>
 
-              {/* Período */}
               <div>
-                <div className="cell-main" style={{ fontSize: '0.82rem' }}>{rental.startDate}</div>
+                <div className="cell-main" style={{ fontSize: '0.82rem' }}>
+                  {rental.startDate}
+                </div>
                 <div className="cell-sub">até {rental.endDate}</div>
               </div>
 
-              {/* Motivo */}
               <div>
+                {/* NOTE: Purpose must wrap fully for both normal requests and returns. */}
                 <div
                   style={{
                     fontSize: '0.875rem',
                     color: 'var(--color-text-muted)',
-                    maxWidth: 200,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
+                    lineHeight: 1.6,
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'anywhere',
                   }}
                   title={rental.purpose}
                 >
                   {rental.purpose}
                 </div>
+
                 {isReturnPending && rental.returnNotes && (
-                  <div className="cell-sub" style={{ marginTop: 2 }}>{rental.returnNotes}</div>
+                  <div className="cell-sub" style={{ marginTop: 6 }}>
+                    {rental.returnNotes}
+                  </div>
                 )}
+
                 {isReturnPending && typeof rental.mileage === 'number' && (
                   <div className="cell-sub return-mileage">
                     KM informado: {rental.mileage.toLocaleString()} km
@@ -229,14 +261,12 @@ const sortedRentals = useMemo(() => {
                 )}
               </div>
 
-              {/* Status */}
               <div>
                 <span className={getStatusBadgeClass(rental.status)}>
                   {statusLabel(rental.status)}
                 </span>
               </div>
 
-              {/* Ações */}
               <div className="row-actions">
                 {isPending ? (
                   <>
@@ -248,10 +278,15 @@ const sortedRentals = useMemo(() => {
                     >
                       {isLoading ? '...' : '✓ Aprovar'}
                     </button>
+
                     <button
                       type="button"
                       className="btn btn-sm"
-                      style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fee2e2' }}
+                      style={{
+                        background: '#fef2f2',
+                        color: '#dc2626',
+                        border: '1px solid #fee2e2',
+                      }}
                       onClick={() => handleDecision(rental.id, 'reject')}
                       disabled={isLoading}
                     >
@@ -268,7 +303,12 @@ const sortedRentals = useMemo(() => {
                     {isLoading ? '...' : 'Confirmar devolução'}
                   </button>
                 ) : (
-                  <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                  <span
+                    style={{
+                      fontSize: '0.8rem',
+                      color: 'var(--color-text-muted)',
+                    }}
+                  >
                     Decisão concluída
                   </span>
                 )}

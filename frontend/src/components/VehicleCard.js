@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import '../styles/dashboard.css';
 
 import {
-// NOTE: Presentational card used to render a vehicle summary and quick context actions.
   FiMoreVertical,
   FiUsers,
   FiCalendar,
@@ -37,13 +36,9 @@ function StatusBadge({ status }) {
 }
 
 function getVehicleImage(vehicle) {
-  if (vehicle.imageUrl) {
-    return vehicle.imageUrl;
-  }
+  if (vehicle.imageUrl) return vehicle.imageUrl;
 
-  const key = `${vehicle.brand || ''} ${vehicle.model || ''}`
-    .toLowerCase()
-    .trim();
+  const key = `${vehicle.brand || ''} ${vehicle.model || ''}`.toLowerCase().trim();
 
   const imageMap = {
     'toyota yaris': yarisImg,
@@ -61,25 +56,16 @@ function getMileageTone(mileage, nextMaintenance) {
   const target = nextMaintenance || 30000;
 
   if (current >= target) {
-    return {
-      cls: 'vehicle-mileageBadge-danger',
-      label: `${current.toLocaleString()} km`,
-    };
+    return { cls: 'vehicle-mileageBadge-danger', label: `${current.toLocaleString()} km` };
   }
 
   const ratio = current / target;
 
   if (ratio >= 0.85) {
-    return {
-      cls: 'vehicle-mileageBadge-warning',
-      label: `${current.toLocaleString()} km`,
-    };
+    return { cls: 'vehicle-mileageBadge-warning', label: `${current.toLocaleString()} km` };
   }
 
-  return {
-    cls: 'vehicle-mileageBadge-normal',
-    label: `${current.toLocaleString()} km`,
-  };
+  return { cls: 'vehicle-mileageBadge-normal', label: `${current.toLocaleString()} km` };
 }
 
 function getMaintenanceBarColor(percentage) {
@@ -135,43 +121,29 @@ export default function VehicleCard({
   const handleViewDetails = (event) => {
     event.stopPropagation();
     setMenuOpen(false);
-
-    if (typeof onSelect === 'function') {
-      onSelect(vehicle.id);
-    }
+    if (typeof onSelect === 'function') onSelect(vehicle.id);
   };
 
   const handleSendMaintenance = (event) => {
     event.stopPropagation();
     setMenuOpen(false);
-
-    if (typeof onSendMaintenance === 'function') {
-      onSendMaintenance(vehicle);
-    }
+    if (typeof onSendMaintenance === 'function') onSendMaintenance(vehicle);
   };
 
   const handleCompleteMaintenance = (event) => {
     event.stopPropagation();
     setMenuOpen(false);
-
-    if (typeof onCompleteMaintenance === 'function') {
-      onCompleteMaintenance(vehicle);
-    }
+    if (typeof onCompleteMaintenance === 'function') onCompleteMaintenance(vehicle);
   };
 
   const handleDeleteVehicle = (event) => {
     event.stopPropagation();
     setMenuOpen(false);
-
-    if (typeof onDeleteVehicle === 'function') {
-      onDeleteVehicle(vehicle);
-    }
+    if (typeof onDeleteVehicle === 'function') onDeleteVehicle(vehicle);
   };
 
   const handleCardSelect = () => {
-    if (typeof onSelect === 'function') {
-      onSelect(vehicle.id);
-    }
+    if (typeof onSelect === 'function') onSelect(vehicle.id);
   };
 
   return (
@@ -214,11 +186,7 @@ export default function VehicleCard({
                   </button>
                 )}
 
-                <button
-                  type="button"
-                  className="danger"
-                  onClick={handleDeleteVehicle}
-                >
+                <button type="button" className="danger" onClick={handleDeleteVehicle}>
                   Excluir
                 </button>
               </div>
