@@ -1514,22 +1514,23 @@
     border-radius: 22px;
   }
 
-  /* 🔥 AGORA SIM, separado */
   .modal-overlay {
     align-items: flex-start;
     padding: 10px;
   }
 
-  .modal-content-card {
-    border-radius: 20px;
-    max-height: calc(100dvh - 20px);
-  }
+ .modal-content-card {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 20px);
+  overflow: hidden;
+}
 
-  .rental-modalBody {
-    max-height: calc(100dvh - 120px);
-    padding: 1rem;
-    overflow-y: auto;
-  }
+ .rental-modalBody {
+  padding: 1rem;
+  overflow-y: auto;
+  flex: 1;
+}
 }
 
   .dashboard-hero,
