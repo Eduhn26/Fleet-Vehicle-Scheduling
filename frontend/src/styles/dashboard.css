@@ -1685,3 +1685,146 @@
     width: 100%;
   }
 }
+
+
+* {
+  min-width: 0;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.dashboard,
+.dashboard-hero,
+.dashboard-hero-text,
+.dashboard-hero-stats,
+.metrics-grid,
+.metrics-grid-tight,
+.user-metrics-row,
+.vehicle-grid,
+.summary-actions,
+.dashboard-actions {
+  min-width: 0;
+}
+
+.dashboard-hero-title,
+.dashboard-hero-sub,
+.summary-title,
+.summary-text,
+.metric-label,
+.metric-desc,
+.hero-stat-label {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-hero-actions {
+    justify-content: flex-start;
+  }
+
+  .dashboard-hero-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-hero-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metrics-grid-tight,
+  .user-metrics-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-hero {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .dashboard-hero-title {
+    font-size: clamp(1.55rem, 8vw, 2rem);
+    line-height: 1.08;
+  }
+
+  .dashboard-hero-sub {
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+
+  .dashboard-hero-stats,
+  .metrics-grid,
+  .metrics-grid-tight,
+  .user-metrics-row,
+  .vehicle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-stat,
+  .metric-card {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .hero-stat {
+    padding: 0.95rem;
+  }
+
+  .hero-stat-value {
+    font-size: clamp(1.4rem, 8vw, 1.9rem);
+  }
+
+  .hero-stat-label {
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .summary-actions,
+  .dashboard-actions,
+  .dashboard-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-linkBtn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .dashboard-hero,
+  .user-hero,
+  .table-card,
+  .card {
+    border-radius: 18px;
+  }
+
+  .dashboard-hero,
+  .user-hero {
+    padding: 0.9rem;
+  }
+
+  .table-header,
+  .table-sectionBody {
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+  }
+
+  .hero-stat,
+  .metric-card {
+    border-radius: 16px;
+  }
+}
