@@ -1448,12 +1448,27 @@
 .btn-danger {
   border-radius: 16px;
   font-weight: 700;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .btn-primary {
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: #ffffff;
   box-shadow: 0 16px 24px rgba(37, 99, 235, 0.18);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  text-align: center;
+  line-height: 1.2;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+
+  max-width: 100%;
 }
 
 .btn-primary:hover {
@@ -1758,6 +1773,11 @@ body {
     padding: 1rem;
     gap: 1rem;
   }
+
+  .btn-primary,
+.btn-secondary {
+  width: 100%;
+}
 
   .dashboard-hero-title {
     font-size: clamp(1.55rem, 8vw, 2rem);
