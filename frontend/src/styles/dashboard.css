@@ -82,15 +82,16 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(110px, 1fr));
   gap: 0.75rem;
+  width: 100%;
 }
 
 .hero-stat {
+  min-width: 110px;
   padding: 1rem;
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  min-width: 110px;
 }
 
 .hero-stat-value {
@@ -827,19 +828,22 @@
   background: rgba(15, 23, 42, 0.58);
   backdrop-filter: blur(8px);
   display: flex;
-  align-items: flex-start;       
+  align-items: flex-start;
   justify-content: center;
-  overflow-y: auto;  
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
 }
 
 .modal-content-card {
   width: min(100%, 1080px);
   border-radius: 28px;
-  max-height: calc(100dvh - 32px);
+  max-height: calc(100svh - 32px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
 }
 
 .rental-modal {
@@ -912,7 +916,8 @@
 .rental-modalBody {
   padding: 1.5rem 1.75rem;
   overflow-y: auto;
-  max-height: calc(100dvh - 140px);
+  flex: 1;
+  min-height: 0;
 }
 
 .rental-modalGrid {
@@ -1268,13 +1273,20 @@
 }
 
 .vehicle-details-shell {
+  width: min(100%, 540px);
   max-width: 540px;
+  max-height: inherit;
+  min-height: 0;
 }
 
 .vehicle-details-modal {
   background: #ffffff;
   border-radius: 28px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+  min-height: 0;
 }
 
 .vehicle-details-header {
@@ -1287,6 +1299,7 @@
   color: #ffffff;
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .vehicle-details-header::before {
@@ -1347,7 +1360,11 @@
 }
 
 .vehicle-details-body {
-  padding: 1.5rem 1.75rem;
+  padding: 1.5rem 1.75rem 1rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .vehicle-details-grid {
@@ -1390,8 +1407,11 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 0 1.75rem 1.75rem;
   flex-wrap: wrap;
+  flex-shrink: 0;
+  padding: 1rem 1.75rem calc(1.25rem + env(safe-area-inset-bottom));
+  border-top: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, #ffffff 100%);
 }
 
 .vehicle-details-cancel {
@@ -1514,28 +1534,60 @@
     border-radius: 22px;
   }
 
-  .modal-overlay {
-    align-items: flex-start;
-    padding: 10px;
-  }
-
- .modal-content-card {
-  display: flex;
-  flex-direction: column;
-  max-height: calc(100dvh - 20px);
-  overflow: hidden;
-}
-
- .rental-modalBody {
-  padding: 1rem;
-  overflow-y: auto;
-  flex: 1;
-}
-}
-
   .dashboard-hero,
   .user-hero {
     padding: 1.2rem;
+  }
+
+  .dashboard-hero-title {
+    font-size: clamp(1.75rem, 8vw, 2.2rem);
+  }
+
+  .dashboard-hero-sub {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .dashboard-hero-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+    width: 100%;
+  }
+
+  .hero-stat {
+    min-width: 0;
+    padding: 0.9rem 0.8rem;
+    border-radius: 18px;
+  }
+
+  .hero-stat-value {
+    font-size: clamp(1.35rem, 7vw, 1.85rem);
+  }
+
+  .hero-stat-label {
+    font-size: 0.74rem;
+    line-height: 1.35;
+  }
+
+  .modal-overlay {
+    align-items: flex-start;
+    padding: 10px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .modal-content-card {
+    max-height: calc(100svh - 20px);
+    border-radius: 20px;
+  }
+
+  .vehicle-details-shell {
+    width: min(100%, 540px);
+    max-height: inherit;
+  }
+
+  .vehicle-details-modal {
+    border-radius: 20px;
+    max-height: inherit;
   }
 
   .table-header,
@@ -1548,9 +1600,31 @@
     padding: 1rem;
   }
 
-  .rental-modalBody,
-  .vehicle-details-body {
+  .rental-modalBody {
     padding: 1rem;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .vehicle-details-body {
+    padding: 1rem 1rem 0.85rem;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .vehicle-details-actions {
+    padding: 0.9rem 1rem calc(1rem + env(safe-area-inset-bottom));
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .vehicle-details-actions .dashboard-linkBtn,
+  .vehicle-details-actions .btn-primary,
+  .vehicle-details-actions .vehicle-details-cancel {
+    width: 100%;
   }
 
   .metrics-grid,
@@ -1596,7 +1670,6 @@
 
   .rental-modalActions,
   .return-modalActions,
-  .vehicle-details-actions,
   .dashboard-actions,
   .dashboard-hero-actions {
     flex-direction: column;
@@ -1611,3 +1684,4 @@
   .dashboard-linkBtn {
     width: 100%;
   }
+}
