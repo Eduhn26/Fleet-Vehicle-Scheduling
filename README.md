@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚗 Fleet Vehicle Scheduling
+#  Fleet Vehicle Scheduling
 
 **Full-stack fleet rental and vehicle scheduling system**
 
