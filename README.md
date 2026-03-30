@@ -1,61 +1,59 @@
 <div align="center">
 
-#  Fleet Vehicle Scheduling
+<br/>
 
-**Full-stack fleet rental and vehicle scheduling system**
+# Fleet Vehicle Scheduling
 
-[![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white)](https://nodejs.org)
-[![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)](https://reactjs.org)
-[![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)](https://mongodb.com)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://docker.com)
-[![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=flat&logo=github-actions&logoColor=white)](https://github.com/features/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+**Full-stack fleet management and vehicle scheduling system built with Node.js, Express, MongoDB and React.**
 
-[**Live Demo**](https://fleet-vehicle-scheduling.vercel.app) · [**API**](https://fleet-vehicle-scheduling.onrender.com) · [**Health Check**](https://fleet-vehicle-scheduling.onrender.com/api/health)
+<br/>
+
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
+[![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactjs.org)
+[![MongoDB](https://img.shields.io/badge/MongoDB_Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://mongodb.com)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docker.com)
+[![Jest](https://img.shields.io/badge/Jest-tested-C21325?style=flat-square&logo=jest&logoColor=white)](https://jestjs.io)
+[![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=flat-square&logo=github-actions&logoColor=white)](https://github.com/features/actions)
+
+<br/>
+
+[🖥️ Live Demo](https://fleet-vehicle-scheduling.vercel.app) · [⚙️ API](https://fleet-vehicle-scheduling.onrender.com) · [🩺 Health Check](https://fleet-vehicle-scheduling.onrender.com/api/health)
+
+<br/>
 
 </div>
 
 ---
 
-## 📋 Overview
+## Sobre o Projeto
 
-A production-grade fleet management system built to demonstrate **real-world software engineering practices** — layered architecture, progressive system evolution, CI/CD pipelines, observability, and containerized deployment.
+Sistema de gestão de frota corporativa construído para demonstrar **práticas reais de engenharia de software** — arquitetura em camadas, evolução progressiva do sistema, CI/CD, observabilidade e deploy containerizado.
 
-Instead of implementing everything at once, the system was built through **12 incremental engineering phases**, each introducing new architectural capabilities while preserving the existing foundation — simulating how production systems actually grow over time.
+Em vez de implementar tudo de uma vez, o sistema foi construído em **12 fases incrementais de engenharia**, cada uma introduzindo novas capacidades arquiteturais enquanto preserva a fundação existente — simulando como sistemas de produção realmente evoluem ao longo do tempo.
 
 ---
 
-## 🌐 Live System
+## Stack
 
-| Service | URL |
+| Categoria | Tecnologia |
 |---|---|
-| 🖥️ Frontend | https://fleet-vehicle-scheduling.vercel.app |
-| ⚙️ Backend API | https://fleet-vehicle-scheduling.onrender.com |
-| 🩺 Health Check | https://fleet-vehicle-scheduling.onrender.com/api/health |
+| Backend | Node.js, Express |
+| Banco de dados | MongoDB Atlas |
+| ODM | Mongoose |
+| Autenticação | JWT |
+| Frontend | React, React Router |
+| Cliente HTTP | Axios |
+| Testes | Jest, Supertest, MongoMemoryServer |
+| CI/CD | GitHub Actions |
+| Containerização | Docker, Docker Compose |
+| Hosting | Render (API) · Vercel (Frontend) |
+| Tooling | ESLint, Prettier, Nodemon |
 
 ---
 
-## 🛠️ Tech Stack
+## Quick Start (Docker)
 
-| Category | Technology |
-|---|---|
-| **Backend** | Node.js, Express |
-| **Database** | MongoDB Atlas |
-| **ORM** | Mongoose |
-| **Authentication** | JWT |
-| **Frontend** | React, React Router |
-| **API Client** | Axios |
-| **Testing** | Jest, Supertest, MongoMemoryServer |
-| **CI/CD** | GitHub Actions |
-| **Containerization** | Docker, Docker Compose |
-| **Hosting** | Render (API) · Vercel (Frontend) |
-| **Tooling** | ESLint, Prettier, Nodemon |
-
----
-
-## ⚡ Quick Start (Docker)
-
-Get the full system running with a single command — no Node.js installation required.
+O sistema completo sobe com um único comando — sem necessidade de instalar Node.js manualmente.
 
 ```bash
 git clone <repository-url>
@@ -63,254 +61,258 @@ cd fleet-vehicle-scheduling
 docker compose up --build
 ```
 
-| Service | URL |
+| Serviço | URL |
 |---|---|
 | Frontend | http://localhost:3000 |
 | Backend API | http://localhost:5000 |
 | Health Check | http://localhost:5000/api/health |
 
 ```bash
-# Stop containers
+# Parar os containers
 docker compose down
 ```
 
 ---
 
-## 🏗️ System Architecture
+## Arquitetura do Sistema
 
 ```
-┌─────────────────────────────────────┐
-│         React  (Vercel)             │  ← User Interface
-└────────────────┬────────────────────┘
-                 │ HTTPS / Axios
-┌────────────────▼────────────────────┐
-│      Node.js + Express  (Render)    │  ← Business Logic & API
-└────────────────┬────────────────────┘
-                 │ Mongoose
-┌────────────────▼────────────────────┐
-│         MongoDB Atlas               │  ← Persistent Storage
-└─────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│          React  (Vercel)             │  ← Interface do usuário
+└─────────────────┬────────────────────┘
+                  │ HTTPS / Axios
+┌─────────────────▼────────────────────┐
+│     Node.js + Express  (Render)      │  ← Lógica de negócio & API
+└─────────────────┬────────────────────┘
+                  │ Mongoose
+┌─────────────────▼────────────────────┐
+│           MongoDB Atlas              │  ← Persistência
+└──────────────────────────────────────┘
 ```
 
-| Layer | Responsibility |
+| Camada | Responsabilidade |
 |---|---|
-| **Frontend (React)** | User interface, auth flow, dashboards, workflow interaction |
-| **Backend (Express)** | Business logic, reservation lifecycle, authentication, validation |
-| **Database (MongoDB)** | Persistent storage for users, vehicles, and reservations |
+| **Frontend (React)** | Interface, fluxo de autenticação, dashboards, interação com workflows |
+| **Backend (Express)** | Lógica de negócio, ciclo de vida das reservas, autenticação, validação |
+| **Banco (MongoDB)** | Armazenamento persistente de usuários, veículos e reservas |
 
 ---
 
-## 🧱 Backend Architecture
+## Arquitetura do Backend
 
-The backend follows a **strict layered architecture** that isolates responsibilities across four layers:
+O backend segue uma **arquitetura em camadas estrita** que isola responsabilidades em quatro níveis:
 
 ```
 HTTP Request
      │
      ▼
-  Routes          →  Defines API endpoints
+  Routes       →  Define endpoints da API
      │
      ▼
-Controllers       →  Parses request, formats response
+Controllers    →  Parse de request, formatação de response
      │
      ▼
-  Services        →  All business logic lives here
+  Services     →  Toda a lógica de negócio vive aqui
      │
      ▼
-   Models         →  Mongoose schemas & database access
+   Models      →  Schemas Mongoose e acesso ao banco
 ```
 
-| Layer | Responsibility | Example |
+| Camada | Responsabilidade | Exemplo |
 |---|---|---|
-| **Routes** | Endpoint definitions | `POST /api/auth/login` |
-| **Controllers** | HTTP orchestration | Request parsing, response formatting |
-| **Services** | Business rules | `createRental()`, `approveRequest()` |
-| **Models** | Database schemas | Mongoose schemas |
+| **Routes** | Definição de endpoints | `POST /api/auth/login` |
+| **Controllers** | Orquestração HTTP | Parse de request, formatação de response |
+| **Services** | Regras de negócio | `createRental()`, `approveRequest()` |
+| **Models** | Schemas do banco | Schemas Mongoose |
 
-### Design Principles
+### Princípios de design
 
-- **Service isolation** — Business rules live exclusively inside Services; never in Controllers or Routes
-- **Thin controllers** — Controllers orchestrate calls but contain zero business logic
-- **Standardized errors** — Centralized `AppError` class ensures consistent API error responses
-- **Validation split** — Request structure validated in middleware; domain rules validated in services
-- **Lifecycle protection** — Every reservation state transition is validated explicitly before execution
+- **Service isolation** — Regras de negócio vivem exclusivamente nos Services; nunca em Controllers ou Routes
+- **Thin controllers** — Controllers orquestram chamadas mas não contêm lógica de negócio
+- **Erros padronizados** — Classe centralizada `AppError` garante respostas de erro consistentes na API
+- **Validação em camadas** — Estrutura do request validada em middleware; regras de domínio validadas nos services
+- **Lifecycle protection** — Toda transição de estado de reserva é validada explicitamente antes de ser executada
 
 ---
 
-## 🔄 Fleet Lifecycle Model
+## Ciclo de Vida da Frota
 
-Vehicles follow a well-defined lifecycle with explicit, validated state transitions:
+Veículos seguem um ciclo de vida bem definido com transições de estado explícitas e validadas:
 
 ```
-                ┌─────────────────┐
-                │  Available      │
-                └────────┬────────┘
-                         │ User requests
-                ┌────────▼────────┐
-                │ Reservation     │
-                │ Requested       │
-                └────────┬────────┘
-                         │ Admin approves
-                ┌────────▼────────┐
-                │   In Use        │
-                └────────┬────────┘
-                         │ User submits mileage
-                ┌────────▼────────┐
-                │ Return          │
-                │ Requested       │
-                └────────┬────────┘
-                         │ Admin confirms
-                ┌────────▼────────┐
-                │ Mileage Update  │
-                └────────┬────────┘
+                ┌──────────────────┐
+                │   Disponível     │
+                └────────┬─────────┘
+                         │ Usuário solicita
+                ┌────────▼─────────┐
+                │    Reserva       │
+                │   Solicitada     │
+                └────────┬─────────┘
+                         │ Admin aprova
+                ┌────────▼─────────┐
+                │    Em Uso        │
+                └────────┬─────────┘
+                         │ Usuário submete quilometragem
+                ┌────────▼─────────┐
+                │    Devolução     │
+                │   Solicitada     │
+                └────────┬─────────┘
+                         │ Admin confirma
+                ┌────────▼─────────┐
+                │  Quilometragem   │
+                │   Atualizada     │
+                └────────┬─────────┘
                          │
-              ┌──────────┴──────────┐
-              │ threshold OK?       │
-        ┌─────▼──────┐      ┌───────▼───────┐
-        │ Available  │      │  Maintenance  │
-        └────────────┘      └───────────────┘
+             ┌───────────┴───────────┐
+             │  threshold OK?        │
+       ┌─────▼──────┐       ┌────────▼────────┐
+       │ Disponível │       │   Manutenção    │
+       └────────────┘       └─────────────────┘
 ```
 
-> If return mileage **exceeds the maintenance threshold**, the vehicle is automatically transitioned to **Maintenance** status.
+> Se a quilometragem de retorno **exceder o threshold de manutenção**, o veículo é automaticamente movido para o status **Manutenção**.
 
 ---
 
-## 🧪 Testing
+## Testes
 
 ```bash
 npm test
 ```
 
-**Test stack:** Jest · Supertest · MongoMemoryServer (in-memory MongoDB for isolated tests)
+**Stack de testes:** Jest · Supertest · MongoMemoryServer (MongoDB in-memory para testes isolados)
 
 ```
 backend/tests/
 ├── helpers/
-│   └── appErrorAssert.js       # Custom error assertion helpers
+│   └── appErrorAssert.js        # Helpers de asserção de erros customizados
 ├── http/
-│   └── rentalRoutes.test.js    # HTTP endpoint integration tests
+│   └── rentalRoutes.test.js     # Testes de integração HTTP
 └── services/
-    └── rentalService.test.js   # Business logic unit tests
+    └── rentalService.test.js    # Testes unitários de lógica de negócio
 ```
 
-**Coverage:**
+**Cobertura:**
 
-- Rental request creation
-- Admin approval and rejection workflows
-- Cancellation rules and scheduling conflict protection
-- Return lifecycle and mileage validation
-- Maintenance threshold logic
-- HTTP endpoint request/response validation
+- Criação de solicitação de reserva
+- Workflows de aprovação e rejeição pelo admin
+- Regras de cancelamento e proteção contra conflitos de agendamento
+- Ciclo de vida de devolução e validação de quilometragem
+- Lógica de threshold de manutenção
+- Validação de request/response nos endpoints HTTP
 
 ---
 
-## 🔁 CI Pipeline
+## CI Pipeline
 
-Runs automatically on every **push** and **pull request** via GitHub Actions.
+Roda automaticamente em todo **push** e **pull request** via GitHub Actions.
 
-```yaml
-# .github/workflows/backend-ci.yml
+```
 npm ci → npm run lint → npm test
 ```
 
-All three stages must pass before a branch can be merged.
+Todos os três estágios precisam passar antes que um branch possa ser mergeado.
 
 ---
 
-## 📡 Observability
+## Observabilidade
 
-Every HTTP request is logged with a **correlation ID** for end-to-end tracing:
+Cada request HTTP é logado com um **correlation ID** para rastreamento ponta a ponta:
 
 ```
 [2026-03-13T12:15:53.590Z] [req:54bd0435] [ip:127.0.0.1] GET /api/vehicles 200 19ms
 ```
 
-**Additional operational features:**
+**Recursos operacionais adicionais:**
 
-- Structured JSON error logging for machine-readable diagnostics
-- API rate limiting with HTTP `429` responses on threshold breach
-- Reverse proxy support with trusted header forwarding
-- Enhanced `/api/health` endpoint exposing service metadata (name, version, environment, uptime, requestId)
+- Log estruturado em JSON para diagnóstico legível por máquinas
+- Rate limiting com resposta HTTP `429` ao atingir o threshold
+- Suporte a reverse proxy com forwarding de headers confiáveis
+- Endpoint `/api/health` com metadados do serviço: nome, versão, ambiente, uptime e requestId
 
 ---
 
-## 📁 Project Structure
+## Estrutura do Projeto
 
 ```
 fleet-vehicle-scheduling/
 ├── backend/
 │   ├── src/
-│   │   ├── config/           # Environment and database configuration
-│   │   ├── controllers/      # HTTP request/response handlers
-│   │   ├── middleware/       # Auth, validation, logging, rate limiting
-│   │   ├── models/           # Mongoose schemas
-│   │   ├── routes/           # API endpoint definitions
-│   │   ├── services/         # Business logic layer
-│   │   ├── utils/            # Shared utilities (AppError, logger)
-│   │   └── validators/       # Request structure validators
-│   ├── tests/                # Jest test suites
-│   ├── scripts/              # Utility and seed scripts
+│   │   ├── config/           # Configuração de ambiente e banco de dados
+│   │   ├── controllers/      # Handlers de request/response HTTP
+│   │   ├── middleware/       # Auth, validação, logging, rate limiting
+│   │   ├── models/           # Schemas Mongoose
+│   │   ├── routes/           # Definições de endpoints da API
+│   │   ├── services/         # Camada de lógica de negócio
+│   │   ├── utils/            # Utilitários compartilhados (AppError, logger)
+│   │   └── validators/       # Validadores de estrutura de request
+│   ├── tests/                # Suites Jest
+│   ├── scripts/              # Scripts utilitários e de seed
 │   ├── Dockerfile
 │   ├── jest.config.js
 │   └── server.js
 ├── frontend/
 │   ├── Dockerfile
 │   └── src/
-│       ├── components/       # Reusable UI components
-│       ├── context/          # React context (Auth, etc.)
-│       ├── pages/            # Page-level views
-│       ├── services/         # Axios API client wrappers
-│       └── styles/           # Global and component CSS
+│       ├── components/       # Componentes de UI reutilizáveis
+│       ├── context/          # React Context (Auth)
+│       ├── pages/            # Views por página
+│       ├── services/         # Wrappers do cliente Axios
+│       └── styles/           # CSS global e por componente
 └── docs/
     ├── phase-1.md
     ├── ...
-    └── phase-12.md           # Full phase-by-phase engineering journal
+    └── phase-12.md           # Diário de engenharia fase a fase
 ```
 
 ---
 
-## 🎯 Current Capabilities
+## Funcionalidades
 
 | Feature | Status |
 |---|---|
-| JWT authentication and role-based dashboards | ✅ |
-| Vehicle rental request creation | ✅ |
-| Admin approval and rejection workflows | ✅ |
-| Reservation cancellation with conflict protection | ✅ |
-| Full fleet lifecycle and mileage tracking | ✅ |
-| Automatic maintenance lifecycle transitions | ✅ |
-| Automated backend tests and CI pipeline | ✅ |
-| Structured request logging with correlation IDs | ✅ |
-| API rate limiting | ✅ |
-| Operational health diagnostics | ✅ |
-| Containerized local development (Docker) | ✅ |
-| Fully responsive UI across mobile devices | ✅ |
+| Autenticação JWT e dashboards por role | ✅ |
+| Criação de solicitação de reserva de veículo | ✅ |
+| Workflows de aprovação e rejeição pelo admin | ✅ |
+| Cancelamento com proteção contra conflitos | ✅ |
+| Ciclo de vida completo da frota com rastreamento de quilometragem | ✅ |
+| Transições automáticas para ciclo de manutenção | ✅ |
+| Testes automatizados e pipeline de CI | ✅ |
+| Request logging estruturado com correlation IDs | ✅ |
+| Rate limiting de API | ✅ |
+| Health diagnostics operacional | ✅ |
+| Desenvolvimento local containerizado (Docker) | ✅ |
+| UI responsiva para dispositivos móveis | ✅ |
 
 ---
 
-## 📐 Engineering Phases
+## Fases de Engenharia
 
-| Phase | Focus |
+| Fase | Foco |
 |---|---|
-| **Phase 1** | Backend foundation and environment setup |
-| **Phase 2** | Services layer and business logic centralization |
-| **Phase 3** | HTTP API, authentication, validation |
-| **Phase 4** | React frontend foundation |
-| **Phase 5** | Rental request workflow |
-| **Phase 6** | Reservation lifecycle rules |
-| **Phase 7** | UX improvements and admin workflow |
-| **Phase 8** | Production deployment |
-| **Phase 9** | Fleet lifecycle management |
-| **Phase 10** | Backend testing and CI pipeline |
-| **Phase 11** | Observability and operational diagnostics |
-| **Phase 12** | Docker containerization and local infrastructure |
+| **Fase 1** | Fundação do backend e setup de ambiente |
+| **Fase 2** | Camada de services e centralização da lógica de negócio |
+| **Fase 3** | HTTP API, autenticação e validação |
+| **Fase 4** | Fundação do frontend React |
+| **Fase 5** | Workflow de solicitação de reserva |
+| **Fase 6** | Regras do ciclo de vida das reservas |
+| **Fase 7** | Melhorias de UX e workflow do admin |
+| **Fase 8** | Deploy em produção |
+| **Fase 9** | Gestão do ciclo de vida da frota |
+| **Fase 10** | Testes de backend e pipeline de CI |
+| **Fase 11** | Observabilidade e diagnósticos operacionais |
+| **Fase 12** | Containerização Docker e infraestrutura local |
 
-Each phase has a corresponding document in `/docs/` detailing the decisions, architecture changes, and lessons learned.
+Cada fase tem um documento correspondente em `/docs/` detalhando as decisões, mudanças arquiteturais e lições aprendidas.
 
 ---
 
-## 👤 Author
+<div align="center">
 
-**Eduardo Henrique** — Full-stack developer focused on backend architecture, system design, scalable APIs, and production-ready applications.
+<br/>
 
-If this project was useful to you, consider giving it a ⭐ on GitHub.
+Made with ☕ by **Eduardo Henrique**
+
+<br/>
+
+</div>
