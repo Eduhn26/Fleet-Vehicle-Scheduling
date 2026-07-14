@@ -20,12 +20,6 @@ function getInitials(name) {
     .join('');
 }
 
-/*
-ENGINEERING NOTE:
-This shared shell is the fastest way to lift the product perception.
-By improving navigation, spacing and identity here, every authenticated
-screen inherits a more premium structure without duplicating UI work.
-*/
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -64,6 +58,9 @@ export default function Layout() {
                   </NavLink>
                   <NavLink to="/admin/rentals" className={linkClassName}>
                     Solicitações
+                  </NavLink>
+                  <NavLink to="/admin/analytics" className={linkClassName}>
+                    Inteligência
                   </NavLink>
                 </>
               ) : (
