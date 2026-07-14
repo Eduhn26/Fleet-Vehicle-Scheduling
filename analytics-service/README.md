@@ -2,7 +2,7 @@
 
 Python/FastAPI analytics service for the Fleet Vehicle Scheduling project.
 
-This service receives a normalized operational dataset from the Node.js backend and prepares the foundation for fleet analytics, metrics, rankings and future Power BI-ready exports.
+The service receives a normalized operational dataset from the Node.js backend and calculates fleet metrics with Pandas.
 
 ## Responsibility
 
@@ -25,7 +25,18 @@ The Node.js backend remains the secure entry point of the product.
 |---|---|---|
 | GET | `/health/live` | Liveness check |
 | GET | `/health/ready` | Readiness check |
-| POST | `/internal/analytics/overview` | Receives normalized fleet dataset |
+| POST | `/internal/analytics/overview` | Receives normalized fleet dataset and returns fleet metrics |
+
+## Metrics calculated in Phase 13.E
+
+- rentals by status;
+- average rental duration;
+- vehicle usage ranking;
+- department usage ranking;
+- mileage by vehicle;
+- maintenance alerts;
+- operational summary;
+- initial insights for dashboard usage.
 
 ## Local Setup
 
@@ -51,8 +62,9 @@ uvicorn app.main:app --reload --port 8000
 ## Docker
 
 ```bash
-docker build -t fleet-analytics-service:dev .
-docker run --rm -p 8000:8000 fleet-analytics-service:dev
+docker build -t fleet-analytics-service:phase13e .
+docker run --rm fleet-analytics-service:phase13e pytest
+docker run --rm -p 8000:8000 --name fleet-analytics-service fleet-analytics-service:phase13e
 ```
 
 ## Phase
@@ -60,11 +72,11 @@ docker run --rm -p 8000:8000 fleet-analytics-service:dev
 Current phase:
 
 ```txt
-13.D — Python Analytics Service Foundation
+13.E — Fleet Metrics with Pandas
 ```
 
 Next phase:
 
 ```txt
-13.E — Calculate fleet analytics metrics with pandas
+13.F — Integrate Node backend with the Python analytics service
 ```

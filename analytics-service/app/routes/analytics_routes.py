@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from app.core.settings import settings
 from app.schemas.analytics_request import FleetAnalyticsDataset
 from app.schemas.analytics_response import HealthResponse, AnalyticsOverviewResponse
-from app.services.fleet_analytics_service import build_initial_overview
+from app.services.fleet_analytics_service import build_fleet_overview
 
 router = APIRouter()
 
@@ -33,4 +33,4 @@ def ready() -> HealthResponse:
     response_model=AnalyticsOverviewResponse,
 )
 def overview(dataset: FleetAnalyticsDataset) -> AnalyticsOverviewResponse:
-    return build_initial_overview(dataset)
+    return build_fleet_overview(dataset)
