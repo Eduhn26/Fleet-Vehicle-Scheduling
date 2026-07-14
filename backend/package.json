@@ -10,8 +10,10 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "test:coverage": "jest --runInBand --coverage",
-    "test:analytics": "jest --runInBand --config jest.analytics.config.js",
-    "test:analytics:coverage": "jest --runInBand --config jest.analytics.config.js --coverage"
+    "test:analytics": "jest --runInBand --config jestAnalytics.config.js",
+    "test:analytics:coverage": "jest --runInBand --config jestAnalytics.config.js --coverage",
+    "seed:annual": "node scripts/seedAnnualPresentation.js",
+    "seed:annual:dry-run": "node scripts/seedAnnualPresentation.js --dry-run"
   },
   "keywords": [],
   "author": "",

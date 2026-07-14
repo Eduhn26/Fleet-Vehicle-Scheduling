@@ -3,7 +3,7 @@ module.exports = {
   testMatch: [
     '<rootDir>/tests/services/analyticsClient.test.js',
     '<rootDir>/tests/services/analyticsService.test.js',
-    '<rootDir>/tests/routes/analyticsRoutes.test.js',
+    '<rootDir>/tests/http/analyticsRoutes.test.js',
   ],
   collectCoverageFrom: [
     'src/services/analyticsClient.js',
