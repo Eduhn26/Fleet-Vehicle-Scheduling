@@ -3,7 +3,12 @@ from typing import Any
 import pandas as pd
 
 from app.core.settings import settings
-from app.schemas.analytics_request import FleetAnalyticsDataset
+from app.schemas.analytics_request import (
+    AnalyticsFilters,
+    AnalyticsOverviewRequest,
+    DatasetCounts,
+    FleetAnalyticsDataset,
+)
 from app.schemas.analytics_response import AnalyticsOverviewResponse
 
 MAINTENANCE_WARNING_KM = 1000
@@ -54,6 +59,141 @@ def _round(value: Any, decimals: int = 2) -> float:
     return round(_safe_number(value), decimals)
 
 
+def _has_active_filters(filters: AnalyticsFilters) -> bool:
+    return any(
+        [
+            filters.startDate,
+            filters.endDate,
+            filters.status,
+            filters.vehicleId,
+            filters.department,
+        ]
+    )
+
+
+def _parse_date(value: str | None) -> pd.Timestamp | None:
+    if not value:
+        return None
+
+    parsed = pd.to_datetime(value, errors="coerce", utc=True)
+    if pd.isna(parsed):
+        return None
+
+    return parsed.normalize()
+
+
+def _date_mask(
+    dataframe: pd.DataFrame,
+    column: str,
+    start_date: str | None,
+    end_date: str | None,
+) -> pd.Series:
+    mask = pd.Series(True, index=dataframe.index)
+
+    if dataframe.empty or column not in dataframe.columns:
+        return mask
+
+    dates = pd.to_datetime(dataframe[column], errors="coerce", utc=True)
+    start = _parse_date(start_date)
+    end = _parse_date(end_date)
+
+    if start is not None:
+        mask &= dates >= start
+
+    if end is not None:
+        mask &= dates < end + pd.Timedelta(days=1)
+
+    return mask.fillna(False)
+
+
+def _filter_rentals(
+    rentals_df: pd.DataFrame,
+    filters: AnalyticsFilters,
+) -> pd.DataFrame:
+    if rentals_df.empty:
+        return rentals_df.copy()
+
+    filtered = rentals_df.copy()
+    mask = _date_mask(filtered, "startDate", filters.startDate, filters.endDate)
+
+    if filters.status and "status" in filtered.columns:
+        mask &= filtered["status"].fillna("").astype(str) == filters.status
+
+    if filters.vehicleId and "vehicleId" in filtered.columns:
+        mask &= filtered["vehicleId"].fillna("").astype(str) == filters.vehicleId
+
+    if filters.department and "user.department" in filtered.columns:
+        mask &= (
+            filtered["user.department"].fillna("Não informado").astype(str)
+            == filters.department
+        )
+
+    return filtered.loc[mask].copy()
+
+
+def _filter_mileage(
+    mileage_df: pd.DataFrame,
+    filtered_rentals_df: pd.DataFrame,
+    filters: AnalyticsFilters,
+) -> pd.DataFrame:
+    if mileage_df.empty:
+        return mileage_df.copy()
+
+    filtered = mileage_df.copy()
+    mask = _date_mask(filtered, "recordedAt", filters.startDate, filters.endDate)
+
+    if filters.vehicleId and "vehicleId" in filtered.columns:
+        mask &= filtered["vehicleId"].fillna("").astype(str) == filters.vehicleId
+
+    rental_scope_filters = bool(filters.status or filters.department)
+    if rental_scope_filters and "rentalId" in filtered.columns:
+        rental_ids = set(
+            filtered_rentals_df.get("id", pd.Series(dtype="object"))
+            .dropna()
+            .astype(str)
+            .tolist()
+        )
+        mask &= filtered["rentalId"].fillna("").astype(str).isin(rental_ids)
+
+    return filtered.loc[mask].copy()
+
+
+def _filter_maintenance_vehicles(
+    vehicles_df: pd.DataFrame,
+    filters: AnalyticsFilters,
+) -> pd.DataFrame:
+    if vehicles_df.empty or not filters.vehicleId or "id" not in vehicles_df.columns:
+        return vehicles_df.copy()
+
+    return vehicles_df.loc[
+        vehicles_df["id"].fillna("").astype(str) == filters.vehicleId
+    ].copy()
+
+
+def _count_unique(dataframe: pd.DataFrame, column: str) -> int:
+    if dataframe.empty or column not in dataframe.columns:
+        return 0
+
+    return int(dataframe[column].dropna().astype(str).replace("", pd.NA).nunique())
+
+
+def _build_filtered_counts(
+    dataset: FleetAnalyticsDataset,
+    rentals_df: pd.DataFrame,
+    mileage_df: pd.DataFrame,
+    filters: AnalyticsFilters,
+) -> DatasetCounts:
+    if not _has_active_filters(filters):
+        return dataset.counts
+
+    return DatasetCounts(
+        rentals=int(len(rentals_df)),
+        vehicles=_count_unique(rentals_df, "vehicleId"),
+        users=_count_unique(rentals_df, "userId"),
+        mileageHistory=int(len(mileage_df)),
+    )
+
+
 def _records_from_grouped_count(
     dataframe: pd.DataFrame,
     group_column: str,
@@ -102,9 +242,7 @@ def _build_rental_metrics(rentals_df: pd.DataFrame) -> dict[str, Any]:
 
 
 def _build_vehicle_usage(rentals_df: pd.DataFrame) -> list[dict[str, Any]]:
-    required_columns = {"vehicleId"}
-
-    if rentals_df.empty or not required_columns.issubset(rentals_df.columns):
+    if rentals_df.empty or "vehicleId" not in rentals_df.columns:
         return []
 
     working_df = rentals_df.copy()
@@ -165,6 +303,34 @@ def _build_mileage_by_vehicle(mileage_df: pd.DataFrame) -> list[dict[str, Any]]:
     return grouped.to_dict(orient="records")
 
 
+def _build_rental_trend(rentals_df: pd.DataFrame) -> list[dict[str, Any]]:
+    if rentals_df.empty or "startDate" not in rentals_df.columns:
+        return []
+
+    working_df = rentals_df.copy()
+    working_df["parsedStartDate"] = pd.to_datetime(
+        working_df["startDate"],
+        errors="coerce",
+        utc=True,
+    )
+    working_df = working_df.dropna(subset=["parsedStartDate"])
+
+    if working_df.empty:
+        return []
+
+    working_df["period"] = working_df["parsedStartDate"].dt.strftime("%Y-%m")
+    working_df["label"] = working_df["parsedStartDate"].dt.strftime("%m/%Y")
+
+    grouped = (
+        working_df.groupby(["period", "label"], dropna=False)
+        .size()
+        .reset_index(name="total")
+        .sort_values("period")
+    )
+
+    return grouped.to_dict(orient="records")
+
+
 def _build_maintenance_alerts(vehicles_df: pd.DataFrame) -> list[dict[str, Any]]:
     if vehicles_df.empty:
         return []
@@ -215,7 +381,8 @@ def _build_maintenance_alerts(vehicles_df: pd.DataFrame) -> list[dict[str, Any]]
 
 
 def _build_summary(
-    dataset: FleetAnalyticsDataset,
+    generated_at: str | None,
+    counts: DatasetCounts,
     rental_metrics: dict[str, Any],
     vehicle_usage: list[dict[str, Any]],
     mileage_by_vehicle: list[dict[str, Any]],
@@ -225,11 +392,11 @@ def _build_summary(
     top_mileage_vehicle = mileage_by_vehicle[0] if mileage_by_vehicle else None
 
     return {
-        "generatedAt": dataset.generatedAt,
+        "generatedAt": generated_at,
         "totalRentals": rental_metrics["totalRentals"],
-        "totalVehicles": dataset.counts.vehicles,
-        "totalUsers": dataset.counts.users,
-        "totalMileageRecords": dataset.counts.mileageHistory,
+        "totalVehicles": counts.vehicles,
+        "totalUsers": counts.users,
+        "totalMileageRecords": counts.mileageHistory,
         "averageDurationHours": rental_metrics["averageDurationHours"],
         "topVehicleByRentals": top_vehicle,
         "topVehicleByMileage": top_mileage_vehicle,
@@ -237,13 +404,18 @@ def _build_summary(
     }
 
 
-def _build_insights(metrics: dict[str, Any]) -> list[str]:
+def _build_insights(metrics: dict[str, Any], filters: AnalyticsFilters) -> list[str]:
     insights: list[str] = []
 
     summary = metrics.get("summary", {})
     top_vehicle = summary.get("topVehicleByRentals")
     top_mileage_vehicle = summary.get("topVehicleByMileage")
     maintenance_alerts_count = summary.get("maintenanceAlertsCount", 0)
+
+    if _has_active_filters(filters):
+        insights.append(
+            f"Os filtros atuais retornaram {summary.get('totalRentals', 0)} reserva(s)."
+        )
 
     if top_vehicle:
         insights.append(
@@ -266,42 +438,66 @@ def _build_insights(metrics: dict[str, Any]) -> list[str]:
 
 
 def build_fleet_overview(
-    dataset: FleetAnalyticsDataset,
+    payload: AnalyticsOverviewRequest,
 ) -> AnalyticsOverviewResponse:
+    dataset = payload.dataset
+    filters = payload.filters
+
     rentals_df = _to_records(dataset.rentals)
     vehicles_df = _to_records(dataset.vehicles)
     mileage_df = _to_records(dataset.mileageHistory)
 
-    rental_metrics = _build_rental_metrics(rentals_df)
-    vehicle_usage = _build_vehicle_usage(rentals_df)
-    department_usage = _build_department_usage(rentals_df)
-    mileage_by_vehicle = _build_mileage_by_vehicle(mileage_df)
-    maintenance_alerts = _build_maintenance_alerts(vehicles_df)
+    filtered_rentals_df = _filter_rentals(rentals_df, filters)
+    filtered_mileage_df = _filter_mileage(mileage_df, filtered_rentals_df, filters)
+    maintenance_vehicles_df = _filter_maintenance_vehicles(vehicles_df, filters)
+
+    filtered_counts = _build_filtered_counts(
+        dataset,
+        filtered_rentals_df,
+        filtered_mileage_df,
+        filters,
+    )
+
+    rental_metrics = _build_rental_metrics(filtered_rentals_df)
+    vehicle_usage = _build_vehicle_usage(filtered_rentals_df)
+    department_usage = _build_department_usage(filtered_rentals_df)
+    mileage_by_vehicle = _build_mileage_by_vehicle(filtered_mileage_df)
+    rental_trend = _build_rental_trend(filtered_rentals_df)
+    maintenance_alerts = _build_maintenance_alerts(maintenance_vehicles_df)
 
     metrics = {
         "summary": _build_summary(
-            dataset,
+            dataset.generatedAt,
+            filtered_counts,
             rental_metrics,
             vehicle_usage,
             mileage_by_vehicle,
             maintenance_alerts,
         ),
         "rentals": rental_metrics,
+        "rentalTrend": rental_trend,
         "vehicleUsage": vehicle_usage,
         "departmentUsage": department_usage,
         "mileageByVehicle": mileage_by_vehicle,
         "maintenanceAlerts": maintenance_alerts,
+        "filterContext": {
+            "active": _has_active_filters(filters),
+            "sourceRentals": dataset.counts.rentals,
+            "filteredRentals": filtered_counts.rentals,
+        },
     }
 
     return AnalyticsOverviewResponse(
         status="OK",
         service=settings.service_name,
-        phase="13.E",
+        phase="13.H",
         source="python-analytics-service",
-        message="Python analytics service calculated fleet metrics with pandas.",
-        receivedCounts=dataset.counts,
+        message="Python analytics service calculated filtered fleet metrics.",
+        sourceCounts=dataset.counts,
+        receivedCounts=filtered_counts,
+        appliedFilters=filters,
         warnings=_build_warnings(dataset),
-        insights=_build_insights(metrics),
+        insights=_build_insights(metrics, filters),
         metrics=metrics,
-        nextStep="13.F - Integrate Node backend with the Python analytics service",
+        nextStep="13.I - Add Power BI-ready exports and analytical drill-downs",
     )

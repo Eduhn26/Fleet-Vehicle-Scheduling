@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class DatasetCounts(BaseModel):
@@ -17,3 +17,25 @@ class FleetAnalyticsDataset(BaseModel):
     vehicles: list[dict[str, Any]] = Field(default_factory=list)
     users: list[dict[str, Any]] = Field(default_factory=list)
     mileageHistory: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class AnalyticsFilters(BaseModel):
+    startDate: str | None = None
+    endDate: str | None = None
+    status: str | None = None
+    vehicleId: str | None = None
+    department: str | None = None
+
+    @field_validator("startDate", "endDate", "status", "vehicleId", "department", mode="before")
+    @classmethod
+    def normalize_optional_text(cls, value: Any) -> str | None:
+        if value is None:
+            return None
+
+        normalized = str(value).strip()
+        return normalized or None
+
+
+class AnalyticsOverviewRequest(BaseModel):
+    dataset: FleetAnalyticsDataset
+    filters: AnalyticsFilters = Field(default_factory=AnalyticsFilters)

@@ -2,7 +2,7 @@
 
 Python/FastAPI analytics service for the Fleet Vehicle Scheduling project.
 
-The service receives a normalized operational dataset from the Node.js backend and calculates fleet metrics with Pandas.
+The service receives a normalized operational dataset and analytical filters from the Node.js backend, then calculates fleet metrics with Pandas.
 
 ## Responsibility
 
@@ -19,24 +19,55 @@ It does not:
 
 The Node.js backend remains the secure entry point of the product.
 
-## Initial Endpoints
+## Endpoints
 
 | Method | Route | Description |
 |---|---|---|
 | GET | `/health/live` | Liveness check |
 | GET | `/health/ready` | Readiness check |
-| POST | `/internal/analytics/overview` | Receives normalized fleet dataset and returns fleet metrics |
+| POST | `/internal/analytics/overview` | Receives dataset and filters, then returns fleet metrics |
 
-## Metrics calculated in Phase 13.E
+## Filters supported in Phase 13.H
+
+- initial date;
+- final date;
+- rental status;
+- vehicle;
+- department.
+
+## Metrics
 
 - rentals by status;
 - average rental duration;
+- rental volume by month;
 - vehicle usage ranking;
 - department usage ranking;
 - mileage by vehicle;
 - maintenance alerts;
-- operational summary;
-- initial insights for dashboard usage.
+- filtered operational summary;
+- automatic insights.
+
+## Request contract
+
+```json
+{
+  "dataset": {
+    "generatedAt": "2026-07-14T15:00:00.000Z",
+    "counts": {},
+    "rentals": [],
+    "vehicles": [],
+    "users": [],
+    "mileageHistory": []
+  },
+  "filters": {
+    "startDate": "2026-01-01",
+    "endDate": "2026-06-30",
+    "status": "approved",
+    "vehicleId": null,
+    "department": "Operações"
+  }
+}
+```
 
 ## Local Setup
 
@@ -62,9 +93,9 @@ uvicorn app.main:app --reload --port 8000
 ## Docker
 
 ```bash
-docker build -t fleet-analytics-service:phase13e .
-docker run --rm fleet-analytics-service:phase13e pytest
-docker run --rm -p 8000:8000 --name fleet-analytics-service fleet-analytics-service:phase13e
+docker build -t fleet-analytics-service:phase13h .
+docker run --rm fleet-analytics-service:phase13h pytest
+docker run --rm -p 8000:8000 --name fleet-analytics-service fleet-analytics-service:phase13h
 ```
 
 ## Phase
@@ -72,11 +103,11 @@ docker run --rm -p 8000:8000 --name fleet-analytics-service fleet-analytics-serv
 Current phase:
 
 ```txt
-13.E — Fleet Metrics with Pandas
+13.H — Filters and temporal analysis
 ```
 
 Next phase:
 
 ```txt
-13.F — Integrate Node backend with the Python analytics service
+13.I — Power BI-ready exports and analytical drill-downs
 ```

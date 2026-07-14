@@ -3,12 +3,15 @@ import {
   FiActivity,
   FiAlertTriangle,
   FiBarChart2,
+  FiCalendar,
   FiCheckCircle,
   FiClock,
   FiCpu,
+  FiFilter,
   FiRefreshCw,
   FiTruck,
   FiUsers,
+  FiX,
 } from 'react-icons/fi';
 
 import analyticsService from '../services/analyticsService';
@@ -22,6 +25,33 @@ const STATUS_LABELS = {
   return_pending: 'Devolução pendente',
   completed: 'Concluídas',
 };
+
+const EMPTY_FILTERS = {
+  startDate: '',
+  endDate: '',
+  status: '',
+  vehicleId: '',
+  department: '',
+};
+
+function countActiveFilters(filters) {
+  return Object.values(filters || {}).filter((value) => String(value || '').trim())
+    .length;
+}
+
+function formatFilterPeriod(filters) {
+  if (!filters?.startDate && !filters?.endDate) return 'Todo o histórico';
+  if (filters.startDate && filters.endDate) {
+    return `${filters.startDate.split('-').reverse().join('/')} até ${filters.endDate
+      .split('-')
+      .reverse()
+      .join('/')}`;
+  }
+  if (filters.startDate) {
+    return `A partir de ${filters.startDate.split('-').reverse().join('/')}`;
+  }
+  return `Até ${filters.endDate.split('-').reverse().join('/')}`;
+}
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -86,6 +116,148 @@ function Panel({ kicker, title, description, children, className = '' }) {
         </div>
       </header>
       <div className="analytics-panel-body">{children}</div>
+    </section>
+  );
+}
+
+function AnalyticsFilters({
+  draftFilters,
+  filterOptions,
+  loading,
+  activeCount,
+  resultCount,
+  sourceCount,
+  onChange,
+  onApply,
+  onClear,
+}) {
+  const statuses = safeArray(filterOptions?.statuses);
+  const vehicles = safeArray(filterOptions?.vehicles);
+  const departments = safeArray(filterOptions?.departments);
+  const dateBounds = filterOptions?.dateBounds || {};
+
+  return (
+    <section className="analytics-filter-card">
+      <div className="analytics-filter-heading">
+        <div className="analytics-filter-title">
+          <span className="analytics-filter-icon" aria-hidden="true">
+            <FiFilter />
+          </span>
+          <div>
+            <span className="analytics-kicker">Análise segmentada</span>
+            <h2>Filtros operacionais</h2>
+            <p>
+              {activeCount > 0
+                ? `${resultCount} de ${sourceCount} reservas no recorte atual.`
+                : 'Analise períodos, status, veículos e departamentos.'}
+            </p>
+          </div>
+        </div>
+
+        {activeCount > 0 ? (
+          <span className="analytics-filter-count">
+            {activeCount} filtro{activeCount > 1 ? 's' : ''} ativo
+            {activeCount > 1 ? 's' : ''}
+          </span>
+        ) : null}
+      </div>
+
+      <form className="analytics-filter-form" onSubmit={onApply}>
+        <label className="analytics-filter-field">
+          <span>Data inicial</span>
+          <div className="analytics-filter-control">
+            <FiCalendar />
+            <input
+              type="date"
+              name="startDate"
+              value={draftFilters.startDate}
+              min={dateBounds.min || undefined}
+              max={draftFilters.endDate || dateBounds.max || undefined}
+              onChange={onChange}
+            />
+          </div>
+        </label>
+
+        <label className="analytics-filter-field">
+          <span>Data final</span>
+          <div className="analytics-filter-control">
+            <FiCalendar />
+            <input
+              type="date"
+              name="endDate"
+              value={draftFilters.endDate}
+              min={draftFilters.startDate || dateBounds.min || undefined}
+              max={dateBounds.max || undefined}
+              onChange={onChange}
+            />
+          </div>
+        </label>
+
+        <label className="analytics-filter-field">
+          <span>Status</span>
+          <select name="status" value={draftFilters.status} onChange={onChange}>
+            <option value="">Todos</option>
+            {statuses.map((status) => (
+              <option value={status} key={status}>
+                {STATUS_LABELS[status] || status}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="analytics-filter-field">
+          <span>Veículo</span>
+          <select
+            name="vehicleId"
+            value={draftFilters.vehicleId}
+            onChange={onChange}
+          >
+            <option value="">Todos</option>
+            {vehicles.map((vehicle) => (
+              <option value={vehicle.id} key={vehicle.id}>
+                {vehicle.label}
+                {vehicle.licensePlate ? ` · ${vehicle.licensePlate}` : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="analytics-filter-field">
+          <span>Departamento</span>
+          <select
+            name="department"
+            value={draftFilters.department}
+            onChange={onChange}
+          >
+            <option value="">Todos</option>
+            {departments.map((department) => (
+              <option value={department} key={department}>
+                {department}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="analytics-filter-actions">
+          <button
+            type="button"
+            className="analytics-filter-clear"
+            onClick={onClear}
+            disabled={loading || activeCount === 0}
+          >
+            <FiX />
+            Limpar
+          </button>
+          <button
+            type="submit"
+            className="analytics-filter-apply"
+            disabled={loading}
+          >
+            <FiFilter />
+            Aplicar filtros
+          </button>
+        </div>
+      </form>
     </section>
   );
 }
@@ -181,6 +353,9 @@ export default function AdminAnalytics() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [draftFilters, setDraftFilters] = useState({ ...EMPTY_FILTERS });
+  const [appliedFilters, setAppliedFilters] = useState({ ...EMPTY_FILTERS });
+  const [filterError, setFilterError] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -191,6 +366,7 @@ export default function AdminAnalytics() {
 
       try {
         const data = await analyticsService.getOverview({
+          filters: appliedFilters,
           signal: controller.signal,
         });
         setOverview(data);
@@ -205,7 +381,7 @@ export default function AdminAnalytics() {
     loadOverview();
 
     return () => controller.abort();
-  }, [refreshKey]);
+  }, [appliedFilters, refreshKey]);
 
   const metrics = overview?.metrics || null;
   const summary = metrics?.summary || {};
@@ -216,8 +392,11 @@ export default function AdminAnalytics() {
   const departmentUsage = safeArray(metrics?.departmentUsage);
   const mileageByVehicle = safeArray(metrics?.mileageByVehicle);
   const maintenanceAlerts = safeArray(metrics?.maintenanceAlerts);
+  const rentalTrend = safeArray(metrics?.rentalTrend);
   const insights = safeArray(overview?.insights);
   const warnings = safeArray(overview?.warnings);
+  const filterOptions = overview?.filterOptions || {};
+  const sourceCounts = overview?.sourceCounts || receivedCounts;
 
   const totalMileage = useMemo(
     () =>
@@ -249,6 +428,40 @@ export default function AdminAnalytics() {
   const maintenanceCount =
     summary.maintenanceAlertsCount ?? maintenanceAlerts.length;
 
+  const activeFilterCount = countActiveFilters(appliedFilters);
+  const filteredPeriod = formatFilterPeriod(appliedFilters);
+
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
+    setDraftFilters((current) => ({
+      ...current,
+      [name]: value,
+    }));
+    setFilterError('');
+  };
+
+  const handleApplyFilters = (event) => {
+    event.preventDefault();
+
+    if (
+      draftFilters.startDate &&
+      draftFilters.endDate &&
+      draftFilters.startDate > draftFilters.endDate
+    ) {
+      setFilterError('A data inicial não pode ser posterior à data final.');
+      return;
+    }
+
+    setFilterError('');
+    setAppliedFilters({ ...draftFilters });
+  };
+
+  const handleClearFilters = () => {
+    setFilterError('');
+    setDraftFilters({ ...EMPTY_FILTERS });
+    setAppliedFilters({ ...EMPTY_FILTERS });
+  };
+
   return (
     <div className="analytics-page">
       <section className="analytics-hero">
@@ -275,6 +488,7 @@ export default function AdminAnalytics() {
               Atualizado em{' '}
               {formatDateTime(overview?.generatedAt || summary.generatedAt)}
             </span>
+            <span>{filteredPeriod}</span>
           </div>
         </div>
 
@@ -311,6 +525,28 @@ export default function AdminAnalytics() {
           Atualizar
         </button>
       </section>
+
+      <AnalyticsFilters
+        draftFilters={draftFilters}
+        filterOptions={filterOptions}
+        loading={loading}
+        activeCount={activeFilterCount}
+        resultCount={receivedCounts.rentals || 0}
+        sourceCount={sourceCounts.rentals || 0}
+        onChange={handleFilterChange}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+      />
+
+      {filterError ? (
+        <div className="analytics-state analytics-state-error">
+          <FiAlertTriangle />
+          <div>
+            <strong>Período inválido</strong>
+            <span>{filterError}</span>
+          </div>
+        </div>
+      ) : null}
 
       {loading ? (
         <div className="analytics-state analytics-state-loading">
@@ -487,6 +723,21 @@ export default function AdminAnalytics() {
             ) : null}
 
             <div className="analytics-main-grid">
+              <Panel
+                kicker="Evolução temporal"
+                title="Reservas por mês"
+                description="Volume de solicitações dentro do período selecionado."
+                className="analytics-trend-panel"
+              >
+                <BarList
+                  items={rentalTrend}
+                  labelKey="label"
+                  valueKey="total"
+                  valueFormatter={(value) => `${formatNumber(value)} reservas`}
+                  emptyMessage="Nenhuma reserva encontrada no período selecionado."
+                />
+              </Panel>
+
               <Panel
                 kicker="Distribuição"
                 title="Reservas por status"

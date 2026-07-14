@@ -15,7 +15,7 @@ const health = async (req, res, next) => {
 
 const overview = async (req, res, next) => {
   try {
-    const data = await analyticsService.getAnalyticsOverview();
+    const data = await analyticsService.getAnalyticsOverview(req.query);
 
     return res.status(200).json({
       data,

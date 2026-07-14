@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from app.schemas.analytics_request import DatasetCounts
+from app.schemas.analytics_request import AnalyticsFilters, DatasetCounts
 
 
 class HealthResponse(BaseModel):
@@ -18,7 +18,9 @@ class AnalyticsOverviewResponse(BaseModel):
     phase: str
     source: str
     message: str
+    sourceCounts: DatasetCounts
     receivedCounts: DatasetCounts
+    appliedFilters: AnalyticsFilters
     warnings: list[str] = Field(default_factory=list)
     insights: list[str] = Field(default_factory=list)
     metrics: dict[str, Any] = Field(default_factory=dict)

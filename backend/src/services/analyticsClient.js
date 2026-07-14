@@ -97,10 +97,13 @@ const requestJson = async (path, options = {}) => {
   }
 };
 
-const requestAnalyticsOverview = (dataset) =>
+const requestAnalyticsOverview = (dataset, filters = {}) =>
   requestJson('/internal/analytics/overview', {
     method: 'POST',
-    body: JSON.stringify(dataset),
+    body: JSON.stringify({
+      dataset,
+      filters,
+    }),
   });
 
 module.exports = {

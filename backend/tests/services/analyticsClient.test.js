@@ -35,13 +35,13 @@ describe('analyticsClient', () => {
     });
   });
 
-  test('sends the normalized dataset to the Python overview endpoint', async () => {
+  test('sends dataset and filters to the Python overview endpoint', async () => {
     const responseBody = {
       status: 'OK',
-      phase: '13.E',
+      phase: '13.H',
       metrics: {
         summary: {
-          totalRentals: 39,
+          totalRentals: 8,
         },
       },
     };
@@ -64,8 +64,18 @@ describe('analyticsClient', () => {
       users: [],
       mileageHistory: [],
     };
+    const filters = {
+      startDate: '2026-01-01',
+      endDate: '2026-03-31',
+      status: 'approved',
+      vehicleId: null,
+      department: 'Operações',
+    };
 
-    const result = await analyticsClient.requestAnalyticsOverview(dataset);
+    const result = await analyticsClient.requestAnalyticsOverview(
+      dataset,
+      filters
+    );
 
     expect(result).toEqual(responseBody);
     expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -80,20 +90,26 @@ describe('analyticsClient', () => {
         'Content-Type': 'application/json; charset=utf-8',
       })
     );
-    expect(JSON.parse(options.body)).toEqual(dataset);
+    expect(JSON.parse(options.body)).toEqual({
+      dataset,
+      filters,
+    });
   });
 
   test('maps unavailable service errors to a stable client error code', async () => {
     global.fetch.mockRejectedValue(new Error('connection refused'));
 
     await expect(
-      analyticsClient.requestAnalyticsOverview({
-        counts: {},
-        rentals: [],
-        vehicles: [],
-        users: [],
-        mileageHistory: [],
-      })
+      analyticsClient.requestAnalyticsOverview(
+        {
+          counts: {},
+          rentals: [],
+          vehicles: [],
+          users: [],
+          mileageHistory: [],
+        },
+        {}
+      )
     ).rejects.toMatchObject({
       name: 'AnalyticsServiceError',
       code: 'ANALYTICS_SERVICE_UNAVAILABLE',
