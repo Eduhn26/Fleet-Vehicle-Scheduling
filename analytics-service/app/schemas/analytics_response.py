@@ -25,3 +25,20 @@ class AnalyticsOverviewResponse(BaseModel):
     insights: list[str] = Field(default_factory=list)
     metrics: dict[str, Any] = Field(default_factory=dict)
     nextStep: str
+
+
+
+class AnalyticsExportResponse(BaseModel):
+    status: str
+    service: str
+    phase: str
+    source: str
+    generatedAt: str | None = None
+    appliedFilters: AnalyticsFilters
+    table: str | None = None
+    filename: str
+    columns: list[str] = Field(default_factory=list)
+    rows: list[dict[str, Any]] = Field(default_factory=list)
+    tables: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
+    csv: str | None = None
+    nextStep: str

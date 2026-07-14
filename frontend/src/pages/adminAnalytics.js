@@ -7,6 +7,8 @@ import {
   FiCheckCircle,
   FiClock,
   FiCpu,
+  FiDownload,
+  FiFileText,
   FiFilter,
   FiRefreshCw,
   FiTruck,
@@ -25,6 +27,18 @@ const STATUS_LABELS = {
   return_pending: 'Devolução pendente',
   completed: 'Concluídas',
 };
+
+const EXPORT_TABLE_OPTIONS = [
+  { value: 'summary', label: 'Resumo executivo' },
+  { value: 'rentals', label: 'Reservas' },
+  { value: 'vehicles', label: 'Veículos' },
+  { value: 'mileageHistory', label: 'Histórico de quilometragem' },
+  { value: 'rentalsByStatus', label: 'Reservas por status' },
+  { value: 'vehicleUsage', label: 'Uso por veículo' },
+  { value: 'departmentUsage', label: 'Uso por departamento' },
+  { value: 'rentalTrend', label: 'Evolução temporal' },
+  { value: 'maintenanceAlerts', label: 'Alertas de manutenção' },
+];
 
 const EMPTY_FILTERS = {
   startDate: '',
@@ -356,6 +370,9 @@ export default function AdminAnalytics() {
   const [draftFilters, setDraftFilters] = useState({ ...EMPTY_FILTERS });
   const [appliedFilters, setAppliedFilters] = useState({ ...EMPTY_FILTERS });
   const [filterError, setFilterError] = useState('');
+  const [exportTable, setExportTable] = useState('rentals');
+  const [exporting, setExporting] = useState('');
+  const [exportMessage, setExportMessage] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -462,6 +479,27 @@ export default function AdminAnalytics() {
     setAppliedFilters({ ...EMPTY_FILTERS });
   };
 
+
+  const handleExport = async (format) => {
+    setExporting(format);
+    setExportMessage('');
+
+    try {
+      const filename = await analyticsService.downloadExport({
+        format,
+        table: exportTable,
+        filters: appliedFilters,
+      });
+      setExportMessage(`Arquivo gerado: ${filename}`);
+    } catch (error) {
+      setExportMessage(
+        getErrorMessage(error) || 'Não foi possível gerar a exportação.'
+      );
+    } finally {
+      setExporting('');
+    }
+  };
+
   return (
     <div className="analytics-page">
       <section className="analytics-hero">
@@ -537,6 +575,63 @@ export default function AdminAnalytics() {
         onApply={handleApplyFilters}
         onClear={handleClearFilters}
       />
+
+
+      <section className="analytics-export-card">
+        <div className="analytics-export-copy">
+          <span className="analytics-export-icon" aria-hidden="true">
+            <FiDownload />
+          </span>
+          <div>
+            <span className="analytics-kicker">Power BI ready</span>
+            <h2>Exportar dados analíticos</h2>
+            <p>
+              O JSON reúne todas as tabelas seguras. O CSV exporta a tabela
+              escolhida respeitando os filtros aplicados.
+            </p>
+          </div>
+        </div>
+
+        <label className="analytics-export-select">
+          <span>Tabela CSV</span>
+          <select
+            value={exportTable}
+            onChange={(event) => setExportTable(event.target.value)}
+            disabled={loading || exporting || !pythonAvailable}
+          >
+            {EXPORT_TABLE_OPTIONS.map((option) => (
+              <option value={option.value} key={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="analytics-export-actions">
+          <button
+            type="button"
+            className="analytics-export-button secondary"
+            onClick={() => handleExport('json')}
+            disabled={loading || exporting || !pythonAvailable}
+          >
+            <FiFileText />
+            {exporting === 'json' ? 'Gerando...' : 'Exportar JSON'}
+          </button>
+          <button
+            type="button"
+            className="analytics-export-button"
+            onClick={() => handleExport('csv')}
+            disabled={loading || exporting || !pythonAvailable}
+          >
+            <FiDownload />
+            {exporting === 'csv' ? 'Gerando...' : 'Baixar CSV'}
+          </button>
+        </div>
+
+        {exportMessage ? (
+          <span className="analytics-export-message">{exportMessage}</span>
+        ) : null}
+      </section>
 
       {filterError ? (
         <div className="analytics-state analytics-state-error">

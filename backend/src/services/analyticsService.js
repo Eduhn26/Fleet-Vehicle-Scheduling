@@ -1,4 +1,5 @@
 const analyticsClient = require('./analyticsClient');
+const AppError = require('../utils/AppError');
 
 const { RentalRequest } = require('../models/RentalRequest');
 const { Vehicle } = require('../models/Vehicle');
@@ -384,7 +385,7 @@ const buildAnalyticsFallback = (
 ) => ({
   status: 'DEGRADED',
   service: 'fleet-analytics-orchestrator',
-  phase: '13.H',
+  phase: '13.I',
   source: 'node-fallback',
   message: 'Analytics unavailable. Returning a filtered safe fallback.',
   generatedAt: dataset.generatedAt,
@@ -402,7 +403,7 @@ const buildAnalyticsFallback = (
     status: clientConfig.configured ? 'unavailable' : 'not_configured',
     errorCode,
   },
-  nextStep: '13.I - Add Power BI-ready exports and analytical drill-downs',
+  nextStep: '13.J - Add analytics service to Docker Compose',
 });
 
 const getAnalyticsHealth = () => {
@@ -411,7 +412,7 @@ const getAnalyticsHealth = () => {
   return {
     status: 'OK',
     service: 'fleet-analytics-boundary',
-    phase: '13.H',
+    phase: '13.I',
     source: 'node-backend',
     message: 'Node analytics boundary supports filtered Python analytics.',
     pythonAnalyticsService: {
@@ -420,7 +421,7 @@ const getAnalyticsHealth = () => {
       timeoutMs: clientConfig.timeoutMs,
       status: clientConfig.configured ? 'configured' : 'not_configured',
     },
-    nextStep: '13.I - Add Power BI-ready exports and analytical drill-downs',
+    nextStep: '13.J - Add analytics service to Docker Compose',
   };
 };
 
@@ -449,7 +450,7 @@ const getAnalyticsOverview = async (query = {}) => {
     return {
       status: analytics.status || 'OK',
       service: 'fleet-analytics-orchestrator',
-      phase: '13.H',
+      phase: '13.I',
       source: 'python-analytics-service',
       message: 'Node backend received filtered fleet metrics from Python.',
       generatedAt: dataset.generatedAt,
@@ -467,7 +468,7 @@ const getAnalyticsOverview = async (query = {}) => {
         status: 'available',
         phase: analytics.phase || null,
       },
-      nextStep: '13.I - Add Power BI-ready exports and analytical drill-downs',
+      nextStep: '13.J - Add analytics service to Docker Compose',
     };
   } catch (error) {
     return buildAnalyticsFallback(
@@ -480,10 +481,55 @@ const getAnalyticsOverview = async (query = {}) => {
   }
 };
 
+const POWER_BI_EXPORT_TABLES = new Set([
+  'summary',
+  'rentals',
+  'vehicles',
+  'mileageHistory',
+  'rentalsByStatus',
+  'vehicleUsage',
+  'departmentUsage',
+  'rentalTrend',
+  'maintenanceAlerts',
+]);
+
+const normalizeExportTable = (value) => {
+  const table = normalizeOptionalText(value);
+  if (!table) return null;
+
+  if (!POWER_BI_EXPORT_TABLES.has(table)) {
+    throw new AppError('Tabela de exportação inválida.', 422);
+  }
+
+  return table;
+};
+
+const getAnalyticsExport = async (query = {}, requestedTable = null) => {
+  const dataset = await buildFleetAnalyticsDataset();
+  const filters = normalizeAnalyticsFilters(query);
+  const table = normalizeExportTable(requestedTable);
+  const clientConfig = analyticsClient.getAnalyticsServiceConfig();
+
+  if (!clientConfig.configured) {
+    throw new AppError('Serviço de analytics não configurado para exportação.', 503);
+  }
+
+  try {
+    return await analyticsClient.requestAnalyticsExport(dataset, filters, table);
+  } catch (error) {
+    const message = getFallbackMessage(
+      error.code || 'ANALYTICS_SERVICE_UNAVAILABLE'
+    );
+    throw new AppError(`${message} A exportação não foi gerada.`, 503);
+  }
+};
+
 module.exports = {
   getAnalyticsHealth,
   getAnalyticsOverview,
+  getAnalyticsExport,
   buildFleetAnalyticsDataset,
   buildFilterOptions,
   normalizeAnalyticsFilters,
+  normalizeExportTable,
 };

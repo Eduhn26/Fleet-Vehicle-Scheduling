@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -39,3 +39,21 @@ class AnalyticsFilters(BaseModel):
 class AnalyticsOverviewRequest(BaseModel):
     dataset: FleetAnalyticsDataset
     filters: AnalyticsFilters = Field(default_factory=AnalyticsFilters)
+
+
+
+PowerBiExportTable = Literal[
+    "summary",
+    "rentals",
+    "vehicles",
+    "mileageHistory",
+    "rentalsByStatus",
+    "vehicleUsage",
+    "departmentUsage",
+    "rentalTrend",
+    "maintenanceAlerts",
+]
+
+
+class AnalyticsExportRequest(AnalyticsOverviewRequest):
+    table: PowerBiExportTable | None = None

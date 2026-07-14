@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Any
 
 import pandas as pd
@@ -5,11 +6,15 @@ import pandas as pd
 from app.core.settings import settings
 from app.schemas.analytics_request import (
     AnalyticsFilters,
+    AnalyticsExportRequest,
     AnalyticsOverviewRequest,
     DatasetCounts,
     FleetAnalyticsDataset,
 )
-from app.schemas.analytics_response import AnalyticsOverviewResponse
+from app.schemas.analytics_response import (
+    AnalyticsExportResponse,
+    AnalyticsOverviewResponse,
+)
 
 MAINTENANCE_WARNING_KM = 1000
 MAINTENANCE_ATTENTION_PERCENT = 90
@@ -490,7 +495,7 @@ def build_fleet_overview(
     return AnalyticsOverviewResponse(
         status="OK",
         service=settings.service_name,
-        phase="13.H",
+        phase="13.I",
         source="python-analytics-service",
         message="Python analytics service calculated filtered fleet metrics.",
         sourceCounts=dataset.counts,
@@ -499,5 +504,305 @@ def build_fleet_overview(
         warnings=_build_warnings(dataset),
         insights=_build_insights(metrics, filters),
         metrics=metrics,
-        nextStep="13.I - Add Power BI-ready exports and analytical drill-downs",
+        nextStep="13.J - Add analytics service to Docker Compose",
+    )
+
+
+
+EXPORT_COLUMNS = {
+    "summary": [
+        "generatedAt",
+        "totalRentals",
+        "totalVehicles",
+        "totalUsers",
+        "totalMileageRecords",
+        "averageDurationHours",
+        "maintenanceAlertsCount",
+        "topVehicleByRentals",
+        "topVehicleRentals",
+        "topVehicleByMileage",
+        "topVehicleMileage",
+    ],
+    "rentals": [
+        "rentalId",
+        "startDate",
+        "endDate",
+        "status",
+        "durationHours",
+        "vehicleId",
+        "vehicleLabel",
+        "licensePlate",
+        "department",
+        "createdAt",
+    ],
+    "vehicles": [
+        "vehicleId",
+        "brand",
+        "model",
+        "vehicleLabel",
+        "year",
+        "licensePlate",
+        "mileage",
+        "status",
+        "transmissionType",
+        "fuelType",
+        "passengers",
+        "nextMaintenance",
+        "lastMaintenanceMileage",
+        "kmUntilMaintenance",
+        "maintenanceProgressPercent",
+        "isMaintenanceDue",
+    ],
+    "mileageHistory": [
+        "historyId",
+        "rentalId",
+        "vehicleId",
+        "vehicleLabel",
+        "licensePlate",
+        "previousMileage",
+        "newMileage",
+        "mileageDelta",
+        "recordedAt",
+    ],
+    "rentalsByStatus": ["status", "total"],
+    "vehicleUsage": [
+        "vehicleId",
+        "vehicleLabel",
+        "licensePlate",
+        "totalRentals",
+        "totalDurationHours",
+    ],
+    "departmentUsage": ["department", "total"],
+    "rentalTrend": ["period", "label", "total"],
+    "maintenanceAlerts": [
+        "vehicleId",
+        "vehicleLabel",
+        "licensePlate",
+        "level",
+        "message",
+        "mileage",
+        "kmUntilMaintenance",
+        "maintenanceProgressPercent",
+    ],
+}
+
+
+def _export_timestamp() -> str:
+    return datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+
+
+def _to_export_rows(
+    dataframe: pd.DataFrame,
+    column_mapping: dict[str, str],
+) -> list[dict[str, Any]]:
+    if dataframe.empty:
+        return []
+
+    rows: list[dict[str, Any]] = []
+    for record in dataframe.to_dict(orient="records"):
+        row: dict[str, Any] = {}
+        for output_column, source_column in column_mapping.items():
+            value = record.get(source_column)
+            if pd.isna(value):
+                value = None
+            row[output_column] = value
+        rows.append(row)
+
+    return rows
+
+
+def _scope_export_vehicles(
+    vehicles_df: pd.DataFrame,
+    filtered_rentals_df: pd.DataFrame,
+    filters: AnalyticsFilters,
+) -> pd.DataFrame:
+    if vehicles_df.empty:
+        return vehicles_df.copy()
+
+    if not _has_active_filters(filters):
+        return vehicles_df.copy()
+
+    vehicle_ids = set(
+        filtered_rentals_df.get("vehicleId", pd.Series(dtype="object"))
+        .dropna()
+        .astype(str)
+        .tolist()
+    )
+
+    if filters.vehicleId:
+        vehicle_ids.add(filters.vehicleId)
+
+    if not vehicle_ids or "id" not in vehicles_df.columns:
+        return vehicles_df.iloc[0:0].copy()
+
+    return vehicles_df.loc[
+        vehicles_df["id"].fillna("").astype(str).isin(vehicle_ids)
+    ].copy()
+
+
+def _build_export_tables(
+    dataset: FleetAnalyticsDataset,
+    filters: AnalyticsFilters,
+) -> dict[str, list[dict[str, Any]]]:
+    rentals_df = _to_records(dataset.rentals)
+    vehicles_df = _to_records(dataset.vehicles)
+    mileage_df = _to_records(dataset.mileageHistory)
+
+    filtered_rentals_df = _filter_rentals(rentals_df, filters)
+    filtered_mileage_df = _filter_mileage(mileage_df, filtered_rentals_df, filters)
+    scoped_vehicles_df = _scope_export_vehicles(
+        vehicles_df,
+        filtered_rentals_df,
+        filters,
+    )
+    maintenance_vehicles_df = _filter_maintenance_vehicles(vehicles_df, filters)
+
+    filtered_counts = _build_filtered_counts(
+        dataset,
+        filtered_rentals_df,
+        filtered_mileage_df,
+        filters,
+    )
+    rental_metrics = _build_rental_metrics(filtered_rentals_df)
+    vehicle_usage = _build_vehicle_usage(filtered_rentals_df)
+    department_usage = _build_department_usage(filtered_rentals_df)
+    mileage_by_vehicle = _build_mileage_by_vehicle(filtered_mileage_df)
+    rental_trend = _build_rental_trend(filtered_rentals_df)
+    maintenance_alerts = _build_maintenance_alerts(maintenance_vehicles_df)
+    summary = _build_summary(
+        dataset.generatedAt,
+        filtered_counts,
+        rental_metrics,
+        vehicle_usage,
+        mileage_by_vehicle,
+        maintenance_alerts,
+    )
+
+    top_rentals = summary.get("topVehicleByRentals") or {}
+    top_mileage = summary.get("topVehicleByMileage") or {}
+
+    summary_rows = [
+        {
+            "generatedAt": summary.get("generatedAt"),
+            "totalRentals": summary.get("totalRentals", 0),
+            "totalVehicles": summary.get("totalVehicles", 0),
+            "totalUsers": summary.get("totalUsers", 0),
+            "totalMileageRecords": summary.get("totalMileageRecords", 0),
+            "averageDurationHours": summary.get("averageDurationHours", 0),
+            "maintenanceAlertsCount": summary.get("maintenanceAlertsCount", 0),
+            "topVehicleByRentals": top_rentals.get("vehicleLabel"),
+            "topVehicleRentals": top_rentals.get("totalRentals", 0),
+            "topVehicleByMileage": top_mileage.get("vehicleLabel"),
+            "topVehicleMileage": top_mileage.get("totalMileageDelta", 0),
+        }
+    ]
+
+    rental_rows = _to_export_rows(
+        filtered_rentals_df,
+        {
+            "rentalId": "id",
+            "startDate": "startDate",
+            "endDate": "endDate",
+            "status": "status",
+            "durationHours": "durationHours",
+            "vehicleId": "vehicleId",
+            "vehicleLabel": "vehicle.label",
+            "licensePlate": "vehicle.licensePlate",
+            "department": "user.department",
+            "createdAt": "createdAt",
+        },
+    )
+
+    vehicle_rows = _to_export_rows(
+        scoped_vehicles_df,
+        {
+            "vehicleId": "id",
+            "brand": "brand",
+            "model": "model",
+            "vehicleLabel": "label",
+            "year": "year",
+            "licensePlate": "licensePlate",
+            "mileage": "mileage",
+            "status": "status",
+            "transmissionType": "transmissionType",
+            "fuelType": "fuelType",
+            "passengers": "passengers",
+            "nextMaintenance": "nextMaintenance",
+            "lastMaintenanceMileage": "lastMaintenanceMileage",
+            "kmUntilMaintenance": "kmUntilMaintenance",
+            "maintenanceProgressPercent": "maintenanceProgressPercent",
+            "isMaintenanceDue": "isMaintenanceDue",
+        },
+    )
+
+    mileage_rows = _to_export_rows(
+        filtered_mileage_df,
+        {
+            "historyId": "id",
+            "rentalId": "rentalId",
+            "vehicleId": "vehicleId",
+            "vehicleLabel": "vehicle.label",
+            "licensePlate": "vehicle.licensePlate",
+            "previousMileage": "previousMileage",
+            "newMileage": "newMileage",
+            "mileageDelta": "mileageDelta",
+            "recordedAt": "recordedAt",
+        },
+    )
+
+    return {
+        "summary": summary_rows,
+        "rentals": rental_rows,
+        "vehicles": vehicle_rows,
+        "mileageHistory": mileage_rows,
+        "rentalsByStatus": rental_metrics.get("rentalsByStatus", []),
+        "vehicleUsage": vehicle_usage,
+        "departmentUsage": department_usage,
+        "rentalTrend": rental_trend,
+        "maintenanceAlerts": maintenance_alerts,
+    }
+
+
+def build_power_bi_export(
+    payload: AnalyticsExportRequest,
+) -> AnalyticsExportResponse:
+    tables = _build_export_tables(payload.dataset, payload.filters)
+    timestamp = _export_timestamp()
+
+    if payload.table:
+        columns = EXPORT_COLUMNS[payload.table]
+        rows = tables[payload.table]
+        dataframe = pd.DataFrame(rows, columns=columns)
+        csv_content = dataframe.to_csv(
+            index=False,
+            sep=";",
+            decimal=",",
+            lineterminator="\r\n",
+        )
+
+        return AnalyticsExportResponse(
+            status="OK",
+            service=settings.service_name,
+            phase="13.I",
+            source="python-analytics-service",
+            generatedAt=payload.dataset.generatedAt,
+            appliedFilters=payload.filters,
+            table=payload.table,
+            filename=f"fleet-analytics-{payload.table}-{timestamp}.csv",
+            columns=columns,
+            rows=rows,
+            csv=csv_content,
+            nextStep="13.J - Add analytics service to Docker Compose",
+        )
+
+    return AnalyticsExportResponse(
+        status="OK",
+        service=settings.service_name,
+        phase="13.I",
+        source="python-analytics-service",
+        generatedAt=payload.dataset.generatedAt,
+        appliedFilters=payload.filters,
+        filename=f"fleet-analytics-power-bi-{timestamp}.json",
+        tables=tables,
+        nextStep="13.J - Add analytics service to Docker Compose",
     )

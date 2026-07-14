@@ -152,7 +152,7 @@ def test_overview_calculates_fleet_metrics_and_temporal_trend():
     metrics = body["metrics"]
 
     assert body["status"] == "OK"
-    assert body["phase"] == "13.H"
+    assert body["phase"] == "13.I"
     assert body["source"] == "python-analytics-service"
     assert body["receivedCounts"]["rentals"] == 4
     assert body["sourceCounts"]["rentals"] == 4

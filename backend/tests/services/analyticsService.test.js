@@ -80,7 +80,7 @@ describe('analyticsService', () => {
   test('returns filtered Python metrics through the Node boundary', async () => {
     analyticsClient.requestAnalyticsOverview.mockResolvedValue({
       status: 'OK',
-      phase: '13.H',
+      phase: '13.I',
       sourceCounts: {
         rentals: 39,
         vehicles: 6,
@@ -135,7 +135,7 @@ describe('analyticsService', () => {
 
     expect(result).toMatchObject({
       status: 'OK',
-      phase: '13.H',
+      phase: '13.I',
       source: 'python-analytics-service',
       receivedCounts: {
         rentals: 8,
@@ -148,7 +148,7 @@ describe('analyticsService', () => {
       },
       pythonAnalyticsService: {
         status: 'available',
-        phase: '13.H',
+        phase: '13.I',
       },
     });
   });
@@ -183,7 +183,7 @@ describe('analyticsService', () => {
 
     analyticsClient.requestAnalyticsOverview.mockResolvedValue({
       status: 'OK',
-      phase: '13.H',
+      phase: '13.I',
       warnings: [],
       insights: [],
       metrics: {},
@@ -248,7 +248,7 @@ describe('analyticsService', () => {
 
     expect(result).toMatchObject({
       status: 'DEGRADED',
-      phase: '13.H',
+      phase: '13.I',
       source: 'node-fallback',
       receivedCounts: {
         rentals: 1,
@@ -293,4 +293,61 @@ describe('analyticsService', () => {
       },
     });
   });
+
+test('returns a filtered Power BI export from Python', async () => {
+  analyticsClient.requestAnalyticsExport.mockResolvedValue({
+    status: 'OK',
+    phase: '13.I',
+    table: 'rentals',
+    filename: 'fleet-analytics-rentals.csv',
+    csv: 'rentalId,status\nrental-1,approved\n',
+  });
+
+  const result = await analyticsService.getAnalyticsExport(
+    { status: 'approved' },
+    'rentals'
+  );
+
+  expect(analyticsClient.requestAnalyticsExport).toHaveBeenCalledWith(
+    expect.objectContaining({ rentals: [] }),
+    {
+      startDate: null,
+      endDate: null,
+      status: 'approved',
+      vehicleId: null,
+      department: null,
+    },
+    'rentals'
+  );
+  expect(result).toMatchObject({
+    status: 'OK',
+    phase: '13.I',
+    table: 'rentals',
+  });
+});
+
+test('rejects an unsupported export table before calling Python', async () => {
+  await expect(
+    analyticsService.getAnalyticsExport({}, 'users')
+  ).rejects.toMatchObject({
+    message: 'Tabela de exportação inválida.',
+    statusCode: 422,
+  });
+
+  expect(analyticsClient.requestAnalyticsExport).not.toHaveBeenCalled();
+});
+
+test('returns 503 semantics when Python cannot generate the export', async () => {
+  const error = new Error('offline');
+  error.code = 'ANALYTICS_SERVICE_UNAVAILABLE';
+  analyticsClient.requestAnalyticsExport.mockRejectedValue(error);
+
+  await expect(
+    analyticsService.getAnalyticsExport({}, 'summary')
+  ).rejects.toMatchObject({
+    message: 'Serviço de analytics indisponível. A exportação não foi gerada.',
+    statusCode: 503,
+  });
+});
+
 });

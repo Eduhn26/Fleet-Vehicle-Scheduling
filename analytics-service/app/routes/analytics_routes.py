@@ -1,9 +1,19 @@
 from fastapi import APIRouter
 
 from app.core.settings import settings
-from app.schemas.analytics_request import AnalyticsOverviewRequest
-from app.schemas.analytics_response import AnalyticsOverviewResponse, HealthResponse
-from app.services.fleet_analytics_service import build_fleet_overview
+from app.schemas.analytics_request import (
+    AnalyticsExportRequest,
+    AnalyticsOverviewRequest,
+)
+from app.schemas.analytics_response import (
+    AnalyticsExportResponse,
+    AnalyticsOverviewResponse,
+    HealthResponse,
+)
+from app.services.fleet_analytics_service import (
+    build_fleet_overview,
+    build_power_bi_export,
+)
 
 router = APIRouter()
 
@@ -34,3 +44,12 @@ def ready() -> HealthResponse:
 )
 def overview(payload: AnalyticsOverviewRequest) -> AnalyticsOverviewResponse:
     return build_fleet_overview(payload)
+
+
+
+@router.post(
+    "/internal/analytics/export",
+    response_model=AnalyticsExportResponse,
+)
+def export(payload: AnalyticsExportRequest) -> AnalyticsExportResponse:
+    return build_power_bi_export(payload)

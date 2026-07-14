@@ -38,7 +38,7 @@ describe('analyticsClient', () => {
   test('sends dataset and filters to the Python overview endpoint', async () => {
     const responseBody = {
       status: 'OK',
-      phase: '13.H',
+      phase: '13.I',
       metrics: {
         summary: {
           totalRentals: 8,
@@ -95,6 +95,48 @@ describe('analyticsClient', () => {
       filters,
     });
   });
+
+
+test('sends a filtered Power BI export request to Python', async () => {
+  const responseBody = {
+    status: 'OK',
+    phase: '13.I',
+    table: 'rentals',
+    filename: 'fleet-analytics-rentals.csv',
+    csv: 'rentalId,status\nrental-1,approved\n',
+  };
+
+  global.fetch.mockResolvedValue({
+    ok: true,
+    status: 200,
+    text: jest.fn().mockResolvedValue(JSON.stringify(responseBody)),
+  });
+
+  const dataset = {
+    counts: {},
+    rentals: [],
+    vehicles: [],
+    users: [],
+    mileageHistory: [],
+  };
+  const filters = { status: 'approved' };
+
+  const result = await analyticsClient.requestAnalyticsExport(
+    dataset,
+    filters,
+    'rentals'
+  );
+
+  expect(result).toEqual(responseBody);
+
+  const [url, options] = global.fetch.mock.calls[0];
+  expect(url).toBe('http://localhost:8000/internal/analytics/export');
+  expect(JSON.parse(options.body)).toEqual({
+    dataset,
+    filters,
+    table: 'rentals',
+  });
+});
 
   test('maps unavailable service errors to a stable client error code', async () => {
     global.fetch.mockRejectedValue(new Error('connection refused'));

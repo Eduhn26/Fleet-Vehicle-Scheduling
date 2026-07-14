@@ -97,6 +97,16 @@ const requestJson = async (path, options = {}) => {
   }
 };
 
+const requestAnalyticsExport = (dataset, filters = {}, table = null) =>
+  requestJson('/internal/analytics/export', {
+    method: 'POST',
+    body: JSON.stringify({
+      dataset,
+      filters,
+      table,
+    }),
+  });
+
 const requestAnalyticsOverview = (dataset, filters = {}) =>
   requestJson('/internal/analytics/overview', {
     method: 'POST',
@@ -110,4 +120,5 @@ module.exports = {
   AnalyticsServiceError,
   getAnalyticsServiceConfig,
   requestAnalyticsOverview,
+  requestAnalyticsExport,
 };

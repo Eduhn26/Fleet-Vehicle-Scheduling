@@ -111,3 +111,33 @@ Next phase:
 ```txt
 13.I — Power BI-ready exports and analytical drill-downs
 ```
+
+
+## Power BI export
+
+The export endpoint receives the normalized dataset and the active dashboard filters.
+
+Without `table`, it returns a JSON package with analytical tables. With `table`, it returns the selected table and its CSV representation.
+
+Supported tables:
+
+- `summary`
+- `rentals`
+- `vehicles`
+- `mileageHistory`
+- `rentalsByStatus`
+- `vehicleUsage`
+- `departmentUsage`
+- `rentalTrend`
+- `maintenanceAlerts`
+
+The export intentionally excludes passwords, emails, user names, notes and other unnecessary operational fields.
+
+CSV files are formatted for Brazilian Excel defaults:
+
+- semicolon (`;`) as the column delimiter;
+- comma as the decimal separator;
+- Windows-compatible CRLF line endings;
+- UTF-8 BOM added by the Node.js download endpoint.
+
+This allows the downloaded file to open directly in separate Excel columns without using the import wizard.

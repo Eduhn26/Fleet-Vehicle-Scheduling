@@ -11,7 +11,7 @@ def test_live_health_returns_ok():
     assert response.status_code == 200
     assert response.json()["status"] == "OK"
     assert response.json()["service"] == "fleet-analytics-service"
-    assert response.json()["version"] == "0.3.0"
+    assert response.json()["version"] == "0.4.0"
 
 
 def test_ready_health_returns_ok():
