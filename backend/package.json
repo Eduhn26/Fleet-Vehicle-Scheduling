@@ -9,7 +9,9 @@
     "format": "prettier --write \"src/**/*.js\" \"tests/**/*.js\" \"*.js\"",
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --runInBand --coverage"
+    "test:coverage": "jest --runInBand --coverage",
+    "test:analytics": "jest --runInBand --config jest.analytics.config.js",
+    "test:analytics:coverage": "jest --runInBand --config jest.analytics.config.js --coverage"
   },
   "keywords": [],
   "author": "",

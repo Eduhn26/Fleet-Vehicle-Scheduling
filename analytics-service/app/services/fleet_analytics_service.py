@@ -106,7 +106,7 @@ def _date_mask(
         mask &= dates >= start
 
     if end is not None:
-        mask &= dates < end + pd.Timedelta(days=1)
+        mask &= dates < end + pd.DateOffset(days=1)
 
     return mask.fillna(False)
 
