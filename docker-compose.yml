@@ -6,6 +6,9 @@ services:
       - "5000:5000"
     env_file:
       - ./backend/.env
+    environment:
+      ANALYTICS_SERVICE_URL: http://host.docker.internal:8000
+      ANALYTICS_SERVICE_TIMEOUT_MS: 5000
     restart: unless-stopped
 
   frontend:

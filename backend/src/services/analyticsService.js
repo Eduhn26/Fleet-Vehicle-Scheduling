@@ -219,37 +219,99 @@ const buildFleetAnalyticsDataset = async () => {
   };
 };
 
+const getFallbackMessage = (errorCode) => {
+  const messages = {
+    ANALYTICS_SERVICE_NOT_CONFIGURED: 'Analytics service is not configured.',
+    ANALYTICS_SERVICE_TIMEOUT: 'Analytics service request timed out.',
+    ANALYTICS_SERVICE_HTTP_ERROR: 'Analytics service returned an invalid response.',
+    ANALYTICS_SERVICE_UNAVAILABLE: 'Analytics service is unavailable.',
+  };
+
+  return messages[errorCode] || 'Analytics service could not process the dataset.';
+};
+
+const buildAnalyticsFallback = (dataset, clientConfig, errorCode) => ({
+  status: 'DEGRADED',
+  service: 'fleet-analytics-orchestrator',
+  phase: '13.F',
+  source: 'node-fallback',
+  message: 'Analytics service unavailable. Returning a safe fallback.',
+  generatedAt: dataset.generatedAt,
+  receivedCounts: dataset.counts,
+  warnings: [getFallbackMessage(errorCode)],
+  insights: [],
+  metrics: null,
+  pythonAnalyticsService: {
+    configured: clientConfig.configured,
+    baseUrl: clientConfig.baseUrl,
+    timeoutMs: clientConfig.timeoutMs,
+    status: clientConfig.configured ? 'unavailable' : 'not_configured',
+    errorCode,
+  },
+  nextStep: '13.G - Add the React analytics dashboard',
+});
+
 const getAnalyticsHealth = () => {
   const clientConfig = analyticsClient.getAnalyticsServiceConfig();
 
   return {
     status: 'OK',
     service: 'fleet-analytics-boundary',
-    phase: '13.C',
+    phase: '13.F',
     source: 'node-backend',
-    message: 'Analytics backend boundary is ready.',
+    message: 'Node analytics boundary is ready to call the Python service.',
     pythonAnalyticsService: {
       configured: clientConfig.configured,
       baseUrl: clientConfig.baseUrl,
       timeoutMs: clientConfig.timeoutMs,
       status: clientConfig.configured ? 'configured' : 'not_configured',
     },
-    nextStep: '13.D - Python analytics service foundation',
+    nextStep: '13.G - Add the React analytics dashboard',
   };
 };
 
 const getAnalyticsOverview = async () => {
   const dataset = await buildFleetAnalyticsDataset();
+  const clientConfig = analyticsClient.getAnalyticsServiceConfig();
 
-  return {
-    status: 'OK',
-    service: 'fleet-analytics-dataset',
-    phase: '13.C',
-    source: 'node-backend',
-    message: 'Fleet analytics dataset normalized successfully.',
-    dataset,
-    nextStep: '13.D - Python analytics service foundation',
-  };
+  if (!clientConfig.configured) {
+    return buildAnalyticsFallback(
+      dataset,
+      clientConfig,
+      'ANALYTICS_SERVICE_NOT_CONFIGURED'
+    );
+  }
+
+  try {
+    const analytics = await analyticsClient.requestAnalyticsOverview(dataset);
+
+    return {
+      status: analytics.status || 'OK',
+      service: 'fleet-analytics-orchestrator',
+      phase: '13.F',
+      source: 'python-analytics-service',
+      message: 'Node backend received fleet metrics from the Python analytics service.',
+      generatedAt: dataset.generatedAt,
+      receivedCounts: analytics.receivedCounts || dataset.counts,
+      warnings: Array.isArray(analytics.warnings) ? analytics.warnings : [],
+      insights: Array.isArray(analytics.insights) ? analytics.insights : [],
+      metrics: analytics.metrics || null,
+      pythonAnalyticsService: {
+        configured: true,
+        baseUrl: clientConfig.baseUrl,
+        timeoutMs: clientConfig.timeoutMs,
+        status: 'available',
+        phase: analytics.phase || null,
+      },
+      nextStep: '13.G - Add the React analytics dashboard',
+    };
+  } catch (error) {
+    return buildAnalyticsFallback(
+      dataset,
+      clientConfig,
+      error.code || 'ANALYTICS_SERVICE_UNAVAILABLE'
+    );
+  }
 };
 
 module.exports = {
