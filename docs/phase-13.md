@@ -1,721 +1,893 @@
-# Phase 13 — Fleet Intelligence
+# 🚀 Phase 13 — Fleet Intelligence & Operational Analytics
 
-## Python Analytics · Mini ETL · Operational Metrics · Power BI Ready
+## 🎯 Phase Objective
 
----
+Phase 13 evolves Fleet Vehicle Scheduling from an operational fleet management system into a platform with a dedicated intelligence layer.
 
-## 1. Objective
+The phase introduces:
 
-Phase 13 introduces an analytical layer to the Fleet Vehicle Scheduling system.
+- a protected analytics boundary in Node.js;
+- a normalized operational dataset;
+- a separate Python analytics service with FastAPI;
+- analytical processing with Pandas;
+- a Fleet Intelligence experience in React;
+- automatic filters and contextual KPIs;
+- temporal analysis and operational rankings;
+- maintenance intelligence;
+- JSON and CSV exports prepared for external BI tools;
+- safe fallback when the Python service is unavailable;
+- Docker Compose integration for the analytics service;
+- dedicated tests and coverage;
+- a deterministic annual demonstration dataset.
 
-The goal is to evolve the project from a vehicle scheduling application into a more complete fleet intelligence platform, capable of transforming operational data into metrics, rankings, maintenance alerts and executive insights.
-
-This phase adds Python with a real architectural purpose: processing operational fleet data without mixing analytical calculations inside the main Node.js backend.
-
-The intended result is:
-
-```txt
-Fleet Vehicle Scheduling
-        ↓
-Fleet Intelligence
-```
-
-In practical terms, this phase will create an analytics flow that can feed:
-
-* an internal admin analytics dashboard in React;
-* future Power BI reports;
-* exported analytical datasets;
-* operational decision-making for fleet administrators.
+This phase establishes a clear separation between **operational workflows** and **analytical processing**.
 
 ---
 
-## 2. Current Project Context
+## 🧠 Why Fleet Intelligence
 
-Before this phase, the project already includes:
-
-* Node.js / Express backend;
-* React frontend;
-* MongoDB Atlas with Mongoose;
-* JWT authentication;
-* role-based access control;
-* admin and user dashboards;
-* vehicle rental request workflow;
-* approval and rejection lifecycle;
-* return request workflow;
-* mileage update flow;
-* automatic maintenance status when mileage reaches the defined threshold;
-* validation layer;
-* services layer;
-* centralized error handling;
-* tests;
-* CI pipeline;
-* Docker Compose support;
-* structured documentation by phases.
-
-Because of this foundation, Phase 13 does not start from a CRUD application.
-
-It starts from an operational system that already produces meaningful data.
-
----
-
-## 3. Problem This Phase Solves
-
-The system currently allows admins to operate the fleet, but it does not yet provide a strong analytical view of the operation.
-
-The admin can see requests, vehicles and statuses, but cannot easily answer questions such as:
-
-* Which vehicles are used the most?
-* Which departments request more vehicles?
-* What is the approval rate?
-* What is the rejection rate?
-* Which vehicles are close to maintenance?
-* Which requests are stuck in pending or return workflows?
-* How much mileage is being accumulated by each vehicle?
-* Where are the operational bottlenecks?
-* Which data should be exported for Power BI?
-
-Phase 13 solves this by creating an analytics layer focused on decision-making.
-
----
-
-## 4. Architectural Decision
-
-The frontend must not call the Python service directly.
-
-The Python service must not replace the Node.js backend.
-
-The Node.js backend remains the secure entry point for the application.
-
-The architecture for this phase is:
-
-```txt
-Frontend React
-    ↓
-Backend Node.js / Express
-    ↓
-Python Analytics Service / FastAPI
-    ↓
-Pandas Transformations
-    ↓
-Analytics Response
-    ↓
-React Dashboard / Power BI Export
-```
-
-The backend continues to handle:
-
-* authentication;
-* authorization;
-* admin protection;
-* data access;
-* data normalization;
-* API response contract.
-
-The Python service handles:
-
-* analytical calculations;
-* aggregations;
-* rankings;
-* maintenance risk scoring;
-* operational insights;
-* transformation of normalized datasets.
-
----
-
-## 5. Why Python
-
-Python is introduced because this phase focuses on analytics.
-
-The reason is not to add another language just for portfolio value.
-
-Python is useful here because it provides a strong ecosystem for:
-
-* data processing;
-* ETL-style transformations;
-* tabular analysis;
-* metrics generation;
-* future Power BI exports;
-* future machine learning experiments.
-
-The first version will use deterministic analytics, not machine learning.
-
-Machine learning is intentionally kept out of the initial scope.
-
----
-
-## 6. Mini ETL Concept
-
-This phase introduces a small and realistic ETL pipeline.
-
-It is not a corporate-scale data platform.
-
-It is a project-level analytical pipeline.
-
-```txt
-Extract
-   ↓
-Transform
-   ↓
-Load
-```
-
-### Extract
-
-The Node.js backend extracts operational data from:
-
-* rental requests;
-* vehicles;
-* users;
-* mileage history.
-
-### Transform
-
-The Python service transforms the normalized payload using Pandas.
+Before this phase, administrators could operate the fleet but had limited support for answering broader operational questions.
 
 Examples:
 
-* total requests;
-* requests by status;
-* approval rate;
-* rejection rate;
-* completed rentals;
-* pending returns;
-* top used vehicles;
-* requests by department;
-* mileage by vehicle;
-* maintenance risk indicators.
+- Which vehicles are requested the most?
+- Which departments generate the highest demand?
+- How does request volume change over time?
+- How much mileage is each vehicle accumulating?
+- Which vehicles are approaching maintenance?
+- What is currently happening in the fleet?
+- Which analytical datasets should be exported for external reporting?
 
-### Load
+The goal was not to replace the existing application with a BI tool.
 
-The first output format is JSON for the React dashboard.
-
-Future outputs may include:
-
-* CSV;
-* JSON export;
-* Excel export;
-* Power BI-ready datasets.
+Instead, the project gained an operational intelligence layer inside the product, while deeper historical analysis remains a responsibility for a future Power BI phase.
 
 ---
 
-## 7. Scope
+## 🧱 Core Components Implemented
 
-### Included in Phase 13
+### Node.js Analytics Boundary
 
-* Create Phase 13 documentation.
-* Create backend analytics route boundary.
-* Protect analytics routes with admin access.
-* Normalize fleet operational data in the Node.js backend.
-* Create a separate Python FastAPI analytics service.
-* Implement analytical calculations with Pandas.
-* Integrate Node.js backend with the Python service.
-* Create `/admin/analytics` page in React.
-* Display KPI cards.
-* Display vehicle usage rankings.
-* Display department rankings.
-* Display maintenance risk alerts.
-* Display operational insights.
-* Add safe fallback when analytics service is unavailable.
-* Prepare export endpoints for future Power BI usage.
-* Update Docker Compose with analytics service.
-* Add tests for backend and Python analytics logic.
-* Update README with the new architecture and storytelling.
+The Node.js backend remains the secure API boundary of the system.
 
-### Not Included in the First Version
-
-* Machine learning.
-* Generative AI.
-* Chatbot.
-* Airflow.
-* Spark.
-* Data lake.
-* Direct frontend-to-Python communication.
-* Direct Python-to-MongoDB access.
-* Rewriting the backend.
-* Replacing MongoDB.
-* Replacing React.
-* Overengineering the system as a full microservices platform.
-
----
-
-## 8. Main Metrics
-
-The first analytics dashboard should focus on useful operational metrics.
-
-### KPI Cards
-
-* Total rental requests.
-* Approval rate.
-* Rejection rate.
-* Completed rentals.
-* Pending returns.
-* Vehicles close to maintenance.
-
-### Usage Metrics
-
-* Most used vehicles.
-* Mileage by vehicle.
-* Average usage duration.
-* Requests by period.
-* Requests by status.
-
-### Department Metrics
-
-* Requests by department.
-* Top requesting departments.
-* Users with high request volume.
-
-### Maintenance Metrics
-
-* Current vehicle mileage.
-* Mileage until next maintenance.
-* Vehicles already in maintenance.
-* Maintenance risk score.
-* High-usage vehicles.
-
-### Operational Insights
-
-Examples:
+Main files:
 
 ```txt
-The Volkswagen Polo has a high usage concentration and is close to maintenance.
-```
-
-```txt
-The Operations department represents the highest number of vehicle requests.
-```
-
-```txt
-Some return requests are pending admin confirmation.
-```
-
----
-
-## 9. Proposed Backend Files
-
-```txt
-backend/src/routes/analyticsRoutes.js
 backend/src/controllers/analyticsController.js
-backend/src/services/analyticsService.js
+backend/src/routes/analyticsRoutes.js
 backend/src/services/analyticsClient.js
+backend/src/services/analyticsService.js
 ```
 
-### Responsibility
+Responsibilities:
 
-`analyticsRoutes.js`
+- authenticate requests;
+- authorize admin-only access;
+- access MongoDB through existing models;
+- normalize the analytical dataset;
+- communicate with the Python service;
+- enforce timeout behavior;
+- translate integration failures;
+- provide safe fallback responses;
+- expose JSON and CSV exports.
 
-* Define analytics endpoints.
-* Apply authentication.
-* Apply admin authorization.
+Public analytics routes:
 
-`analyticsController.js`
+```txt
+GET /api/analytics/health
+GET /api/analytics/overview
+GET /api/analytics/export/json
+GET /api/analytics/export/csv
+```
 
-* Handle HTTP request and response.
-* Stay thin.
-* Delegate logic to service.
+Expected protection:
 
-`analyticsService.js`
+```txt
+Unauthenticated user       → 401
+Authenticated regular user → 403
+Authenticated admin        → 200
+```
 
-* Fetch operational data.
-* Normalize dataset.
-* Call analytics client.
-* Apply fallback if Python service fails.
+Real risks prevented:
 
-`analyticsClient.js`
-
-* Call Python FastAPI service.
-* Configure service URL.
-* Configure timeout.
-* Handle unavailable service errors.
+- exposing analytics data directly to unauthorized users;
+- coupling the frontend to the Python service;
+- allowing a secondary dependency to become the main application boundary.
 
 ---
 
-## 10. Proposed Python Service Structure
+### Normalized Analytics Dataset
+
+The backend builds a normalized payload using operational data from:
+
+```txt
+RentalRequest
+Vehicle
+User
+VehicleMileageHistory
+```
+
+The Python service does not receive raw Mongoose documents and does not connect directly to MongoDB.
+
+This boundary provides:
+
+- a stable integration contract;
+- explicit data ownership;
+- reduced coupling between analytics and persistence;
+- controlled exposure of only the fields required for analysis.
+
+Sensitive authentication fields are excluded from the analytical flow.
+
+---
+
+### Python Analytics Service
+
+A separate service was introduced under:
+
+```txt
+analytics-service/
+```
+
+Technology stack:
+
+```txt
+Python
+FastAPI
+Pandas
+Pydantic
+Pytest
+pytest-cov
+```
+
+Main structure:
 
 ```txt
 analytics-service/
 ├── app/
-│   ├── main.py
+│   ├── core/
 │   ├── routes/
-│   │   └── analytics_routes.py
-│   ├── services/
-│   │   ├── fleet_analytics_service.py
-│   │   └── maintenance_risk_service.py
 │   ├── schemas/
-│   │   ├── analytics_request.py
-│   │   └── analytics_response.py
-│   └── core/
-│       └── settings.py
+│   └── services/
 ├── tests/
-├── requirements.txt
 ├── Dockerfile
-└── README.md
+├── pytest.ini
+└── requirements.txt
 ```
 
-### Initial Python Endpoints
+Internal endpoints:
 
 ```txt
 GET /health/live
 GET /health/ready
 POST /internal/analytics/overview
+POST /internal/analytics/export
 ```
+
+The service is consumed by Node.js, never directly by the browser.
 
 ---
 
-## 11. Proposed Frontend Files
+### Pandas Processing Layer
+
+Pandas is responsible for the analytical transformations.
+
+The service calculates:
+
+- total rentals;
+- users represented;
+- vehicles represented in the current scope;
+- average reservation duration;
+- rentals by status;
+- rental evolution by month;
+- vehicle usage ranking;
+- accumulated duration by vehicle;
+- demand by department;
+- mileage by vehicle;
+- maintenance alerts;
+- analytical export tables.
+
+The analytical logic remains deterministic.
+
+Machine learning, generative AI, Airflow, Spark and data lakes were intentionally kept outside this phase.
+
+---
+
+### Node → Python Integration
+
+The integration flow is:
 
 ```txt
-frontend/src/pages/adminAnalytics.js
-frontend/src/components/analytics/AnalyticsMetricCard.js
-frontend/src/components/analytics/AnalyticsFilters.js
-frontend/src/components/analytics/VehicleUsageRanking.js
-frontend/src/components/analytics/DepartmentRanking.js
-frontend/src/components/analytics/MaintenanceRiskPanel.js
-frontend/src/components/analytics/OperationalInsights.js
-frontend/src/styles/analytics.css
+React
+  ↓
+Node.js / Express
+  ↓
+Normalized Dataset
+  ↓
+FastAPI
+  ↓
+Pandas
+  ↓
+Analytics Response
 ```
 
-The page route should be:
+Architectural guarantees:
+
+- React does not call Python directly.
+- Python does not access MongoDB.
+- Node.js remains responsible for authentication and authorization.
+- MongoDB remains the operational source of truth.
+- Python is an analytical dependency, not the main application backend.
+
+---
+
+### Fleet Intelligence Dashboard
+
+The administrative interface gained:
 
 ```txt
 /admin/analytics
 ```
 
-The analytics dashboard should follow the existing visual identity of the project, but with a more executive and data-driven presentation.
+The page evolved from a simple analytics output into an operational intelligence experience.
 
----
-
-## 12. Route Protection
-
-Analytics routes must be admin-only.
-
-The frontend must not expose analytics data to regular users.
-
-The backend must protect all analytics endpoints using the existing authentication and role-based authorization strategy.
-
-Expected route behavior:
+The final structure prioritizes:
 
 ```txt
-Unauthenticated user → 401
-Authenticated regular user → 403
-Authenticated admin → 200
+Context
+↓
+Filters
+↓
+KPIs
+↓
+Immediate visual response
+↓
+Operational interpretation
+↓
+Maintenance
+↓
+Rankings
+↓
+Data export
+```
+
+The frontend uses React and native SVG for visualizations without introducing a new charting library.
+
+---
+
+### Operational Analytics UX Evolution
+
+The final Fleet Intelligence experience includes:
+
+- a dedicated visual identity;
+- internal sidebar navigation;
+- scroll-aware active section highlighting;
+- improved information hierarchy;
+- better use of page width;
+- reduced visual repetition;
+- contextual copy written for product users instead of developers;
+- compact first-fold presentation for easier operational reading and project demos.
+
+The React page is intentionally positioned as **operational analytics**.
+
+Its main question is:
+
+> What is happening with the fleet now?
+
+A future Power BI layer will focus on deeper historical exploration and comparative analysis.
+
+---
+
+### Automatic Filters
+
+Supported filters:
+
+```txt
+Start date
+End date
+Status
+Vehicle
+Department
+```
+
+The final interaction is:
+
+```txt
+Select filter
+↓
+Automatic update
+↓
+New metrics and visualizations
+```
+
+The page uses:
+
+- a short debounce;
+- background refresh;
+- preservation of the previous data while a new request is loading;
+- visual indication that the analysis is updating;
+- active filter chips;
+- clear filter reset.
+
+The final date is treated as inclusive throughout the selected day.
+
+---
+
+### Contextual KPIs
+
+The KPI layer adapts to the active analytical scope.
+
+Examples:
+
+```txt
+Reservations
+1,620
+```
+
+With an active filter:
+
+```txt
+Reservations in scope
+10
+
+10 of 1,620 in history
+```
+
+When a specific vehicle is selected, the interface avoids presenting redundant information such as a generic vehicle count of `1` when another contextual indicator is more useful.
+
+---
+
+### Adaptive Temporal Analysis
+
+The reservation evolution visualization adapts to the number of available periods.
+
+#### Three or more periods
+
+A complete temporal chart is displayed.
+
+#### Two periods
+
+The interface presents a direct comparison and percentage change.
+
+#### One period
+
+The page presents a period summary instead of forcing an almost empty chart.
+
+This prevents visually weak charts and improves the interpretation of small analytical scopes.
+
+---
+
+### Contextual Insights
+
+Insights are generated according to the active filter context.
+
+Without a specific filter, the page can highlight:
+
+- the most requested vehicle;
+- the department with the highest demand;
+- current maintenance attention.
+
+With a vehicle filter, the page prioritizes:
+
+- reservations for that vehicle;
+- average reservation duration;
+- maintenance context.
+
+With department or status filters, the insights adapt to the selected scope.
+
+This avoids redundant outputs such as:
+
+```txt
+Selected vehicle: Honda HRV
+Insight: Most requested vehicle: Honda HRV
 ```
 
 ---
 
-## 13. Fallback Strategy
+### Status Semantics
 
-The Node.js backend must not crash if the Python service is offline.
+The backend status values were preserved.
 
-If Python analytics is unavailable, the backend should return a safe response such as:
+Technical values remain:
 
-```json
-{
-  "source": "fallback",
-  "message": "Analytics service unavailable",
-  "metrics": null,
-  "insights": []
-}
+```txt
+pending
+approved
+return_pending
+completed
+rejected
+cancelled
 ```
 
-This keeps the main system stable.
+The interface introduced a clearer operational interpretation.
 
-Analytics is an intelligence layer, not the source of truth for operational workflows.
+#### In progress
+
+```txt
+Pending
+Active
+Return pending
+```
+
+#### Closed
+
+```txt
+Completed
+Rejected
+Cancelled
+```
+
+The backend value:
+
+```txt
+approved
+```
+
+is presented to users as:
+
+```txt
+Active
+```
+
+This makes it clear that an approved reservation represents a current operational stage, while a completed reservation represents the end of the lifecycle.
+
+Conceptual flow:
+
+```txt
+PENDING
+   │
+   ├── REJECTED
+   │
+   └── ACTIVE / APPROVED
+            │
+            ├── CANCELLED
+            │
+            └── RETURN PENDING
+                       │
+                       └── COMPLETED
+```
 
 ---
 
-## 14. Power BI Strategy
+### Maintenance Intelligence
 
-Power BI will be introduced as an executive presentation layer.
+Maintenance alerts remain an operational view of the current fleet.
 
-It should not be required for the application to work.
+Historical filters such as period, department or rental status do not hide current maintenance alerts.
 
-The first Power BI-ready output may be:
+When a specific vehicle is selected, the maintenance view can be restricted to that vehicle.
+
+This behavior is intentional because maintenance represents the fleet's current operational state rather than a historical rental result.
+
+---
+
+### Empty States
+
+When an analytical scope returns no rentals, the interface displays a single clear empty state instead of repeating several independent "no data" messages.
+
+Example:
+
+```txt
+No reservations were found with the current filters.
+
+Adjust the period or remove one of the filters to expand the analysis.
+```
+
+Current maintenance alerts can remain visible even when the rental scope is empty.
+
+---
+
+### Power BI-ready Exports
+
+The backend exposes:
 
 ```txt
 GET /api/analytics/export/json
+GET /api/analytics/export/csv?table=<table>
 ```
 
-or:
+Supported tables:
 
 ```txt
-GET /api/analytics/export/csv
+summary
+rentals
+vehicles
+mileageHistory
+rentalsByStatus
+vehicleUsage
+departmentUsage
+rentalTrend
+maintenanceAlerts
 ```
 
-Power BI should consume analytical datasets, not raw sensitive operational data.
-
----
-
-## 15. Development Roadmap
-
-### 13.0 — Initial Setup
-
-Status: completed.
-
-Actions:
-
-* Create branch.
-* Confirm Docker works.
-* Confirm MongoDB Atlas connection.
-* Confirm backend health check.
-* Create initial empty commit.
-
-Expected commit:
-
-```bash
-git commit --allow-empty -m "chore: start phase 13 fleet intelligence"
-```
-
----
-
-### 13.A — Phase Documentation
-
-Goal:
-
-Create this documentation file.
-
-Expected file:
+CSV formatting was adjusted for Excel in Portuguese-Brazil environments:
 
 ```txt
-docs/phase-13.md
+Delimiter: ;
+Decimal separator: ,
+Encoding: UTF-8 with BOM
+Line ending: CRLF
 ```
 
-Expected commit:
+The Phase 13 scope prepares the analytical datasets.
 
-```bash
-git add docs/phase-13.md
-git commit -m "docs: add phase 13 fleet intelligence plan"
-```
+The Power BI report itself is intentionally left for a separate project phase.
 
 ---
 
-### 13.B — Backend Analytics Boundary
+### Analytics Fallback
 
-Goal:
+The Node.js backend does not fail when the Python service is unavailable.
 
-Create backend analytics route, controller, service and client boundaries without heavy analytics logic.
-
-Expected commit:
-
-```bash
-git commit -m "feat: add analytics backend boundary"
-```
-
----
-
-### 13.C — Normalize Fleet Dataset
-
-Goal:
-
-Create a clean normalized dataset from operational models.
-
-Expected commit:
-
-```bash
-git commit -m "feat: normalize fleet analytics dataset"
-```
-
----
-
-### 13.D — Python Analytics Service Foundation
-
-Goal:
-
-Create the FastAPI service structure with health endpoints.
-
-Expected commit:
-
-```bash
-git commit -m "feat: add python analytics service foundation"
-```
-
----
-
-### 13.E — Pandas Metrics
-
-Goal:
-
-Implement the first metrics with Pandas.
-
-Expected commit:
-
-```bash
-git commit -m "feat: calculate fleet analytics metrics with pandas"
-```
-
----
-
-### 13.F — Node to Python Integration
-
-Goal:
-
-Connect the Node.js backend to the Python analytics service.
-
-Expected commit:
-
-```bash
-git commit -m "feat: integrate backend with python analytics service"
-```
-
----
-
-### 13.G — Admin Analytics Dashboard
-
-Goal:
-
-Create the `/admin/analytics` page.
-
-Expected commit:
-
-```bash
-git commit -m "feat: add admin analytics dashboard"
-```
-
----
-
-### 13.H — Presentation Polish
-
-Goal:
-
-Improve the visual presentation for portfolio, LinkedIn and demo video.
-
-Expected commit:
-
-```bash
-git commit -m "style: polish analytics dashboard presentation"
-```
-
----
-
-### 13.I — Power BI Export
-
-Goal:
-
-Create export endpoint for analytical datasets.
-
-Expected commit:
-
-```bash
-git commit -m "feat: add analytics export for power bi"
-```
-
----
-
-### 13.J — Docker Compose Integration
-
-Goal:
-
-Add analytics-service to Docker Compose.
-
-Expected commit:
-
-```bash
-git commit -m "chore: add analytics service to docker compose"
-```
-
----
-
-### 13.K — Tests
-
-Goal:
-
-Add coverage for backend analytics routes, dataset normalization and Python metrics.
-
-Expected commit:
-
-```bash
-git commit -m "test: add analytics service coverage"
-```
-
----
-
-### 13.L — README and Storytelling
-
-Goal:
-
-Update README with architecture, usage, endpoints, screenshots and portfolio explanation.
-
-Expected commit:
-
-```bash
-git commit -m "docs: update readme with fleet intelligence phase"
-```
-
----
-
-## 16. Success Criteria
-
-Phase 13 is successful when:
-
-* the project has a documented analytics architecture;
-* backend analytics endpoints are admin-protected;
-* operational data is normalized before analytics processing;
-* Python FastAPI service calculates useful fleet metrics;
-* React dashboard displays metrics clearly;
-* Docker can run the full system;
-* the analytics service can fail without breaking the main app;
-* exports are prepared for Power BI;
-* README explains why Python was introduced;
-* the feature can be defended in technical interviews.
-
----
-
-## 17. Portfolio Explanation
-
-This phase can be explained as:
+Validated degraded flow:
 
 ```txt
-I evolved a fleet scheduling system into a fleet intelligence platform by adding a Python/FastAPI analytics service. The Node.js backend remains responsible for authentication, authorization and operational workflows, while Python processes normalized fleet data using Pandas to generate KPIs, rankings, maintenance alerts and Power BI-ready datasets.
+Python unavailable
+        ↓
+Node.js remains available
+        ↓
+Operational workflows continue
+        ↓
+Basic counts remain visible
+        ↓
+Advanced analytics are hidden
 ```
 
-A shorter version:
+The page clearly communicates degraded mode instead of rendering incomplete analytics as if they were complete.
+
+---
+
+### Docker Compose Integration
+
+The local environment now includes:
 
 ```txt
-I added a Python analytics layer to a MERN fleet management project, using FastAPI and Pandas to transform operational data into decision-making metrics without mixing analytical processing into the main Node.js backend.
+fleet-frontend
+fleet-backend
+fleet-analytics-service
+```
+
+Internal service communication:
+
+```txt
+Backend
+   ↓
+http://analytics-service:8000
+```
+
+The analytics service includes health checks, and the backend is configured to wait for service readiness in the containerized environment.
+
+---
+
+## 📊 Annual Demonstration Dataset
+
+A deterministic annual presentation seed was introduced:
+
+```txt
+backend/scripts/seedAnnualPresentation.js
+```
+
+Commands:
+
+```bash
+cd backend
+npm run seed:annual:dry-run
+npm run seed:annual
+```
+
+The dataset simulates the 2025 closing period of a company with approximately 1,000 employees.
+
+Final scenario:
+
+```txt
+Company employees: 1,000
+System users: 226
+Original fleet vehicles: 5
+Rental requests: 1,620
+Completed rentals: 1,330
+Mileage history records: 1,330
+Registered mileage: 111,120 km
+Average reservation duration: 3.72 h
+Maintenance alerts: 3
+```
+
+Original fleet preserved:
+
+```txt
+Jeep Compass
+Volkswagen Polo Highline
+Toyota Yaris
+Toyota Etios
+Honda HRV
+```
+
+Rental status distribution:
+
+```txt
+Completed: 1,330
+Rejected: 140
+Cancelled: 100
+Pending: 20
+Active: 20
+Return pending: 10
+```
+
+Monthly distribution:
+
+```txt
+01/2025: 100
+02/2025: 110
+03/2025: 140
+04/2025: 145
+05/2025: 155
+06/2025: 135
+07/2025: 110
+08/2025: 150
+09/2025: 165
+10/2025: 170
+11/2025: 145
+12/2025: 95
+```
+
+The seed is deterministic and produces the same scenario across dry runs.
+
+> The dataset is demonstrative and simulated for technical presentation. It does not represent operational data from a real company.
+
+---
+
+## 🛡️ Architectural Guarantees
+
+The phase preserves the boundaries established in previous phases.
+
+```txt
+React
+  ↓
+Node.js / Express
+  ├── Authentication
+  ├── Authorization
+  ├── MongoDB
+  ├── Operational workflows
+  └── Analytics boundary
+          ↓
+      FastAPI
+          ↓
+       Pandas
+```
+
+Key guarantees:
+
+- Node.js remains the public backend.
+- Python is not a second public backend.
+- MongoDB remains the source of truth.
+- Analytics cannot break the main fleet workflows.
+- Analytical processing remains isolated from operational business rules.
+- The frontend does not need to know how analytics is internally processed.
+
+---
+
+## 🧪 Validation & Testing
+
+### Complete Backend Suite
+
+Validated result:
+
+```txt
+5 test suites passed
+37 tests passed
+```
+
+### Targeted Node.js Analytics Suite
+
+Validated result:
+
+```txt
+3 test suites passed
+19 tests passed
+```
+
+Coverage:
+
+```txt
+Statements: 82.22%
+Branches:   60.31%
+Functions:  89.09%
+Lines:      87.25%
+```
+
+Main coverage areas:
+
+- authentication;
+- admin-only authorization;
+- analytics health endpoint;
+- query filter forwarding;
+- Node-to-Python contract;
+- safe fallback;
+- JSON export headers;
+- CSV export headers;
+- UTF-8 BOM;
+- analytical orchestration;
+- operational error propagation.
+
+### Python Analytics Suite
+
+Validated result:
+
+```txt
+24 tests passed
+Total coverage: 96.09%
+Required coverage: 80%
+```
+
+Main coverage areas:
+
+- health endpoints;
+- normalized dataset contract;
+- filtered metrics;
+- temporal analysis;
+- inclusive final-date filtering;
+- mileage filtering;
+- maintenance ordering;
+- empty dataset stability;
+- count mismatch warnings;
+- all supported export tables;
+- Excel pt-BR CSV formatting;
+- sensitive-field exclusion;
+- CSV escaping.
+
+### Manual Validation
+
+The following scenarios were manually validated:
+
+- complete historical dataset;
+- vehicle filter;
+- vehicle plus date period;
+- department filter;
+- department plus status;
+- status filter;
+- empty rental scope;
+- one-period temporal scope;
+- two-period temporal scope;
+- operational statuses with small counts;
+- historical statuses with larger counts;
+- automatic filter updates;
+- collapsed and expanded filter area;
+- internal sidebar navigation;
+- Python service available;
+- Python service unavailable;
+- recovery after restarting Python;
+- JSON export;
+- CSV export;
+- annual demonstration dataset.
+
+---
+
+## ⚖️ Trade-offs and Explicit Decisions
+
+- Python was introduced for analytical processing, not only to add another language to the stack.
+- FastAPI remains behind Node.js instead of becoming a second public backend.
+- Python does not access MongoDB directly.
+- Analytics remains optional for the main operational workflow.
+- React provides operational intelligence, while deeper BI is deferred to Power BI.
+- Native React and SVG were kept instead of adding a charting dependency.
+- Machine learning was intentionally excluded because deterministic analytics solves the current problem.
+- Maintenance alerts represent current fleet state and are not fully constrained by historical rental filters.
+- The annual dataset is simulated and explicitly documented as demonstrative.
+
+These decisions are conscious and documented.
+
+---
+
+## 📂 Main Files Introduced / Modified
+
+### Python Analytics
+
+```txt
+analytics-service/
+```
+
+### Node.js Analytics
+
+```txt
+backend/src/controllers/analyticsController.js
+backend/src/routes/analyticsRoutes.js
+backend/src/services/analyticsClient.js
+backend/src/services/analyticsService.js
+backend/jestAnalytics.config.js
+```
+
+### Backend Tests
+
+```txt
+backend/tests/http/analyticsRoutes.test.js
+backend/tests/services/analyticsClient.test.js
+backend/tests/services/analyticsService.test.js
+```
+
+### Annual Dataset
+
+```txt
+backend/scripts/seedAnnualPresentation.js
+```
+
+### Frontend
+
+```txt
+frontend/src/pages/adminAnalytics.js
+frontend/src/services/analyticsService.js
+frontend/src/components/Layout.js
+frontend/src/styles/analytics.css
+frontend/src/styles/layout.css
+```
+
+### Infrastructure
+
+```txt
+docker-compose.yml
+backend/.env.example
 ```
 
 ---
 
-## 18. Engineering Principles
+## 🧠 Key Engineering Learnings
 
-This phase follows the same principles as the rest of the project:
-
-* incremental development;
-* small commits;
-* branch per feature;
-* documentation per phase;
-* clear separation of concerns;
-* no business logic inside routes;
-* no heavy logic inside controllers;
-* backend remains the secure API boundary;
-* Python has a clear analytical responsibility;
-* frontend focuses on presentation;
-* tests protect important rules;
-* Docker keeps the environment reproducible.
+- A new service should have a clear responsibility instead of existing only for technology variety.
+- Integration boundaries are easier to maintain when they exchange normalized contracts.
+- A secondary analytical service needs explicit failure behavior.
+- Operational analytics and business intelligence solve different problems.
+- Filters should change both the data and the interpretation of the interface.
+- Technical status names are not always the best product language.
+- Current operational alerts may need different filtering rules from historical analysis.
+- Test coverage is most useful when focused on architectural boundaries and failure modes.
 
 ---
 
-## 19. Current Status
+## 🚀 Phase 13 Outcome
 
-Phase 13 has been initialized.
+Before this phase, Fleet Vehicle Scheduling already handled the complete operational lifecycle of a corporate fleet.
 
-The current branch is:
+After Phase 13, the project also includes:
 
-```txt
-feat/phase-13-fleet-intelligence
-```
+- a dedicated Python analytics service;
+- FastAPI integration;
+- Pandas-based analytical processing;
+- a normalized Node-to-Python contract;
+- operational Fleet Intelligence inside React;
+- contextual filtering and insights;
+- temporal analysis;
+- maintenance intelligence;
+- Power BI-ready datasets;
+- safe degraded mode;
+- containerized analytics infrastructure;
+- dedicated test coverage;
+- a reproducible annual presentation scenario.
 
-Initial environment validation:
+Phase 13 transforms the project from a fleet scheduling application into a system that can both **operate the fleet** and **interpret its operational data**.
 
-```txt
-Backend health check: OK
-MongoDB Atlas connection: OK
-Frontend Docker startup: OK
-Backend Docker startup: OK
-```
+---
 
-Next step:
+## ✅ Phase 13 Completion Checklist
 
-```txt
-13.B — Backend Analytics Boundary
-```
+- [x] Analytics backend boundary implemented
+- [x] Admin-only analytics access implemented
+- [x] Operational dataset normalized
+- [x] FastAPI analytics service created
+- [x] Pandas analytics implemented
+- [x] Node-to-Python integration completed
+- [x] Safe fallback implemented
+- [x] Fleet Intelligence dashboard created
+- [x] Operational analytics UX refined
+- [x] Automatic filters implemented
+- [x] Temporal analysis implemented
+- [x] Contextual KPIs and insights implemented
+- [x] Status semantics refined
+- [x] Maintenance intelligence implemented
+- [x] JSON and CSV exports implemented
+- [x] Power BI-ready datasets prepared
+- [x] Docker Compose integration completed
+- [x] Node.js analytics tests completed
+- [x] Python analytics tests completed
+- [x] Annual demonstration dataset added
+- [x] Final documentation completed
+
+Phase 13 is considered complete.
+
+The project is now ready for the next analytical evolution: **Power BI reporting and deeper historical exploration**.
