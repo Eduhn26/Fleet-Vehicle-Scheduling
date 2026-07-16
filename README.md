@@ -4,20 +4,25 @@
 
 # Fleet Vehicle Scheduling
 
-**Full-stack fleet management and vehicle scheduling system built with Node.js, Express, MongoDB and React.**
+**Full-stack fleet management, vehicle scheduling and operational intelligence platform built with Node.js, React, MongoDB and Python.**
 
 <br/>
 
 [![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
-[![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactjs.org)
+[![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
 [![MongoDB](https://img.shields.io/badge/MongoDB_Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://mongodb.com)
+[![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Pandas](https://img.shields.io/badge/Pandas-150458?style=flat-square&logo=pandas&logoColor=white)](https://pandas.pydata.org)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docker.com)
 [![Jest](https://img.shields.io/badge/Jest-tested-C21325?style=flat-square&logo=jest&logoColor=white)](https://jestjs.io)
 [![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=flat-square&logo=github-actions&logoColor=white)](https://github.com/features/actions)
 
 <br/>
 
-[🖥️ Live Demo](https://fleet-vehicle-scheduling.vercel.app) · [⚙️ API](https://fleet-vehicle-scheduling.onrender.com) · [🩺 Health Check](https://fleet-vehicle-scheduling.onrender.com/api/health)
+[🖥️ Live Demo](https://fleet-vehicle-scheduling.vercel.app) ·
+[⚙️ API](https://fleet-vehicle-scheduling.onrender.com) ·
+[🩺 Health Check](https://fleet-vehicle-scheduling.onrender.com/api/health)
 
 <br/>
 
@@ -27,9 +32,24 @@
 
 ## Sobre o Projeto
 
-Sistema de gestão de frota corporativa construído para demonstrar **práticas reais de engenharia de software** — arquitetura em camadas, evolução progressiva do sistema, CI/CD, observabilidade e deploy containerizado.
+O **Fleet Vehicle Scheduling** é uma plataforma corporativa de gestão de frota construída para demonstrar a evolução real de um sistema full stack ao longo de fases incrementais de engenharia.
 
-Em vez de implementar tudo de uma vez, o sistema foi construído em **12 fases incrementais de engenharia**, cada uma introduzindo novas capacidades arquiteturais enquanto preserva a fundação existente — simulando como sistemas de produção realmente evoluem ao longo do tempo.
+O projeto cobre:
+
+- autenticação e autorização;
+- gestão de veículos;
+- solicitações e aprovação de reservas;
+- devolução e quilometragem;
+- manutenção;
+- testes automatizados;
+- CI/CD;
+- observabilidade;
+- Docker;
+- inteligência operacional da frota.
+
+Na Fase 13, o sistema ganhou uma camada dedicada de **Fleet Intelligence** com Python, FastAPI e Pandas.
+
+A aplicação continua usando Node.js como backend principal. O serviço Python recebe apenas um dataset normalizado e processa indicadores, rankings, séries temporais, alertas de manutenção e exportações analíticas.
 
 ---
 
@@ -37,27 +57,192 @@ Em vez de implementar tudo de uma vez, o sistema foi construído em **12 fases i
 
 | Categoria | Tecnologia |
 |---|---|
-| Backend | Node.js, Express |
-| Banco de dados | MongoDB Atlas |
-| ODM | Mongoose |
-| Autenticação | JWT |
 | Frontend | React, React Router |
-| Cliente HTTP | Axios |
-| Testes | Jest, Supertest, MongoMemoryServer |
+| Backend operacional | Node.js, Express |
+| Banco de dados | MongoDB Atlas, Mongoose |
+| Autenticação | JWT |
+| Analytics | Python, FastAPI, Pandas |
+| Validação | Zod, Pydantic |
+| Testes Node.js | Jest, Supertest, MongoMemoryServer |
+| Testes Python | Pytest, pytest-cov |
 | CI/CD | GitHub Actions |
 | Containerização | Docker, Docker Compose |
-| Hosting | Render (API) · Vercel (Frontend) |
+| Hosting | Render, Vercel |
+| Cliente HTTP | Axios |
 | Tooling | ESLint, Prettier, Nodemon |
 
 ---
 
-## Quick Start (Docker)
+## Arquitetura do Sistema
 
-O sistema completo sobe com um único comando — sem necessidade de instalar Node.js manualmente.
+```txt
+React
+  ↓
+Node.js / Express
+  ├── MongoDB Atlas
+  ├── Authentication
+  ├── Authorization
+  ├── Operational workflows
+  └── Normalized analytics dataset
+          ↓
+      FastAPI
+          ↓
+       Pandas
+          ↓
+ KPIs, rankings, trends,
+ maintenance alerts and exports
+```
+
+### Responsabilidades
+
+| Camada | Responsabilidade |
+|---|---|
+| React | Interface operacional, filtros e visualização |
+| Node.js | API pública, autenticação, autorização, regras operacionais e analytics boundary |
+| MongoDB | Fonte de verdade dos dados operacionais |
+| FastAPI | Contrato interno do serviço analítico |
+| Pandas | Transformações, métricas, rankings, séries temporais e exportações |
+
+O frontend não chama Python diretamente.
+
+O serviço Python não acessa MongoDB diretamente.
+
+O backend Node.js continua sendo o ponto seguro de entrada da aplicação.
+
+---
+
+## Fleet Intelligence
+
+A área administrativa possui:
+
+```txt
+/admin/analytics
+```
+
+A experiência de inteligência operacional apresenta:
+
+- filtros automáticos por período, status, veículo e departamento;
+- KPIs contextuais;
+- evolução temporal das reservas;
+- leitura semântica dos status;
+- rankings de utilização;
+- demanda por departamento;
+- quilometragem;
+- alertas de manutenção;
+- insights contextuais;
+- navegação interna;
+- exportação de dados.
+
+A interface React responde principalmente:
+
+> O que está acontecendo com a frota agora?
+
+Análises históricas profundas e exploração gerencial ficam preparadas para uma futura camada de Power BI.
+
+---
+
+## Mini ETL
+
+A Fase 13 introduz um fluxo analítico pequeno e adequado ao escopo do projeto:
+
+```txt
+Extract
+  Node.js consulta os dados operacionais
+        ↓
+Transform
+  Node.js normaliza o dataset
+  Pandas calcula as métricas
+        ↓
+Load
+  React recebe os indicadores
+  Node.js disponibiliza JSON e CSV
+```
+
+---
+
+## Analytics Fallback
+
+A camada analítica não é necessária para os fluxos principais.
+
+Se o serviço Python ficar indisponível:
+
+```txt
+Node.js permanece disponível
+Reservas continuam funcionando
+Veículos continuam funcionando
+Devoluções continuam funcionando
+Contagens básicas permanecem disponíveis
+Analytics avançado entra em modo degradado
+```
+
+Isso impede que uma dependência secundária derrube o sistema operacional.
+
+---
+
+## Exportações Analíticas
+
+Endpoints:
+
+```txt
+GET /api/analytics/export/json
+GET /api/analytics/export/csv?table=<table>
+```
+
+Tabelas disponíveis:
+
+```txt
+summary
+rentals
+vehicles
+mileageHistory
+rentalsByStatus
+vehicleUsage
+departmentUsage
+rentalTrend
+maintenanceAlerts
+```
+
+CSV preparado para Excel pt-BR:
+
+```txt
+Delimiter: ;
+Decimal separator: ,
+Encoding: UTF-8 with BOM
+Line ending: CRLF
+```
+
+---
+
+## Dataset Anual Demonstrativo
+
+O projeto inclui uma seed determinística para demonstração anual.
+
+```bash
+cd backend
+npm run seed:annual:dry-run
+```
+
+Cenário:
+
+```txt
+Ano: 2025
+Empresa simulada: 1.000 funcionários
+Usuários do sistema: 226
+Veículos: 5
+Solicitações: 1.620
+Reservas concluídas: 1.330
+Quilometragem registrada: 111.120 km
+```
+
+> Os dados são demonstrativos e simulados. Não representam dados operacionais de uma empresa real.
+
+---
+
+## Quick Start com Docker
 
 ```bash
 git clone <repository-url>
-cd fleet-vehicle-scheduling
+cd Fleet-Vehicle-Scheduling
 docker compose up --build
 ```
 
@@ -65,204 +250,90 @@ docker compose up --build
 |---|---|
 | Frontend | http://localhost:3000 |
 | Backend API | http://localhost:5000 |
-| Health Check | http://localhost:5000/api/health |
+| Backend Health | http://localhost:5000/api/health |
+| Analytics Service | http://localhost:8000 |
+| Analytics Readiness | http://localhost:8000/health/ready |
+
+Parar os containers:
 
 ```bash
-# Parar os containers
 docker compose down
 ```
 
 ---
 
-## Arquitetura do Sistema
-
-```
-┌──────────────────────────────────────┐
-│          React  (Vercel)             │  ← Interface do usuário
-└─────────────────┬────────────────────┘
-                  │ HTTPS / Axios
-┌─────────────────▼────────────────────┐
-│     Node.js + Express  (Render)      │  ← Lógica de negócio & API
-└─────────────────┬────────────────────┘
-                  │ Mongoose
-┌─────────────────▼────────────────────┐
-│           MongoDB Atlas              │  ← Persistência
-└──────────────────────────────────────┘
-```
-
-| Camada | Responsabilidade |
-|---|---|
-| **Frontend (React)** | Interface, fluxo de autenticação, dashboards, interação com workflows |
-| **Backend (Express)** | Lógica de negócio, ciclo de vida das reservas, autenticação, validação |
-| **Banco (MongoDB)** | Armazenamento persistente de usuários, veículos e reservas |
-
----
-
-## Arquitetura do Backend
-
-O backend segue uma **arquitetura em camadas estrita** que isola responsabilidades em quatro níveis:
-
-```
-HTTP Request
-     │
-     ▼
-  Routes       →  Define endpoints da API
-     │
-     ▼
-Controllers    →  Parse de request, formatação de response
-     │
-     ▼
-  Services     →  Toda a lógica de negócio vive aqui
-     │
-     ▼
-   Models      →  Schemas Mongoose e acesso ao banco
-```
-
-| Camada | Responsabilidade | Exemplo |
-|---|---|---|
-| **Routes** | Definição de endpoints | `POST /api/auth/login` |
-| **Controllers** | Orquestração HTTP | Parse de request, formatação de response |
-| **Services** | Regras de negócio | `createRental()`, `approveRequest()` |
-| **Models** | Schemas do banco | Schemas Mongoose |
-
-### Princípios de design
-
-- **Service isolation** — Regras de negócio vivem exclusivamente nos Services; nunca em Controllers ou Routes
-- **Thin controllers** — Controllers orquestram chamadas mas não contêm lógica de negócio
-- **Erros padronizados** — Classe centralizada `AppError` garante respostas de erro consistentes na API
-- **Validação em camadas** — Estrutura do request validada em middleware; regras de domínio validadas nos services
-- **Lifecycle protection** — Toda transição de estado de reserva é validada explicitamente antes de ser executada
-
----
-
-## Ciclo de Vida da Frota
-
-Veículos seguem um ciclo de vida bem definido com transições de estado explícitas e validadas:
-
-```
-                ┌──────────────────┐
-                │   Disponível     │
-                └────────┬─────────┘
-                         │ Usuário solicita
-                ┌────────▼─────────┐
-                │    Reserva       │
-                │   Solicitada     │
-                └────────┬─────────┘
-                         │ Admin aprova
-                ┌────────▼─────────┐
-                │    Em Uso        │
-                └────────┬─────────┘
-                         │ Usuário submete quilometragem
-                ┌────────▼─────────┐
-                │    Devolução     │
-                │   Solicitada     │
-                └────────┬─────────┘
-                         │ Admin confirma
-                ┌────────▼─────────┐
-                │  Quilometragem   │
-                │   Atualizada     │
-                └────────┬─────────┘
-                         │
-             ┌───────────┴───────────┐
-             │  threshold OK?        │
-       ┌─────▼──────┐       ┌────────▼────────┐
-       │ Disponível │       │   Manutenção    │
-       └────────────┘       └─────────────────┘
-```
-
-> Se a quilometragem de retorno **exceder o threshold de manutenção**, o veículo é automaticamente movido para o status **Manutenção**.
-
----
-
 ## Testes
 
+### Backend
+
 ```bash
+cd backend
 npm test
 ```
 
-**Stack de testes:** Jest · Supertest · MongoMemoryServer (MongoDB in-memory para testes isolados)
+Resultado validado:
 
-```
-backend/tests/
-├── helpers/
-│   └── appErrorAssert.js        # Helpers de asserção de erros customizados
-├── http/
-│   └── rentalRoutes.test.js     # Testes de integração HTTP
-└── services/
-    └── rentalService.test.js    # Testes unitários de lógica de negócio
+```txt
+5 suites
+37 tests
 ```
 
-**Cobertura:**
+### Analytics Node.js
 
-- Criação de solicitação de reserva
-- Workflows de aprovação e rejeição pelo admin
-- Regras de cancelamento e proteção contra conflitos de agendamento
-- Ciclo de vida de devolução e validação de quilometragem
-- Lógica de threshold de manutenção
-- Validação de request/response nos endpoints HTTP
-
----
-
-## CI Pipeline
-
-Roda automaticamente em todo **push** e **pull request** via GitHub Actions.
-
-```
-npm ci → npm run lint → npm test
+```bash
+npm run test:analytics
+npm run test:analytics:coverage
 ```
 
-Todos os três estágios precisam passar antes que um branch possa ser mergeado.
+Resultado validado:
 
----
+```txt
+3 suites
+19 tests
 
-## Observabilidade
-
-Cada request HTTP é logado com um **correlation ID** para rastreamento ponta a ponta:
-
+Statements: 82.22%
+Branches:   60.31%
+Functions:  89.09%
+Lines:      87.25%
 ```
-[2026-03-13T12:15:53.590Z] [req:54bd0435] [ip:127.0.0.1] GET /api/vehicles 200 19ms
+
+### Python Analytics
+
+```bash
+docker compose run --rm analytics-service pytest
 ```
 
-**Recursos operacionais adicionais:**
+Resultado validado:
 
-- Log estruturado em JSON para diagnóstico legível por máquinas
-- Rate limiting com resposta HTTP `429` ao atingir o threshold
-- Suporte a reverse proxy com forwarding de headers confiáveis
-- Endpoint `/api/health` com metadados do serviço: nome, versão, ambiente, uptime e requestId
+```txt
+24 tests
+96.09% coverage
+```
 
 ---
 
 ## Estrutura do Projeto
 
-```
-fleet-vehicle-scheduling/
+```txt
+Fleet-Vehicle-Scheduling/
+├── analytics-service/
+│   ├── app/
+│   ├── tests/
+│   ├── Dockerfile
+│   └── requirements.txt
 ├── backend/
+│   ├── scripts/
 │   ├── src/
-│   │   ├── config/           # Configuração de ambiente e banco de dados
-│   │   ├── controllers/      # Handlers de request/response HTTP
-│   │   ├── middleware/       # Auth, validação, logging, rate limiting
-│   │   ├── models/           # Schemas Mongoose
-│   │   ├── routes/           # Definições de endpoints da API
-│   │   ├── services/         # Camada de lógica de negócio
-│   │   ├── utils/            # Utilitários compartilhados (AppError, logger)
-│   │   └── validators/       # Validadores de estrutura de request
-│   ├── tests/                # Suites Jest
-│   ├── scripts/              # Scripts utilitários e de seed
-│   ├── Dockerfile
-│   ├── jest.config.js
-│   └── server.js
+│   └── tests/
 ├── frontend/
-│   ├── Dockerfile
 │   └── src/
-│       ├── components/       # Componentes de UI reutilizáveis
-│       ├── context/          # React Context (Auth)
-│       ├── pages/            # Views por página
-│       ├── services/         # Wrappers do cliente Axios
-│       └── styles/           # CSS global e por componente
-└── docs/
-    ├── phase-1.md
-    ├── ...
-    └── phase-12.md           # Diário de engenharia fase a fase
+├── docs/
+│   ├── phase-1.md
+│   ├── ...
+│   ├── phase-12.md
+│   └── phase-13.md
+├── docker-compose.yml
+└── README.md
 ```
 
 ---
@@ -271,18 +342,21 @@ fleet-vehicle-scheduling/
 
 | Feature | Status |
 |---|---|
-| Autenticação JWT e dashboards por role | ✅ |
-| Criação de solicitação de reserva de veículo | ✅ |
-| Workflows de aprovação e rejeição pelo admin | ✅ |
-| Cancelamento com proteção contra conflitos | ✅ |
-| Ciclo de vida completo da frota com rastreamento de quilometragem | ✅ |
-| Transições automáticas para ciclo de manutenção | ✅ |
-| Testes automatizados e pipeline de CI | ✅ |
-| Request logging estruturado com correlation IDs | ✅ |
-| Rate limiting de API | ✅ |
-| Health diagnostics operacional | ✅ |
-| Desenvolvimento local containerizado (Docker) | ✅ |
-| UI responsiva para dispositivos móveis | ✅ |
+| Autenticação JWT e controle por perfil | ✅ |
+| Solicitação de reserva | ✅ |
+| Aprovação e rejeição administrativa | ✅ |
+| Cancelamento e conflito de agenda | ✅ |
+| Devolução e atualização de quilometragem | ✅ |
+| Controle de manutenção | ✅ |
+| Testes automatizados e CI | ✅ |
+| Observabilidade e correlation IDs | ✅ |
+| Rate limiting | ✅ |
+| Docker Compose | ✅ |
+| Fleet Intelligence | ✅ |
+| Filtros e análise temporal | ✅ |
+| Analytics fallback | ✅ |
+| Exportação JSON e CSV | ✅ |
+| Dataset anual demonstrativo | ✅ |
 
 ---
 
@@ -290,20 +364,27 @@ fleet-vehicle-scheduling/
 
 | Fase | Foco |
 |---|---|
-| **Fase 1** | Fundação do backend e setup de ambiente |
-| **Fase 2** | Camada de services e centralização da lógica de negócio |
-| **Fase 3** | HTTP API, autenticação e validação |
-| **Fase 4** | Fundação do frontend React |
-| **Fase 5** | Workflow de solicitação de reserva |
-| **Fase 6** | Regras do ciclo de vida das reservas |
-| **Fase 7** | Melhorias de UX e workflow do admin |
-| **Fase 8** | Deploy em produção |
-| **Fase 9** | Gestão do ciclo de vida da frota |
-| **Fase 10** | Testes de backend e pipeline de CI |
-| **Fase 11** | Observabilidade e diagnósticos operacionais |
-| **Fase 12** | Containerização Docker e infraestrutura local |
+| **Phase 1** | Backend foundation |
+| **Phase 2** | Service layer and business logic |
+| **Phase 3** | HTTP API, authentication and validation |
+| **Phase 4** | React frontend foundation |
+| **Phase 5** | Vehicle rental request workflow |
+| **Phase 6** | Reservation lifecycle rules |
+| **Phase 7** | UX and administrative workflows |
+| **Phase 8** | Production deployment |
+| **Phase 9** | Fleet lifecycle and vehicle operations |
+| **Phase 10** | Engineering hardening and backend quality |
+| **Phase 11** | Observability and operational maturity |
+| **Phase 12** | Docker containerization and local infrastructure |
+| **Phase 13** | Fleet Intelligence and operational analytics |
 
-Cada fase tem um documento correspondente em `/docs/` detalhando as decisões, mudanças arquiteturais e lições aprendidas.
+Cada fase possui documentação correspondente em [`/docs`](./docs).
+
+---
+
+## Explicação Técnica da Phase 13
+
+> O sistema MERN continua responsável pelos fluxos operacionais. A camada de Fleet Intelligence adiciona um serviço FastAPI que recebe um dataset normalizado do backend e usa Pandas para produzir KPIs, rankings, análise temporal, alertas de manutenção e exportações preparadas para Power BI. A integração possui timeout, fallback, testes automatizados e execução completa por Docker Compose.
 
 ---
 

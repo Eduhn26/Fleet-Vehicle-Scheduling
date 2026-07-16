@@ -5,17 +5,13 @@ import Login from './pages/login';
 import AdminDashboard from './pages/adminDashboard';
 import AdminRentals from './pages/adminRentals';
 import AdminVehicles from './pages/adminVehicles';
+import AdminAnalytics from './pages/adminAnalytics';
 import UserDashboard from './pages/userDashboard';
 import Rentals from './pages/rentals';
 
 import Layout from './components/Layout';
 import PrivateRoute from './components/PrivateRoute';
 
-/*
-ENGINEERING NOTE:
-HomeRedirect resolves the initial landing page from the authenticated role
-so users always enter the correct dashboard from the root URL.
-*/
 function HomeRedirect() {
   const { user } = useAuth();
 
@@ -39,6 +35,11 @@ export default function App() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/vehicles" element={<AdminVehicles />} />
             <Route path="/admin/rentals" element={<AdminRentals />} />
+
+            <Route element={<PrivateRoute allowedRoles={['admin']} />}>
+              <Route path="/admin/analytics" element={<AdminAnalytics />} />
+            </Route>
+
             <Route path="/user" element={<UserDashboard />} />
             <Route path="/rentals" element={<Rentals />} />
           </Route>
