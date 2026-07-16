@@ -2,7 +2,7 @@
 
 <br/>
 
-# 🚙 Fleet Vehicle Scheduling
+#  Fleet Vehicle Scheduling
 
 ### Gestão operacional de frota + inteligência analítica em uma arquitetura full stack
 
