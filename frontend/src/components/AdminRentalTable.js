@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import api from '../services/api';
 import '../styles/dashboard.css';
+import '../styles/adminRentals.css';
 
 // NOTE: Admin table that centralizes rental review, filtering and approval actions.
 function safeArray(value) {
@@ -67,6 +68,34 @@ const STATUS_PRIORITY = {
   cancelled: 5,
   completed: 6,
 };
+
+function UserEmail({ email }) {
+  const normalizedEmail = String(email || '').trim();
+
+  if (!normalizedEmail) {
+    return <div className="cell-sub rental-user-email">-</div>;
+  }
+
+  const atIndex = normalizedEmail.lastIndexOf('@');
+
+  if (atIndex <= 0 || atIndex === normalizedEmail.length - 1) {
+    return (
+      <div className="cell-sub rental-user-email" title={normalizedEmail}>
+        <span>{normalizedEmail}</span>
+      </div>
+    );
+  }
+
+  const localPart = normalizedEmail.slice(0, atIndex);
+  const domainPart = normalizedEmail.slice(atIndex);
+
+  return (
+    <div className="cell-sub rental-user-email" title={normalizedEmail}>
+      <span>{localPart}</span>
+      <span>{domainPart}</span>
+    </div>
+  );
+}
 
 export default function AdminRentalTable({ rentals, onActionComplete }) {
   const [loadingId, setLoadingId] = useState('');
@@ -209,7 +238,7 @@ export default function AdminRentalTable({ rentals, onActionComplete }) {
 
                 <div>
                   <div className="cell-main">{userName}</div>
-                  <div className="cell-sub">{rental?.user?.email || '-'}</div>
+                  <UserEmail email={rental?.user?.email} />
                 </div>
               </div>
 
