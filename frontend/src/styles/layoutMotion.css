@@ -481,3 +481,36 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Admin rentals table — preserve full user emails on desktop ------------- */
+
+.user-cell > div:last-child {
+  width: 100%;
+  min-width: 0;
+}
+
+.user-cell .cell-main,
+.user-cell .cell-sub {
+  max-width: 100%;
+}
+
+.user-cell .cell-sub {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (min-width: 1201px) {
+  .sol-table-head,
+  .sol-table-row {
+    grid-template-columns:
+      minmax(220px, 1.4fr)
+      minmax(150px, 1fr)
+      minmax(150px, 0.9fr)
+      minmax(170px, 1.05fr)
+      minmax(115px, 0.72fr)
+      minmax(165px, 1fr);
+  }
+}
+

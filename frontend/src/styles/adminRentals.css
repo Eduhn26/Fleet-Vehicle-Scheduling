@@ -1,0 +1,29 @@
+/* Admin rentals — controlled email wrapping at the @ boundary */
+
+.sol-table-row .user-cell .rental-user-email {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  max-width: 100%;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.sol-table-row .user-cell .rental-user-email > span {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+@media (max-width: 1200px) {
+  .sol-table-row .user-cell .rental-user-email {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0;
+  }
+}
