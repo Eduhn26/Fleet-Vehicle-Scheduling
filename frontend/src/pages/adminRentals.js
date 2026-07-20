@@ -19,12 +19,14 @@ function getApiErrorMessage(err, fallbackMessage) {
 
 /*
 ENGINEERING NOTE:
-This page frames the request queue as an operational workspace, not just
-a raw table. The top summary gives urgency before the detailed rows.
+The request queue keeps its last valid data visible while an action refreshes
+the collection. Initial loading and background refresh are intentionally
+different states to avoid blank-screen flashes during operational work.
 */
 export default function AdminRentals() {
   const [rentals, setRentals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const loadRentals = async () => {
@@ -34,6 +36,7 @@ export default function AdminRentals() {
     try {
       const res = await api.get('/rentals');
       setRentals(safeArray(res?.data?.data));
+      setHasLoadedOnce(true);
     } catch (err) {
       setErrorMsg(
         getApiErrorMessage(err, 'Não foi possível carregar as solicitações.')
@@ -54,8 +57,11 @@ export default function AdminRentals() {
   );
   const completedCount = useMemo(() => countByStatus(rentals, 'completed'), [rentals]);
 
+  const isInitialLoading = loading && !hasLoadedOnce;
+  const isRefreshing = loading && hasLoadedOnce;
+
   return (
-    <div className="dashboard">
+    <div className={`dashboard operational-page${isRefreshing ? ' is-refreshing' : ''}`}>
       <section className="dashboard-hero dashboard-hero-compact">
         <div className="dashboard-hero-text">
           <span className="section-kicker">Admin queue</span>
@@ -83,11 +89,21 @@ export default function AdminRentals() {
         </div>
       </section>
 
-      {loading ? <div className="alert alert-info">Carregando solicitações...</div> : null}
-      {!loading && errorMsg ? <div className="alert alert-error">{errorMsg}</div> : null}
+      {isInitialLoading ? (
+        <div className="alert alert-info">Carregando solicitações...</div>
+      ) : null}
 
-      {!loading && !errorMsg ? (
-        <>
+      {isRefreshing ? (
+        <div className="operational-refresh-indicator" role="status" aria-live="polite">
+          <span className="operational-refresh-spinner" aria-hidden="true" />
+          Atualizando solicitações sem interromper sua visualização...
+        </div>
+      ) : null}
+
+      {errorMsg ? <div className="alert alert-error">{errorMsg}</div> : null}
+
+      {hasLoadedOnce ? (
+        <div className="operational-preserved-content" aria-busy={isRefreshing}>
           <section className="metrics-grid metrics-grid-tight">
             <div className="metric-card amber">
               <div className="metric-header">
@@ -127,7 +143,7 @@ export default function AdminRentals() {
           </section>
 
           <AdminRentalTable rentals={rentals} onActionComplete={loadRentals} />
-        </>
+        </div>
       ) : null}
     </div>
   );

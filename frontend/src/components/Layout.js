@@ -12,6 +12,8 @@ import {
 
 import { useAuth } from '../context/AuthContext';
 import '../styles/layout.css';
+import '../styles/layoutSidebar.css';
+import '../styles/layoutMotion.css';
 
 function isAdmin(user) {
   return String(user?.role || '').trim() === 'admin';
@@ -19,6 +21,10 @@ function isAdmin(user) {
 
 function linkClassName({ isActive }) {
   return `layout-link${isActive ? ' layout-link-active' : ''}`;
+}
+
+function sidebarRouteClassName({ isActive }) {
+  return `layout-sidebar-item layout-sidebar-route${isActive ? ' is-active' : ''}`;
 }
 
 function getInitials(name) {
@@ -29,6 +35,19 @@ function getInitials(name) {
     .slice(0, 2)
     .map((chunk) => chunk[0].toUpperCase())
     .join('');
+}
+
+function getPageTitle(pathname, admin) {
+  if (!admin) {
+    if (pathname.startsWith('/rentals')) return 'Minhas solicitações';
+    return 'Meu dashboard';
+  }
+
+  if (pathname.startsWith('/admin/vehicles')) return 'Gestão de veículos';
+  if (pathname.startsWith('/admin/rentals')) return 'Gestão de solicitações';
+  if (pathname.startsWith('/admin/analytics')) return 'Inteligência de Frota';
+
+  return 'Dashboard Administrativo';
 }
 
 const ANALYTICS_SECTION_IDS = [
@@ -55,10 +74,81 @@ function navigateToAnalyticsSection(event, sectionId, setActiveSection) {
   }
 }
 
-function AnalyticsSidebar() {
+function AnalyticsSectionLink({
+  sectionId,
+  activeSection,
+  setActiveSection,
+  icon: Icon,
+  children,
+}) {
+  const active = activeSection === sectionId;
+
+  return (
+    <a
+      className={`layout-sidebar-item layout-sidebar-subitem${
+        active ? ' is-active' : ''
+      }`}
+      href={`#${sectionId}`}
+      onClick={(event) =>
+        navigateToAnalyticsSection(event, sectionId, setActiveSection)
+      }
+    >
+      <Icon />
+      {children}
+    </a>
+  );
+}
+
+function PrimaryNavigation({ admin, mobile = false }) {
+  const className = mobile ? linkClassName : sidebarRouteClassName;
+
+  if (admin) {
+    return (
+      <>
+        <NavLink to="/admin" end className={className}>
+          {mobile ? null : <FiGrid />}
+          Dashboard
+        </NavLink>
+
+        <NavLink to="/admin/vehicles" className={className}>
+          {mobile ? null : <FiTruck />}
+          Veículos
+        </NavLink>
+
+        <NavLink to="/admin/rentals" className={className}>
+          {mobile ? null : <FiFileText />}
+          Solicitações
+        </NavLink>
+
+        <NavLink to="/admin/analytics" className={className}>
+          {mobile ? null : <FiBarChart2 />}
+          Inteligência
+        </NavLink>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <NavLink to="/user" end className={className}>
+        {mobile ? null : <FiGrid />}
+        Dashboard
+      </NavLink>
+
+      <NavLink to="/rentals" className={className}>
+        {mobile ? null : <FiFileText />}
+        Minhas solicitações
+      </NavLink>
+    </>
+  );
+}
+
+function AppSidebar({ admin, analyticsMode }) {
   const [activeSection, setActiveSection] = useState('analytics-overview');
 
   useEffect(() => {
+    if (!analyticsMode) return undefined;
+
     const updateActiveSection = () => {
       const sections = ANALYTICS_SECTION_IDS.map((id) =>
         document.getElementById(id)
@@ -79,6 +169,7 @@ function AnalyticsSidebar() {
       const highestTop = Math.max(
         ...eligibleSections.map((section) => section.getBoundingClientRect().top)
       );
+
       const closestSections = eligibleSections.filter(
         (section) =>
           Math.abs(section.getBoundingClientRect().top - highestTop) < 4
@@ -110,14 +201,14 @@ function AnalyticsSidebar() {
       window.removeEventListener('resize', updateActiveSection);
       observer?.disconnect();
     };
-  }, []);
-
-  const itemClassName = (sectionId) =>
-    `layout-sidebar-item${activeSection === sectionId ? ' is-active' : ''}`;
+  }, [analyticsMode]);
 
   return (
     <aside className="layout-analytics-sidebar">
-      <NavLink to="/admin" className="layout-sidebar-brand">
+      <NavLink
+        to={admin ? '/admin' : '/user'}
+        className="layout-sidebar-brand"
+      >
         <span className="layout-sidebar-brandBadge">FM</span>
         <span>
           <strong>Fleet Manager</strong>
@@ -128,85 +219,131 @@ function AnalyticsSidebar() {
       <div className="layout-sidebar-scroll">
         <div className="layout-sidebar-group">
           <span className="layout-sidebar-label">Visão geral</span>
-          <a
-            className={itemClassName('analytics-overview')}
-            href="#analytics-overview"
-            onClick={(event) =>
-              navigateToAnalyticsSection(event, 'analytics-overview', setActiveSection)
-            }
-          >
-            <FiGrid />
-            Visão executiva
-          </a>
+
+          {admin ? (
+            <NavLink to="/admin" end className={sidebarRouteClassName}>
+              <FiGrid />
+              Dashboard
+            </NavLink>
+          ) : (
+            <NavLink to="/user" end className={sidebarRouteClassName}>
+              <FiGrid />
+              Dashboard
+            </NavLink>
+          )}
         </div>
 
         <div className="layout-sidebar-group">
-          <span className="layout-sidebar-label">Análises</span>
-          <a
-            className={itemClassName('analytics-trend')}
-            href="#analytics-trend"
-            onClick={(event) =>
-              navigateToAnalyticsSection(event, 'analytics-trend', setActiveSection)
-            }
-          >
-            <FiBarChart2 />
-            Evolução das reservas
-          </a>
-          <a
-            className={itemClassName('analytics-maintenance')}
-            href="#analytics-maintenance"
-            onClick={(event) =>
-              navigateToAnalyticsSection(event, 'analytics-maintenance', setActiveSection)
-            }
-          >
-            <FiTool />
-            Manutenção
-          </a>
-          <a
-            className={itemClassName('analytics-vehicles')}
-            href="#analytics-vehicles"
-            onClick={(event) =>
-              navigateToAnalyticsSection(event, 'analytics-vehicles', setActiveSection)
-            }
-          >
-            <FiTruck />
-            Uso da frota
-          </a>
-          <a
-            className={itemClassName('analytics-departments')}
-            href="#analytics-departments"
-            onClick={(event) =>
-              navigateToAnalyticsSection(event, 'analytics-departments', setActiveSection)
-            }
-          >
-            <FiUsers />
-            Demanda por área
-          </a>
-          <a
-            className={itemClassName('analytics-mileage')}
-            href="#analytics-mileage"
-            onClick={(event) =>
-              navigateToAnalyticsSection(event, 'analytics-mileage', setActiveSection)
-            }
-          >
-            <FiActivity />
-            Quilometragem
-          </a>
+          <span className="layout-sidebar-label">Operação</span>
+
+          {admin ? (
+            <>
+              <NavLink
+                to="/admin/vehicles"
+                className={sidebarRouteClassName}
+              >
+                <FiTruck />
+                Veículos
+              </NavLink>
+
+              <NavLink
+                to="/admin/rentals"
+                className={sidebarRouteClassName}
+              >
+                <FiFileText />
+                Solicitações
+              </NavLink>
+            </>
+          ) : (
+            <NavLink to="/rentals" className={sidebarRouteClassName}>
+              <FiFileText />
+              Minhas solicitações
+            </NavLink>
+          )}
         </div>
 
-        <div className="layout-sidebar-group">
-          <span className="layout-sidebar-label">Dados</span>
-          <a
-            className={itemClassName('analytics-integrations')}
-            href="#analytics-integrations"
-            onClick={(event) =>
-              navigateToAnalyticsSection(event, 'analytics-integrations', setActiveSection)
-            }
-          >
-            <FiFileText />
-            Exportação
-          </a>
-        </div>
+        {admin ? (
+          <div className="layout-sidebar-group">
+            <span className="layout-sidebar-label">Dados</span>
+
+            <NavLink
+              to="/admin/analytics"
+              className={sidebarRouteClassName}
+            >
+              <FiBarChart2 />
+              Inteligência
+            </NavLink>
+          </div>
+        ) : null}
+
+        {analyticsMode ? (
+          <div className="layout-sidebar-group layout-sidebar-contextGroup">
+            <span className="layout-sidebar-label">Nesta análise</span>
+
+            <AnalyticsSectionLink
+              sectionId="analytics-overview"
+              activeSection={activeSection}
+              setActiveSection={setActiveSection}
+              icon={FiGrid}
+            >
+              Visão executiva
+            </AnalyticsSectionLink>
+
+            <AnalyticsSectionLink
+              sectionId="analytics-trend"
+              activeSection={activeSection}
+              setActiveSection={setActiveSection}
+              icon={FiBarChart2}
+            >
+              Evolução das reservas
+            </AnalyticsSectionLink>
+
+            <AnalyticsSectionLink
+              sectionId="analytics-maintenance"
+              activeSection={activeSection}
+              setActiveSection={setActiveSection}
+              icon={FiTool}
+            >
+              Manutenção
+            </AnalyticsSectionLink>
+
+            <AnalyticsSectionLink
+              sectionId="analytics-vehicles"
+              activeSection={activeSection}
+              setActiveSection={setActiveSection}
+              icon={FiTruck}
+            >
+              Uso da frota
+            </AnalyticsSectionLink>
+
+            <AnalyticsSectionLink
+              sectionId="analytics-departments"
+              activeSection={activeSection}
+              setActiveSection={setActiveSection}
+              icon={FiUsers}
+            >
+              Demanda por área
+            </AnalyticsSectionLink>
+
+            <AnalyticsSectionLink
+              sectionId="analytics-mileage"
+              activeSection={activeSection}
+              setActiveSection={setActiveSection}
+              icon={FiActivity}
+            >
+              Quilometragem
+            </AnalyticsSectionLink>
+
+            <AnalyticsSectionLink
+              sectionId="analytics-integrations"
+              activeSection={activeSection}
+              setActiveSection={setActiveSection}
+              icon={FiFileText}
+            >
+              Exportação
+            </AnalyticsSectionLink>
+          </div>
+        ) : null}
       </div>
     </aside>
   );
@@ -218,114 +355,39 @@ export default function Layout() {
   const location = useLocation();
 
   const admin = isAdmin(user);
-  const analyticsMode = admin && location.pathname.startsWith('/admin/analytics');
+  const analyticsMode =
+    admin && location.pathname.startsWith('/admin/analytics');
+  const pageTitle = getPageTitle(location.pathname, admin);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  if (analyticsMode) {
-    return (
-      <div className="layout-shell layout-shell-analytics">
-        <AnalyticsSidebar />
-
-        <div className="layout-analytics-workspace">
-          <header className="layout-analytics-topbar">
-            <nav className="layout-analytics-topnav" aria-label="Main navigation">
-              <NavLink to="/admin" end className={linkClassName}>
-                Dashboard
-              </NavLink>
-              <NavLink to="/admin/vehicles" className={linkClassName}>
-                Veículos
-              </NavLink>
-              <NavLink to="/admin/rentals" className={linkClassName}>
-                Solicitações
-              </NavLink>
-              <NavLink to="/admin/analytics" className={linkClassName}>
-                Inteligência
-              </NavLink>
-            </nav>
-
-            <div className="layout-user layout-user-light">
-              <div className="layout-userMeta">
-                <span className="layout-userLabel">Administrador</span>
-                <span className="layout-username">{user?.name || 'Usuário'}</span>
-              </div>
-
-              <div className="layout-avatar" aria-hidden="true">
-                {getInitials(user?.name)}
-              </div>
-
-              <button
-                type="button"
-                className="layout-logout layout-logout-light"
-                onClick={handleLogout}
-              >
-                Sair
-              </button>
-            </div>
-          </header>
-
-          <main className="layout-main layout-main-analytics">
-            <div className="layout-content layout-content-analytics">
-              <Outlet />
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="layout-shell">
-      <header className="layout-header">
-        <div className="layout-container">
-          <div className="layout-brandBlock">
-            <NavLink to={admin ? '/admin' : '/user'} className="layout-brand">
-              <span className="layout-brandBadge">FM</span>
+    <div className="layout-shell layout-shell-analytics layout-shell-unified">
+      <AppSidebar admin={admin} analyticsMode={analyticsMode} />
 
-              <div className="layout-brandText">
-                <span className="layout-title">Fleet Manager</span>
-                <span className="layout-subtitle">
-                  Enterprise Vehicle Scheduling
-                </span>
-              </div>
-            </NavLink>
-
-            <nav className="layout-nav" aria-label="Main navigation">
-              {admin ? (
-                <>
-                  <NavLink to="/admin" end className={linkClassName}>
-                    Dashboard
-                  </NavLink>
-                  <NavLink to="/admin/vehicles" className={linkClassName}>
-                    Veículos
-                  </NavLink>
-                  <NavLink to="/admin/rentals" className={linkClassName}>
-                    Solicitações
-                  </NavLink>
-                  <NavLink to="/admin/analytics" className={linkClassName}>
-                    Inteligência
-                  </NavLink>
-                </>
-              ) : (
-                <>
-                  <NavLink to="/user" end className={linkClassName}>
-                    Dashboard
-                  </NavLink>
-                  <NavLink to="/rentals" className={linkClassName}>
-                    Minhas solicitações
-                  </NavLink>
-                </>
-              )}
-            </nav>
+      <div className="layout-analytics-workspace layout-unified-workspace">
+        <header className="layout-analytics-topbar layout-unified-topbar">
+          <div className="layout-workspace-context">
+            <span className="layout-workspace-kicker">
+              {admin ? 'Área administrativa' : 'Área do usuário'}
+            </span>
+            <strong className="layout-workspace-title">{pageTitle}</strong>
           </div>
 
-          <div className="layout-user">
+          <nav
+            className="layout-mobile-topnav"
+            aria-label="Navegação principal"
+          >
+            <PrimaryNavigation admin={admin} mobile />
+          </nav>
+
+          <div className="layout-user layout-user-light">
             <div className="layout-userMeta">
               <span className="layout-userLabel">
-                {admin ? 'Administrator' : 'User workspace'}
+                {admin ? 'Administrador' : 'Usuário'}
               </span>
               <span className="layout-username">{user?.name || 'Usuário'}</span>
             </div>
@@ -336,20 +398,32 @@ export default function Layout() {
 
             <button
               type="button"
-              className="layout-logout"
+              className="layout-logout layout-logout-light"
               onClick={handleLogout}
             >
               Sair
             </button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="layout-main">
-        <div className="layout-content">
-          <Outlet />
-        </div>
-      </main>
+        <main
+          className={`layout-main layout-main-analytics layout-main-unified${
+            analyticsMode ? ' is-analytics' : ''
+          }`}
+        >
+          <div
+            className={`layout-content${
+              analyticsMode
+                ? ' layout-content-analytics'
+                : ' layout-content-unified'
+            }`}
+          >
+            <div className="layout-route-stage" key={location.pathname}>
+              <Outlet />
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

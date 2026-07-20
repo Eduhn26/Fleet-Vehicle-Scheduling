@@ -1,0 +1,172 @@
+/*
+ * Unified application sidebar
+ * Keeps the Phase 13 analytics visual language across every authenticated page.
+ */
+
+.layout-shell-unified {
+  min-height: 100vh;
+}
+
+.layout-unified-workspace {
+  min-width: 0;
+  min-height: 100vh;
+}
+
+.layout-unified-topbar {
+  min-height: 74px;
+}
+
+.layout-workspace-context {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.layout-workspace-kicker {
+  color: #64748b;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.layout-workspace-title {
+  overflow: hidden;
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layout-content-unified {
+  width: min(100%, 1320px);
+  margin: 0 auto;
+}
+
+.layout-main-unified {
+  min-width: 0;
+}
+
+.layout-sidebar-route.is-active {
+  color: #ffffff;
+  background: linear-gradient(
+    90deg,
+    rgba(37, 99, 235, 0.82),
+    rgba(37, 99, 235, 0.34)
+  );
+}
+
+.layout-sidebar-contextGroup {
+  padding-top: 0.2rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.layout-sidebar-subitem {
+  min-height: 36px;
+  padding-block: 0.52rem;
+  padding-left: 0.9rem;
+  color: rgba(203, 213, 225, 0.78);
+  font-size: 0.78rem;
+}
+
+.layout-sidebar-subitem svg {
+  width: 15px;
+  height: 15px;
+  color: rgba(125, 211, 252, 0.7);
+}
+
+.layout-sidebar-subitem.is-active {
+  color: #ffffff;
+  background: rgba(37, 99, 235, 0.2);
+  box-shadow:
+    inset 2px 0 0 #67e8f9,
+    inset 0 0 0 1px rgba(147, 197, 253, 0.07);
+  transform: none;
+}
+
+.layout-sidebar-subitem:hover {
+  background: rgba(37, 99, 235, 0.16);
+  transform: translateX(2px);
+}
+
+.layout-mobile-topnav {
+  display: none;
+}
+
+@media (min-width: 901px) {
+  .layout-unified-topbar {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .layout-unified-topbar {
+    align-items: center;
+  }
+
+  .layout-workspace-context {
+    flex: 1 1 auto;
+  }
+
+  .layout-mobile-topnav {
+    order: 3;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+
+  .layout-mobile-topnav .layout-link {
+    color: #475569;
+    border-radius: 10px;
+  }
+
+  .layout-mobile-topnav .layout-link:hover {
+    color: #0f172a;
+    background: #f1f5f9;
+  }
+
+  .layout-mobile-topnav .layout-link-active {
+    color: #1d4ed8;
+    background: #eff6ff;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12);
+  }
+}
+
+@media (max-width: 720px) {
+  .layout-unified-topbar {
+    gap: 0.75rem;
+  }
+
+  .layout-workspace-context {
+    width: calc(100% - 190px);
+  }
+
+  .layout-mobile-topnav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .layout-mobile-topnav .layout-link {
+    width: 100%;
+    text-align: center;
+  }
+
+  .layout-main-unified {
+    padding: 1rem 0.9rem 1.5rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .layout-workspace-context {
+    width: 100%;
+  }
+
+  .layout-user-light {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

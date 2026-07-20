@@ -1,0 +1,483 @@
+/*
+ * Motion & microinteractions
+ * Final calibrated pass: subtle, functional and without blank-screen flashes.
+ */
+
+/* Route transition ------------------------------------------------------- */
+
+.layout-route-stage {
+  min-width: 0;
+  animation: fleetRouteReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fleetRouteReveal {
+  from {
+    opacity: 0.35;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Sidebar --------------------------------------------------------------- */
+
+.layout-sidebar-brandBadge {
+  animation: fleetBrandEnter 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fleetBrandEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.82) rotate(-7deg);
+  }
+
+  65% {
+    opacity: 1;
+    transform: scale(1.05) rotate(1deg);
+  }
+
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+.layout-sidebar-item {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.layout-sidebar-item::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 999px;
+  background: #67e8f9;
+  opacity: 0;
+  transform: scaleY(0.25);
+  transform-origin: center;
+  transition:
+    opacity 180ms ease,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.layout-sidebar-item.is-active::before {
+  opacity: 1;
+  transform: scaleY(0.72);
+}
+
+.layout-sidebar-item svg {
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 180ms ease,
+    filter 180ms ease;
+}
+
+.layout-sidebar-item:hover svg {
+  transform: scale(1.09);
+}
+
+.layout-sidebar-item.is-active svg {
+  color: #bfdbfe;
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 7px rgba(103, 232, 249, 0.3));
+}
+
+.layout-sidebar-route:hover {
+  transform: translateX(3px);
+}
+
+.layout-sidebar-route.is-active {
+  box-shadow:
+    inset 0 0 0 1px rgba(147, 197, 253, 0.1),
+    0 9px 20px rgba(2, 6, 23, 0.12);
+}
+
+/* Page entrance --------------------------------------------------------- */
+
+.dashboard-hero,
+.analytics-page-header,
+.analytics-state,
+.next-actions-card,
+.analytics-integration-card,
+.analytics-degraded-panel,
+.analytics-no-results {
+  animation: fleetSurfaceReveal 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.metric-card,
+.table-card,
+.vehicle-card,
+.analytics-summary-grid > *,
+.analytics-visual-grid > *,
+.analytics-decision-grid > *,
+.analytics-ranking-grid > * {
+  animation: fleetCardReveal 430ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fleetSurfaceReveal {
+  from {
+    opacity: 0.45;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fleetCardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Stagger --------------------------------------------------------------- */
+
+.metrics-grid > :nth-child(1),
+.vehicle-grid > :nth-child(1),
+.analytics-summary-grid > :nth-child(1),
+.analytics-ranking-grid > :nth-child(1) {
+  animation-delay: 30ms;
+}
+
+.metrics-grid > :nth-child(2),
+.vehicle-grid > :nth-child(2),
+.analytics-summary-grid > :nth-child(2),
+.analytics-ranking-grid > :nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.metrics-grid > :nth-child(3),
+.vehicle-grid > :nth-child(3),
+.analytics-summary-grid > :nth-child(3),
+.analytics-ranking-grid > :nth-child(3) {
+  animation-delay: 90ms;
+}
+
+.metrics-grid > :nth-child(4),
+.vehicle-grid > :nth-child(4),
+.analytics-summary-grid > :nth-child(4) {
+  animation-delay: 120ms;
+}
+
+.metrics-grid > :nth-child(5),
+.vehicle-grid > :nth-child(5),
+.analytics-summary-grid > :nth-child(5) {
+  animation-delay: 150ms;
+}
+
+.metrics-grid > :nth-child(6),
+.vehicle-grid > :nth-child(6) {
+  animation-delay: 180ms;
+}
+
+/* Cards & surfaces ------------------------------------------------------ */
+
+.metric-card,
+.table-card,
+.vehicle-card,
+.next-actions-card,
+.analytics-integration-card,
+.analytics-visual-grid > *,
+.analytics-decision-grid > *,
+.analytics-ranking-grid > * {
+  transition:
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 200ms ease,
+    border-color 200ms ease,
+    opacity 180ms ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.1);
+}
+
+.table-card:hover,
+.next-actions-card:hover,
+.analytics-integration-card:hover,
+.analytics-visual-grid > *:hover,
+.analytics-decision-grid > *:hover,
+.analytics-ranking-grid > *:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 38px rgba(15, 23, 42, 0.085);
+}
+
+.vehicle-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 38px rgba(15, 23, 42, 0.13);
+}
+
+/* Vehicle image loading ------------------------------------------------ */
+
+.vehicle-card-imageWrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.vehicle-card-imageWrapper.is-loading::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(
+      105deg,
+      rgba(226, 232, 240, 0.25) 20%,
+      rgba(255, 255, 255, 0.75) 42%,
+      rgba(226, 232, 240, 0.25) 64%
+    );
+  background-size: 220% 100%;
+  animation: fleetImageShimmer 1.15s ease-in-out infinite;
+}
+
+@keyframes fleetImageShimmer {
+  from {
+    background-position: 140% 0;
+  }
+
+  to {
+    background-position: -80% 0;
+  }
+}
+
+.vehicle-card-image {
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  transform: scale(0.975);
+  filter: blur(3px);
+  transition:
+    opacity 240ms ease,
+    transform 340ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 240ms ease;
+}
+
+.vehicle-card-image.is-loaded {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+}
+
+.vehicle-card:hover .vehicle-card-image.is-loaded {
+  transform: scale(1.035);
+}
+
+/* Tables --------------------------------------------------------------- */
+
+.dashboard-table tbody tr {
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.dashboard-table tbody tr:hover {
+  position: relative;
+  z-index: 1;
+  transform: translateX(2px);
+  box-shadow: inset 3px 0 0 rgba(37, 99, 235, 0.55);
+}
+
+/* Buttons -------------------------------------------------------------- */
+
+.btn,
+.dashboard-linkBtn,
+.analytics-toolbar-button,
+.analytics-export-button,
+.layout-logout-light {
+  transition:
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.btn:hover:not(:disabled),
+.dashboard-linkBtn:hover,
+.analytics-toolbar-button:hover:not(:disabled),
+.analytics-export-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.btn:active:not(:disabled),
+.dashboard-linkBtn:active,
+.analytics-toolbar-button:active:not(:disabled),
+.analytics-export-button:active:not(:disabled),
+.layout-logout-light:active {
+  transform: translateY(0) scale(0.985);
+}
+
+/* Operational refresh ------------------------------------------------- */
+
+.operational-refresh-indicator {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0.85rem 0;
+  padding: 0.68rem 0.9rem;
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  border-radius: 12px;
+  color: #1d4ed8;
+  background: rgba(239, 246, 255, 0.9);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.05);
+  font-size: 0.84rem;
+  font-weight: 700;
+  animation: fleetRefreshEnter 180ms ease both;
+}
+
+.operational-refresh-spinner {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  border: 2px solid rgba(37, 99, 235, 0.2);
+  border-top-color: #2563eb;
+  border-radius: 999px;
+  animation: fleetSpin 720ms linear infinite;
+}
+
+.operational-preserved-content {
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.operational-page.is-refreshing .operational-preserved-content {
+  opacity: 0.82;
+  transform: translateY(1px);
+}
+
+@keyframes fleetRefreshEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Analytics recalculation feedback ------------------------------------- */
+
+.analytics-page .analytics-summary-grid,
+.analytics-page .analytics-visual-grid,
+.analytics-page .analytics-decision-grid,
+.analytics-page .analytics-ranking-grid,
+.analytics-page .analytics-integration-card {
+  transition:
+    opacity 200ms ease,
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.analytics-page.is-refreshing .analytics-summary-grid,
+.analytics-page.is-refreshing .analytics-visual-grid,
+.analytics-page.is-refreshing .analytics-decision-grid,
+.analytics-page.is-refreshing .analytics-ranking-grid,
+.analytics-page.is-refreshing .analytics-integration-card {
+  opacity: 0.76;
+  transform: translateY(1px) scale(0.998);
+}
+
+/* Progress & loading --------------------------------------------------- */
+
+.maint-bar-fill {
+  transform-origin: left center;
+  animation: fleetProgressGrow 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fleetProgressGrow {
+  from {
+    transform: scaleX(0);
+    opacity: 0.55;
+  }
+
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+.analytics-state-loading svg,
+.is-spinning {
+  animation: fleetSpin 900ms linear infinite;
+}
+
+@keyframes fleetSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Accessibility -------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .layout-route-stage,
+  .layout-sidebar-brandBadge,
+  .dashboard-hero,
+  .analytics-page-header,
+  .analytics-state,
+  .next-actions-card,
+  .analytics-integration-card,
+  .analytics-degraded-panel,
+  .analytics-no-results,
+  .metric-card,
+  .table-card,
+  .vehicle-card,
+  .analytics-summary-grid > *,
+  .analytics-visual-grid > *,
+  .analytics-decision-grid > *,
+  .analytics-ranking-grid > *,
+  .maint-bar-fill,
+  .analytics-state-loading svg,
+  .is-spinning,
+  .operational-refresh-spinner,
+  .operational-refresh-indicator,
+  .vehicle-card-imageWrapper.is-loading::before {
+    animation: none !important;
+  }
+
+  .layout-sidebar-item,
+  .layout-sidebar-item svg,
+  .metric-card,
+  .table-card,
+  .vehicle-card,
+  .vehicle-card-image,
+  .next-actions-card,
+  .analytics-integration-card,
+  .analytics-visual-grid > *,
+  .analytics-decision-grid > *,
+  .analytics-ranking-grid > *,
+  .dashboard-table tbody tr,
+  .btn,
+  .dashboard-linkBtn,
+  .analytics-toolbar-button,
+  .analytics-export-button,
+  .operational-preserved-content,
+  .analytics-page .analytics-summary-grid,
+  .analytics-page .analytics-visual-grid,
+  .analytics-page .analytics-decision-grid,
+  .analytics-page .analytics-ranking-grid {
+    transition-duration: 0.01ms !important;
+  }
+}

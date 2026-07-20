@@ -86,6 +86,7 @@ export default function VehicleCard({
   const isAdmin = String(user?.role || '').trim() === 'admin';
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const menuRef = useRef(null);
 
   const mileage = vehicle.mileage ?? 0;
@@ -106,6 +107,10 @@ export default function VehicleCard({
 
   const imageSource = getVehicleImage(vehicle);
   const mileageTone = getMileageTone(vehicle.mileage, vehicle.nextMaintenance);
+
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [imageSource]);
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -195,19 +200,25 @@ export default function VehicleCard({
         )}
       </div>
 
-      <div className="vehicle-card-imageWrapper">
+      <div
+        className={`vehicle-card-imageWrapper ${
+          imageLoaded ? 'is-loaded' : 'is-loading'
+        }`.trim()}
+      >
         <img
           src={imageSource}
           alt={`${vehicle.brand} ${vehicle.model}`}
-          className="vehicle-card-image"
+          className={`vehicle-card-image${imageLoaded ? ' is-loaded' : ''}`}
+          onLoad={() => setImageLoaded(true)}
           onError={(event) => {
+            event.currentTarget.onerror = null;
             event.currentTarget.src = defaultImg;
           }}
           loading="lazy"
         />
 
         <div className="vehicle-card-hoverOverlay">
-          <span className="vehicle-card-hoverCta">Reservar veículo</span>
+          <span className="vehicle-card-hoverCta">Ver detalhes</span>
         </div>
       </div>
 
