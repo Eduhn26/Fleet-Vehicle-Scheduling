@@ -1306,7 +1306,7 @@ export default function AdminAnalytics() {
   };
 
   return (
-    <div className="analytics-page" id="analytics-overview">
+    <div className={`analytics-page${isRefreshing ? ' is-refreshing' : ''}`} id="analytics-overview" aria-busy={loading}>
       <section className="analytics-page-header">
         <div>
           <div className="analytics-title-row">
@@ -1760,3 +1760,4 @@ export default function AdminAnalytics() {
     </div>
   );
 }
+
